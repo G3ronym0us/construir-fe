@@ -1,0 +1,415 @@
+export interface User {
+  id: number;
+  uuid: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Category {
+  id: number;
+  uuid: string;
+  name: string;
+  slug: string;
+  description?: string;
+  image?: string;
+  order: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CategoryStats {
+  total: number;
+  active: number;
+  inactive: number;
+}
+
+export interface ProductImage {
+  id: number;
+  uuid: string;
+  url: string;
+  isPrimary: boolean;
+  order: number;
+}
+
+export interface Product {
+  id: number;
+  uuid: string;
+  name: string;
+  sku: string;
+  inventory: number;
+  price: string;
+  categories?: {
+    uuid: string;
+    name: string;
+    slug: string;
+  }[];
+  description?: string;
+  shortDescription?: string;
+  type?: 'simple' | 'variable';
+  published: boolean;
+  featured: boolean;
+  visibility?: 'visible' | 'hidden' | 'catalog' | 'search';
+  barcode?: string;
+  tags?: string[];
+  images?: ProductImage[];
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
+export interface RegisterDto {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+}
+
+export interface LoginDto {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  access_token: string;
+  user: User;
+}
+
+export interface CreateProductDto {
+  name: string;
+  sku: string;
+  inventory: number;
+  price: number;
+  categoryUuids?: string[];
+  description?: string;
+  shortDescription?: string;
+  type?: 'simple' | 'variable';
+  published?: boolean;
+  featured?: boolean;
+  visibility?: 'visible' | 'hidden' | 'catalog' | 'search';
+  barcode?: string;
+  tags?: string[];
+}
+
+export interface UpdateProductDto {
+  name?: string;
+  inventory?: number;
+  price?: number;
+  categoryUuids?: string[];
+  description?: string;
+  shortDescription?: string;
+  type?: 'simple' | 'variable';
+  published?: boolean;
+  featured?: boolean;
+  visibility?: 'visible' | 'hidden' | 'catalog' | 'search';
+  barcode?: string;
+  tags?: string[];
+}
+
+export interface CreateCategoryDto {
+  name: string;
+  slug: string;
+  description?: string;
+  image?: string;
+  order?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateCategoryDto {
+  name?: string;
+  slug?: string;
+  description?: string;
+  image?: string;
+  order?: number;
+  isActive?: boolean;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  lastPage: number;
+}
+
+export interface ProductStats {
+  total: number;
+  published: number;
+  unpublished: number;
+  featured: number;
+  lowStock: number;
+}
+
+export interface ApiError {
+  statusCode: number;
+  message: string | string[];
+  error: string;
+}
+
+// Banner types
+export interface BannerImageVariants {
+  desktop: {
+    webp: string;
+    jpeg: string;
+  };
+  tablet: {
+    webp: string;
+    jpeg: string;
+  };
+  mobile: {
+    webp: string;
+    jpeg: string;
+  };
+}
+
+export interface Banner {
+  id: number;
+  uuid: string;
+  title: string;
+  description?: string;
+  isActive: boolean;
+  priority: number;
+  startDate?: string;
+  endDate?: string;
+  link?: string;
+  images: BannerImageVariants;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
+export interface CreateBannerDto {
+  title: string;
+  description?: string;
+  isActive?: boolean;
+  priority?: number;
+  startDate?: string;
+  endDate?: string;
+  link?: string;
+  image?: File; // Imagen general (si no se especifican las demás)
+  desktopImage?: File;
+  tabletImage?: File;
+  mobileImage?: File;
+}
+
+export interface UpdateBannerDto {
+  title?: string;
+  description?: string;
+  isActive?: boolean;
+  priority?: number;
+  startDate?: string;
+  endDate?: string;
+  link?: string;
+  image?: File; // Imagen general (si no se especifican las demás)
+  desktopImage?: File;
+  tabletImage?: File;
+  mobileImage?: File;
+}
+
+// Cart types
+export interface CartItem {
+  id: number;
+  productId: number;
+  quantity: number;
+  price: string;
+  subtotal: number;
+  product: Product;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Cart {
+  id: number;
+  uuid: string;
+  userId: number;
+  items: CartItem[];
+  totalItems: number;
+  subtotal: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Local cart types (para localStorage)
+export interface LocalCartItem {
+  productId: number;
+  quantity: number;
+}
+
+export interface LocalCart {
+  items: LocalCartItem[];
+}
+
+// DTOs para el carrito
+export interface AddToCartDto {
+  productId: number;
+  quantity: number;
+}
+
+export interface UpdateCartItemDto {
+  quantity: number;
+}
+
+// Checkout types
+export type DeliveryMethod = 'pickup' | 'delivery';
+
+export interface ShippingAddress {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  additionalInfo?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+export type PaymentMethod = 'zelle' | 'pagomovil' | 'transferencia';
+
+export interface ZellePayment {
+  senderName: string;
+  senderBank: string;
+  receipt: File | null;
+}
+
+export interface PagoMovilPayment {
+  phoneNumber: string;
+  cedula: string;
+  bank: string;
+  referenceCode: string;
+  receipt: File | null;
+}
+
+export interface TransferenciaPayment {
+  accountName: string;
+  bank: string;
+  referenceNumber: string;
+  receipt: File | null;
+}
+
+export interface CheckoutData {
+  // Método de entrega
+  deliveryMethod: DeliveryMethod;
+  // Email para guest con pickup
+  guestEmail?: string;
+  // Información de envío (opcional para pickup)
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  additionalInfo?: string;
+  latitude?: number;
+  longitude?: number;
+  // Si el usuario quiere crear cuenta después
+  createAccount?: boolean;
+  password?: string;
+  // Método de pago
+  paymentMethod: PaymentMethod;
+  zellePayment?: ZellePayment;
+  pagomovilPayment?: PagoMovilPayment;
+  transferenciaPayment?: TransferenciaPayment;
+}
+
+// Order types
+export type OrderStatus =
+  | 'pending'
+  | 'payment_review'
+  | 'confirmed'
+  | 'processing'
+  | 'shipped'
+  | 'delivered'
+  | 'cancelled'
+  | 'refunded';
+
+export type PaymentStatus =
+  | 'pending'
+  | 'verified'
+  | 'rejected'
+  | 'refunded';
+
+export interface OrderItem {
+  id: number;
+  productId: number;
+  productName: string;
+  productSku: string;
+  quantity: number;
+  price: string;
+  subtotal: number;
+}
+
+export interface PaymentInfo {
+  id: number;
+  method: PaymentMethod;
+  status: PaymentStatus;
+  receiptUrl?: string;
+  details: Record<string, string>;
+  verifiedAt?: string;
+  verifiedBy?: number;
+  adminNotes?: string;
+}
+
+export interface Order {
+  id: number;
+  uuid: string;
+  orderNumber: string;
+  userId: number;
+  status: OrderStatus;
+  items: OrderItem[];
+  deliveryMethod: DeliveryMethod;
+  shippingAddress: ShippingAddress | null;
+  paymentInfo: PaymentInfo;
+  subtotal: number;
+  tax: number;
+  shipping: number;
+  total: number;
+  totalItems: number;
+  notes?: string;
+  trackingNumber?: string;
+  shippedAt?: string;
+  deliveredAt?: string;
+  cancelledAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateOrderDto {
+  deliveryMethod: DeliveryMethod;
+  guestEmail?: string;
+  shippingAddress?: ShippingAddress;
+  paymentMethod: PaymentMethod;
+  paymentDetails: Record<string, string>;
+  notes?: string;
+  createAccount?: boolean;
+  password?: string;
+  items?: Array<{
+    productId: number;
+    quantity: number;
+  }>;
+}
+
+export interface UpdateOrderStatusDto {
+  orderStatus?: OrderStatus;
+  paymentStatus?: PaymentStatus;
+  adminNotes?: string;
+  trackingNumber?: string;
+}
+
+export interface OrderSummary {
+  id: number;
+  uuid: string;
+  orderNumber: string;
+  status: OrderStatus;
+  total: number;
+  totalItems: number;
+  createdAt: string;
+}

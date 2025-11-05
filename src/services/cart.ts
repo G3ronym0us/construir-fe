@@ -1,0 +1,226 @@
+import { apiClient } from '@/lib/api';
+import type {
+  Cart,
+  LocalCart,
+  LocalCartItem,
+  AddToCartDto,
+  UpdateCartItemDto,
+  Product,
+} from '@/types';
+
+const CART_STORAGE_KEY = 'cart';
+
+// ============================================
+// LocalStorage Cart Functions (Sin autenticación)
+// ============================================
+
+export const localCartService = {
+  /**
+   * Obtiene el carrito desde localStorage
+   */
+  getCart(): LocalCart {
+    if (typeof window === 'undefined') return { items: [] };
+
+    try {
+      const cart = localStorage.getItem(CART_STORAGE_KEY);
+      return cart ? JSON.parse(cart) : { items: [] };
+    } catch (error) {
+      console.error('Error reading cart from localStorage:', error);
+      return { items: [] };
+    }
+  },
+
+  /**
+   * Guarda el carrito en localStorage
+   */
+  saveCart(cart: LocalCart): void {
+    if (typeof window === 'undefined') return;
+
+    try {
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+    } catch (error) {
+      console.error('Error saving cart to localStorage:', error);
+    }
+  },
+
+  /**
+   * Agrega un producto al carrito local
+   */
+  addItem(productId: number, quantity: number): LocalCart {
+    const cart = this.getCart();
+    const existingItem = cart.items.find((item) => item.productId === productId);
+
+    if (existingItem) {
+      existingItem.quantity += quantity;
+    } else {
+      cart.items.push({ productId, quantity });
+    }
+
+    this.saveCart(cart);
+    return cart;
+  },
+
+  /**
+   * Actualiza la cantidad de un producto
+   */
+  updateItem(productId: number, quantity: number): LocalCart {
+    const cart = this.getCart();
+    const item = cart.items.find((item) => item.productId === productId);
+
+    if (item) {
+      item.quantity = quantity;
+      this.saveCart(cart);
+    }
+
+    return cart;
+  },
+
+  /**
+   * Elimina un producto del carrito
+   */
+  removeItem(productId: number): LocalCart {
+    const cart = this.getCart();
+    cart.items = cart.items.filter((item) => item.productId !== productId);
+    this.saveCart(cart);
+    return cart;
+  },
+
+  /**
+   * Vacía el carrito local
+   */
+  clearCart(): void {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem(CART_STORAGE_KEY);
+  },
+
+  /**
+   * Obtiene el número total de items
+   */
+  getTotalItems(): number {
+    const cart = this.getCart();
+    return cart.items.reduce((total, item) => total + item.quantity, 0);
+  },
+
+  /**
+   * Verifica si el carrito tiene items
+   */
+  hasItems(): boolean {
+    return this.getTotalItems() > 0;
+  },
+};
+
+// ============================================
+// API Cart Functions (Con autenticación)
+// ============================================
+
+export const cartService = {
+  /**
+   * Obtiene el carrito del usuario autenticado desde el backend
+   */
+  async getCart(): Promise<Cart> {
+    return apiClient.get<Cart>('/cart');
+  },
+
+  /**
+   * Agrega un producto al carrito del backend
+   */
+  async addItem(data: AddToCartDto): Promise<Cart> {
+    return apiClient.post<Cart>('/cart/items', data);
+  },
+
+  /**
+   * Actualiza la cantidad de un item en el carrito
+   */
+  async updateItem(itemId: number, data: UpdateCartItemDto): Promise<Cart> {
+    return apiClient.patch<Cart>(`/cart/items/${itemId}`, data);
+  },
+
+  /**
+   * Elimina un item del carrito
+   */
+  async removeItem(itemId: number): Promise<Cart> {
+    return apiClient.delete<Cart>(`/cart/items/${itemId}`);
+  },
+
+  /**
+   * Vacía todo el carrito
+   */
+  async clearCart(): Promise<Cart> {
+    return apiClient.delete<Cart>('/cart');
+  },
+
+  /**
+   * Sincroniza los precios del carrito con los precios actuales
+   */
+  async syncPrices(): Promise<Cart> {
+    return apiClient.post<Cart>('/cart/sync-prices');
+  },
+
+  /**
+   * Sincroniza el carrito local con el backend después del login
+   * Envía todos los items del localStorage al servidor
+   */
+  async syncLocalCart(): Promise<Cart> {
+    const localCart = localCartService.getCart();
+
+    // Si no hay items locales, solo obtener el carrito del servidor
+    if (!localCart.items.length) {
+      return this.getCart();
+    }
+
+    // Agregar cada item local al carrito del servidor
+    for (const item of localCart.items) {
+      try {
+        await this.addItem({
+          productId: item.productId,
+          quantity: item.quantity,
+        });
+      } catch (error) {
+        console.error(`Error syncing item ${item.productId}:`, error);
+        // Continuar con los demás items aunque uno falle
+      }
+    }
+
+    // Limpiar el carrito local después de sincronizar
+    localCartService.clearCart();
+
+    // Retornar el carrito actualizado del servidor
+    return this.getCart();
+  },
+};
+
+// ============================================
+// Helper Functions
+// ============================================
+
+/**
+ * Calcula el total de items con información de productos
+ */
+export function calculateCartTotals(items: LocalCartItem[], products: Product[]) {
+  let subtotal = 0;
+  let totalItems = 0;
+
+  const enrichedItems = items.map((item) => {
+    const product = products.find((p) => p.id === item.productId);
+    if (!product) return null;
+
+    const price = parseFloat(product.price);
+    const itemSubtotal = price * item.quantity;
+
+    subtotal += itemSubtotal;
+    totalItems += item.quantity;
+
+    return {
+      ...item,
+      product,
+      price: product.price,
+      subtotal: itemSubtotal,
+    };
+  }).filter(Boolean);
+
+  return {
+    items: enrichedItems,
+    totalItems,
+    subtotal,
+  };
+}
