@@ -21,8 +21,8 @@ export default function LoginPage() {
     try {
       await login({ email, password });
       router.push("/productos");
-    } catch (err: any) {
-      setError(err.message || "Error al iniciar sesión");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Error al iniciar sesión");
     } finally {
       setLoading(false);
     }

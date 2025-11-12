@@ -29,8 +29,8 @@ export default function AdminLoginPage() {
 
       // Redirect to admin dashboard
       router.push('/admin/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'Credenciales inválidas');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Credenciales inválidas');
     } finally {
       setLoading(false);
     }

@@ -56,8 +56,8 @@ export default function NewBannerPage() {
         mobileImage: mobileImage || undefined,
       });
       router.push('/admin/dashboard/banners');
-    } catch (err: any) {
-      setError(err.message || 'Error al crear banner');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al crear banner');
     } finally {
       setLoading(false);
     }

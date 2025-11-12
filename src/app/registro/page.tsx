@@ -25,8 +25,8 @@ export default function RegisterPage() {
     try {
       await register(formData);
       router.push("/productos");
-    } catch (err: any) {
-      setError(err.message || "Error al registrarse");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Error al registrarse");
     } finally {
       setLoading(false);
     }

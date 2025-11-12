@@ -99,7 +99,7 @@ export default function FeaturedProducts() {
                 <div className="p-4">
                   {/* Categoría */}
                   <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                    {product.category}
+                    {product.categories?.[0]?.name}
                   </div>
 
                   {/* Nombre del producto */}

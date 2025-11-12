@@ -177,10 +177,10 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
             </div>
           ) : (
             <>
-              {items.map((item) => (
+              {items.map((item, index) => (
                 <CartItem
-                  key={isAuthenticated ? (item as any).id : item.productId}
-                  item={item as any}
+                  key={index}
+                  item={item}
                   onUpdateQuantity={updateQuantity}
                   onRemove={removeFromCart}
                   isAuthenticated={isAuthenticated}

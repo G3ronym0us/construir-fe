@@ -16,8 +16,8 @@ export default function BannersPage() {
       setLoading(true);
       const data = await getBanners();
       setBanners(data);
-    } catch (err: any) {
-      setError(err.message || 'Error al cargar banners');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al cargar banners');
     } finally {
       setLoading(false);
     }
@@ -33,8 +33,8 @@ export default function BannersPage() {
     try {
       await deleteBanner(uuid);
       setBanners(banners.filter(b => b.uuid !== uuid));
-    } catch (err: any) {
-      alert(err.message || 'Error al eliminar banner');
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Error al eliminar banner');
     }
   };
 

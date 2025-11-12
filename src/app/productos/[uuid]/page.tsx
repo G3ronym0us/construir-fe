@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Package, ShoppingCart, Loader2 } from "lucide-react";
+import { Package, Loader2 } from "lucide-react";
 import { productsService } from "@/services/products";
 import AddToCartButton from "@/components/cart/AddToCartButton";
 import type { Product } from "@/types";
@@ -62,9 +63,9 @@ export default function ProductDetailPage() {
         <h1 className="text-2xl font-bold text-gray-900 mb-4">
           {t('notFound')}
         </h1>
-        <a href="/productos" className="text-blue-600 hover:underline">
+        <Link href="/productos" className="text-blue-600 hover:underline">
           Volver a productos
-        </a>
+        </Link>
       </div>
     );
   }
@@ -78,9 +79,9 @@ export default function ProductDetailPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
         <nav className="text-sm text-gray-500 mb-8">
-          <a href="/" className="hover:text-blue-600">Inicio</a>
+          <Link href="/" className="hover:text-blue-600">Inicio</Link>
           {' / '}
-          <a href="/productos" className="hover:text-blue-600">{t('title')}</a>
+          <Link href="/productos" className="hover:text-blue-600">{t('title')}</Link>
           {' / '}
           <span className="text-gray-900">{product.name}</span>
         </nav>

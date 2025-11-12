@@ -49,8 +49,8 @@ export default function EditBannerPage() {
         setStartDate(data.startDate ? data.startDate.slice(0, 16) : '');
         setEndDate(data.endDate ? data.endDate.slice(0, 16) : '');
         setIsActive(data.isActive);
-      } catch (err: any) {
-        setError(err.message || 'Error al cargar banner');
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Error al cargar banner');
       } finally {
         setLoading(false);
       }
@@ -79,8 +79,8 @@ export default function EditBannerPage() {
         mobileImage: mobileImage || undefined,
       });
       router.push('/admin/dashboard/banners');
-    } catch (err: any) {
-      setError(err.message || 'Error al actualizar banner');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al actualizar banner');
     } finally {
       setSaving(false);
     }

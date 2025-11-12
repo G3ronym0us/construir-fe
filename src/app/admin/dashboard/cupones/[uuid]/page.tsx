@@ -34,7 +34,7 @@ export default function EditDiscountPage() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const data = await discountsService.getByUuid(uuid, token);
+      const data = await discountsService.getByUuid(uuid);
       setDiscount(data);
       setFormData({
         code: data.code,
@@ -86,10 +86,10 @@ export default function EditDiscountPage() {
         code: formData.code?.toUpperCase(),
       };
 
-      await discountsService.update(uuid, dataToSend, token);
+      await discountsService.update(uuid, dataToSend);
       toast.success(t('updateSuccess'));
       router.push('/admin/dashboard/cupones');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error updating discount:', error);
       toast.error(t('updateError'));
     } finally {

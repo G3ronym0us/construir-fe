@@ -21,6 +21,7 @@ export default function AddToCartButton({
   showSuccessMessage = true,
 }: AddToCartButtonProps) {
   const t = useTranslations('cart');
+  const tErrors = useTranslations('errors');
   const { addToCart, loading } = useCart();
   const [justAdded, setJustAdded] = useState(false);
 
@@ -34,7 +35,6 @@ export default function AddToCartButton({
       }
     } catch (error) {
       console.error("Error adding to cart:", error);
-      const tErrors = useTranslations('errors');
       alert(tErrors('addToCartError'));
     }
   };

@@ -10,18 +10,18 @@ import type {
 
 export const discountsService = {
   // Listar todos los cupones (Admin)
-  async getAll(token: string): Promise<Discount[]> {
-    return apiClient.get<Discount[]>("/discounts", token);
+  async getAll(): Promise<Discount[]> {
+    return apiClient.get<Discount[]>("/discounts");
   },
 
   // Obtener estadísticas (Admin)
-  async getStats(token: string): Promise<DiscountStats> {
-    return apiClient.get<DiscountStats>("/discounts/stats", token);
+  async getStats(): Promise<DiscountStats> {
+    return apiClient.get<DiscountStats>("/discounts/stats");
   },
 
   // Obtener cupón por UUID (Admin)
-  async getByUuid(uuid: string, token: string): Promise<Discount> {
-    return apiClient.get<Discount>(`/discounts/${uuid}`, token);
+  async getByUuid(uuid: string, ): Promise<Discount> {
+    return apiClient.get<Discount>(`/discounts/${uuid}`);
   },
 
   // Validar cupón (Público)
@@ -33,21 +33,21 @@ export const discountsService = {
   },
 
   // Crear cupón (Admin)
-  async create(data: CreateDiscountDto, token: string): Promise<Discount> {
-    return apiClient.post<Discount>("/discounts", data, token);
+  async create(data: CreateDiscountDto, ): Promise<Discount> {
+    return apiClient.post<Discount>("/discounts", data);
   },
 
   // Actualizar cupón (Admin)
   async update(
     uuid: string,
     data: UpdateDiscountDto,
-    token: string
+    
   ): Promise<Discount> {
-    return apiClient.patch<Discount>(`/discounts/${uuid}`, data, token);
+    return apiClient.patch<Discount>(`/discounts/${uuid}`, data);
   },
 
   // Eliminar cupón (Admin)
-  async delete(uuid: string, token: string): Promise<{ message: string }> {
-    return apiClient.delete<{ message: string }>(`/discounts/${uuid}`, token);
+  async delete(uuid: string, ): Promise<{ message: string }> {
+    return apiClient.delete<{ message: string }>(`/discounts/${uuid}`);
   },
 };

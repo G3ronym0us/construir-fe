@@ -1,5 +1,5 @@
 import { apiClient } from "@/lib/api";
-import type { Product, CreateProductDto, UpdateProductDto, PaginatedResponse, ProductStats } from "@/types";
+import type { Product, CreateProductDto, UpdateProductDto, PaginatedResponse, ProductStats, ProductImage } from "@/types";
 
 export const productsService = {
   // CRUD Básico
@@ -11,20 +11,19 @@ export const productsService = {
     return apiClient.get<Product>(`/products/${id}`);
   },
 
-  async create(data: CreateProductDto, token: string): Promise<Product> {
-    return apiClient.post<Product>("/products", data, token);
+  async create(data: CreateProductDto): Promise<Product> {
+    return apiClient.post<Product>("/products", data);
   },
 
   async update(
     id: number,
     data: UpdateProductDto,
-    token: string
   ): Promise<Product> {
-    return apiClient.patch<Product>(`/products/${id}`, data, token);
+    return apiClient.patch<Product>(`/products/${id}`, data);
   },
 
-  async delete(id: number, token: string): Promise<{ message: string }> {
-    return apiClient.delete<{ message: string }>(`/products/${id}`, token);
+  async delete(id: number): Promise<{ message: string }> {
+    return apiClient.delete<{ message: string }>(`/products/${id}`);
   },
 
   // Admin - Listado y Filtros
@@ -75,33 +74,28 @@ export const productsService = {
   async updateInventory(
     id: number,
     inventory: number,
-    token: string
   ): Promise<Product> {
-    return apiClient.patch<Product>(`/products/${id}/inventory`, { inventory }, token);
+    return apiClient.patch<Product>(`/products/${id}/inventory`, { inventory });
   },
 
   // Operaciones Masivas
   async bulkPublish(
     ids: number[],
     published: boolean,
-    token: string
   ): Promise<{ message: string; updated: number }> {
     return apiClient.patch<{ message: string; updated: number }>(
       '/products/bulk/publish',
       { ids, published },
-      token
     );
   },
 
   async bulkFeature(
     ids: number[],
     featured: boolean,
-    token: string
   ): Promise<{ message: string; updated: number }> {
     return apiClient.patch<{ message: string; updated: number }>(
       '/products/bulk/feature',
       { ids, featured },
-      token
     );
   },
 
@@ -109,10 +103,9 @@ export const productsService = {
   async uploadImage(
     id: number,
     file: File,
-    token: string,
     isPrimary?: boolean,
     order?: number
-  ): Promise<{ message: string; image: any }> {
+  ): Promise<{ message: string; image: ProductImage }> {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -123,34 +116,20 @@ export const productsService = {
     const url = `/products/${id}/images${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
 
     // FormData request
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}${url}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw error;
-    }
-
-    return response.json();
+    const response = await apiClient.post<{ message: string; image: ProductImage }>(url, formData);
+    return response;
   },
 
   async deleteImage(
     imageId: number,
-    token: string
   ): Promise<{ message: string }> {
-    return apiClient.delete<{ message: string }>(`/products/images/${imageId}`, token);
+    return apiClient.delete<{ message: string }>(`/products/images/${imageId}`);
   },
 
   async setPrimaryImage(
     imageId: number,
-    token: string
   ): Promise<{ message: string }> {
-    return apiClient.patch<{ message: string }>(`/products/images/${imageId}/primary`, {}, token);
+    return apiClient.patch<{ message: string }>(`/products/images/${imageId}/primary`, {});
   },
 };
 

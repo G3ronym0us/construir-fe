@@ -31,7 +31,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
-  const [locationMethod, setLocationMethod] = useState<LocationMethod>('manual');
+  const [locationMethod, setLocationMethod] = useState<'manual' | 'auto' | 'map'>('manual');
   const [currentStep, setCurrentStep] = useState(0);
 
   // Discount state
@@ -93,7 +93,6 @@ export default function CheckoutPage() {
     receipt: null,
   });
 
-  const totalItems = getTotalItems();
   const isAuthenticated = !!user;
 
   // Definir los pasos dinámicamente según el método de entrega
@@ -422,7 +421,7 @@ export default function CheckoutPage() {
         ...(!isAuthenticated ? {
           items: localCart.items,
         } : {}),
-        discountCode,
+        discountCode: discountCode || undefined,
       };
 
       // Crear la orden
@@ -522,7 +521,7 @@ export default function CheckoutPage() {
                   onTransferenciaChange={setTransferenciaPayment}
                   total={total}
                   isAuthenticated={isAuthenticated}
-                  createAccount={createAccount}
+                  createAccount={createAccount || false}
                 />
               )}
 
@@ -574,8 +573,12 @@ export default function CheckoutPage() {
 
               {/* Items */}
               <div className="space-y-3 mb-6 max-h-64 overflow-y-auto">
-                {items.map((item: { productId: string; quantity: number; product: Product }) => (
-                  <div key={item.productId} className="flex gap-3">
+                {items.map((item) => {
+                  if (!item) {
+                    return null;
+                  }
+                  return (
+                    <div key={item.productId} className="flex gap-3">
                     <div className="w-16 h-16 bg-gray-100 rounded flex-shrink-0 flex items-center justify-center">
                       <Package className="w-8 h-8 text-gray-400" />
                     </div>
@@ -591,7 +594,8 @@ export default function CheckoutPage() {
                       </p>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Totales */}
@@ -603,7 +607,7 @@ export default function CheckoutPage() {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">{t('shipping')}:</span>
                   <span className="font-medium">
-                    {shipping === 0 ? t('free') : `${shipping.toFixed(2)}`}
+                    {shipping === 0 ? t('free') : `$${(shipping as unknown as number).toFixed(2)}`}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">

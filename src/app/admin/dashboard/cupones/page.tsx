@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { discountsService } from '@/services/discounts';
 import type { Discount, DiscountStats } from '@/types';
-import { PlusCircle, Edit, Trash2, Percent, DollarSign, Calendar, Users, CheckCircle, XCircle } from 'lucide-react';
+import { PlusCircle, Percent, DollarSign, Calendar, Users, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { ConfirmModal } from '@/components/ConfirmModal';
 
@@ -28,12 +28,9 @@ export default function CuponesPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
       const [discountsData, statsData] = await Promise.all([
-        discountsService.getAll(token),
-        discountsService.getStats(token),
+        discountsService.getAll(),
+        discountsService.getStats(),
       ]);
       setDiscounts(discountsData);
       setStats(statsData);
@@ -56,7 +53,7 @@ export default function CuponesPage() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      await discountsService.delete(deleteModal.uuid, token);
+      await discountsService.delete(deleteModal.uuid);
       toast.success(t('deleteSuccess'));
       setDeleteModal({ isOpen: false, uuid: null });
       loadData();

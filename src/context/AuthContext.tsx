@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
       authService
-        .getProfile(storedToken)
+        .getProfile()
         .then((userData) => {
           setUser(userData);
           setToken(storedToken);

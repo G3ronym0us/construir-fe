@@ -198,38 +198,40 @@ export default function OrderDetailPage() {
           </div>
 
           {/* Shipping Address */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <MapPin className="w-5 h-5" />
-              {t("shippingAddress")}
-            </h2>
-            <div className="space-y-2 text-sm">
-              <p className="font-medium text-gray-900">
-                {order.shippingAddress.firstName}{" "}
-                {order.shippingAddress.lastName}
-              </p>
-              <p className="text-gray-600">{order.shippingAddress.email}</p>
-              <p className="text-gray-600">{order.shippingAddress.phone}</p>
-              <p className="text-gray-600">{order.shippingAddress.address}</p>
-              <p className="text-gray-600">
-                {order.shippingAddress.city}, {order.shippingAddress.state}{" "}
-                {order.shippingAddress.zipCode}
-              </p>
-              <p className="text-gray-600">
-                {order.shippingAddress.country}
-              </p>
-              {order.shippingAddress.additionalInfo && (
-                <div className="mt-2 pt-2 border-t">
-                  <p className="text-xs text-gray-500">
-                    {t("additionalInfo")}
-                  </p>
-                  <p className="text-gray-600">
-                    {order.shippingAddress.additionalInfo}
-                  </p>
-                </div>
-              )}
+          {order.shippingAddress && (
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <MapPin className="w-5 h-5" />
+                {t("shippingAddress")}
+              </h2>
+              <div className="space-y-2 text-sm">
+                <p className="font-medium text-gray-900">
+                  {order.shippingAddress.firstName}{" "}
+                  {order.shippingAddress.lastName}
+                </p>
+                <p className="text-gray-600">{order.shippingAddress.email}</p>
+                <p className="text-gray-600">{order.shippingAddress.phone}</p>
+                <p className="text-gray-600">{order.shippingAddress.address}</p>
+                <p className="text-gray-600">
+                  {order.shippingAddress.city}, {order.shippingAddress.state}{" "}
+                  {order.shippingAddress.zipCode}
+                </p>
+                <p className="text-gray-600">
+                  {order.shippingAddress.country}
+                </p>
+                {order.shippingAddress.additionalInfo && (
+                  <div className="mt-2 pt-2 border-t">
+                    <p className="text-xs text-gray-500">
+                      {t("additionalInfo")}
+                    </p>
+                    <p className="text-gray-600">
+                      {order.shippingAddress.additionalInfo}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Payment Information */}
           <div className="bg-white rounded-lg shadow p-6">
@@ -345,7 +347,7 @@ export default function OrderDetailPage() {
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
-                  {Object.entries(t.raw("statuses")).map(([key, value]) => (
+                  {Object.entries(t.raw("statuses") as Record<string, string>).map(([key, value]) => (
                     <option key={key} value={key}>
                       {value}
                     </option>
@@ -364,7 +366,7 @@ export default function OrderDetailPage() {
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
-                  {Object.entries(t.raw("paymentStatuses")).map(
+                  {Object.entries(t.raw("paymentStatuses") as Record<string, string>).map(
                     ([key, value]) => (
                       <option key={key} value={key}>
                         {value}

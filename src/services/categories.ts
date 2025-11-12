@@ -44,7 +44,6 @@ export const categoriesService = {
     uuid: string,
     data: UpdateCategoryDto,
     image?: File,
-    token?: string
   ): Promise<Category> {
     const formData = new FormData();
     for (const key in data) {
@@ -56,10 +55,10 @@ export const categoriesService = {
     if (image) {
       formData.append('image', image);
     }
-    return apiClient.patch<Category>(`/categories/${uuid}`, formData, token);
+    return apiClient.patch<Category>(`/categories/${uuid}`, formData);
   },
 
-  async delete(uuid: string, token?: string): Promise<{ message: string }> {
-    return apiClient.delete<{ message: string }>(`/categories/${uuid}`, token);
+  async delete(uuid: string): Promise<{ message: string }> {
+    return apiClient.delete<{ message: string }>(`/categories/${uuid}`);
   },
 };

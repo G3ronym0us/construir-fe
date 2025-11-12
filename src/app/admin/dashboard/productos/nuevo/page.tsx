@@ -74,12 +74,12 @@ export default function NewProductPage() {
         categoryUuids: selectedCategoryUuids
       };
 
-      await productsService.create(dataToCreate, token);
+      await productsService.create(dataToCreate);
       alert('Producto creado exitosamente');
       router.push('/admin/dashboard/productos');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating product:', error);
-      alert(error.message || 'Error al crear el producto');
+      alert(error instanceof Error ? error.message : 'Error al crear el producto');
     } finally {
       setLoading(false);
     }
@@ -321,7 +321,7 @@ export default function NewProductPage() {
               </label>
               <select
                 value={formData.visibility}
-                onChange={(e) => setFormData({ ...formData, visibility: e.target.value as any })}
+                onChange={(e) => setFormData({ ...formData, visibility: e.target.value as 'visible' | 'hidden' | 'catalog' | 'search' })}
                 className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
               >
                 <option value="visible">Visible</option>

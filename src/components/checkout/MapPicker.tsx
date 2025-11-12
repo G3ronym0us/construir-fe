@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { MapPin } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import 'leaflet/dist/leaflet.css';
 
 interface MapPickerProps {
   latitude?: number;
@@ -15,9 +16,9 @@ export default function MapPicker({ latitude, longitude, onLocationSelect }: Map
   const [selectedLat, setSelectedLat] = useState(latitude || 10.4806);
   const [selectedLng, setSelectedLng] = useState(longitude || -66.9036);
   const [isClient, setIsClient] = useState(false);
-  const mapRef = useRef<any>(null);
-  const markerRef = useRef<any>(null);
-  const mapInstanceRef = useRef<any>(null);
+  const mapRef = useRef<HTMLDivElement | null>(null);
+  const markerRef = useRef<unknown>(null);
+  const mapInstanceRef = useRef<unknown>(null);
 
   // Asegurar que solo se renderice en el cliente
   useEffect(() => {
@@ -35,16 +36,16 @@ export default function MapPicker({ latitude, longitude, onLocationSelect }: Map
   useEffect(() => {
     if (!isClient) return;
 
-    let L: any;
-    let map: any;
-    let marker: any;
+    let L: typeof import('leaflet');
+    let map: unknown;
+    let marker: unknown;
 
     const initMap = async () => {
-      // Importar Leaflet y sus estilos
+      // Importar Leaflet
       L = await import('leaflet');
-      await import('leaflet/dist/leaflet.css');
 
       // Fix para los iconos de Leaflet
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       delete (L.Icon.Default.prototype as any)._getIconUrl;
       L.Icon.Default.mergeOptions({
         iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -60,18 +61,20 @@ export default function MapPicker({ latitude, longitude, onLocationSelect }: Map
         // Agregar capa de tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
+        }).addTo(map as L.Map);
 
         // Crear marcador
-        marker = L.marker([selectedLat, selectedLng]).addTo(map);
+        marker = L.marker([selectedLat, selectedLng]).addTo(map as L.Map);
         markerRef.current = marker;
 
         // Manejar clics en el mapa
-        map.on('click', (e: any) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (map as any).on('click', (e: { latlng: { lat: number; lng: number } }) => {
           const { lat, lng } = e.latlng;
           setSelectedLat(lat);
           setSelectedLng(lng);
-          marker.setLatLng([lat, lng]);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (marker as any).setLatLng([lat, lng]);
           // Actualizar inmediatamente en el padre cuando el usuario hace clic
           onLocationSelect(lat, lng);
         });
@@ -83,7 +86,7 @@ export default function MapPicker({ latitude, longitude, onLocationSelect }: Map
     // Cleanup
     return () => {
       if (map) {
-        map.remove();
+        (map as L.Map).remove();
         mapInstanceRef.current = null;
       }
     };
@@ -92,10 +95,12 @@ export default function MapPicker({ latitude, longitude, onLocationSelect }: Map
   // Actualizar marcador y centrar mapa cuando cambian las coordenadas
   useEffect(() => {
     if (markerRef.current) {
-      markerRef.current.setLatLng([selectedLat, selectedLng]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (markerRef.current as any).setLatLng([selectedLat, selectedLng]);
     }
     if (mapInstanceRef.current) {
-      mapInstanceRef.current.setView([selectedLat, selectedLng], 13);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (mapInstanceRef.current as any).setView([selectedLat, selectedLng], 13);
     }
   }, [selectedLat, selectedLng]);
 

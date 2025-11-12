@@ -12,7 +12,6 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
   const [lastPage, setLastPage] = useState(1);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -39,10 +38,9 @@ export default function ProductsPage() {
         sortOrder: 'DESC',
       });
       setProducts(response.data);
-      setTotal(response.total);
       setLastPage(response.lastPage);
-    } catch (err: any) {
-      setError(err.message || "Error al cargar productos");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Error al cargar productos");
     } finally {
       setLoading(false);
     }
@@ -167,7 +165,7 @@ export default function ProductsPage() {
                     {/* Información del producto */}
                     <div className="p-4">
                       <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                        {product.category}
+                        {product.categories?.[0]?.name}
                       </div>
                       <h3 className="text-sm font-semibold text-gray-900 mb-2 line-clamp-2 min-h-[40px]">
                         {product.name}

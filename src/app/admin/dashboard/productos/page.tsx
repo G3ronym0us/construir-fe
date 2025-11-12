@@ -35,7 +35,6 @@ export default function ProductsPage() {
         page,
         limit: 10,
         search: search || undefined,
-        categoryUuid: categoryUuid || undefined,
         published,
         featured,
         sortBy,
@@ -65,10 +64,7 @@ export default function ProductsPage() {
     if (!confirm('¿Estás seguro de eliminar este producto?')) return;
 
     try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      await productsService.delete(id, token);
+      await productsService.delete(id);
       loadProducts();
     } catch (error) {
       console.error('Error deleting product:', error);
@@ -83,15 +79,11 @@ export default function ProductsPage() {
     }
 
     try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      await productsService.bulkPublish(selectedProducts, publishValue, token);
+      await productsService.bulkPublish(selectedProducts, publishValue);
       setSelectedProducts([]);
       loadProducts();
     } catch (error) {
       console.error('Error in bulk publish:', error);
-      alert('Error al actualizar productos');
     }
   };
 
@@ -102,10 +94,7 @@ export default function ProductsPage() {
     }
 
     try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      await productsService.bulkFeature(selectedProducts, featureValue, token);
+      await productsService.bulkFeature(selectedProducts, featureValue);
       setSelectedProducts([]);
       loadProducts();
     } catch (error) {

@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { categoriesService } from '@/services/categories';
 import type { Category, CategoryStats } from '@/types';
-import { PlusCircle, Edit, Trash2, ListTree, CheckCircle, XCircle, Star } from 'lucide-react';
+import { PlusCircle, ListTree, CheckCircle, XCircle, Star } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { ConfirmModal } from '@/components/ConfirmModal';
 
@@ -62,7 +62,7 @@ export default function CategoriesPage() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      await categoriesService.delete(deleteModal.uuid, token);
+      await categoriesService.delete(deleteModal.uuid);
       toast.success(t('deleteSuccess'));
       setDeleteModal({ isOpen: false, uuid: null });
       loadData();
@@ -90,8 +90,7 @@ export default function CategoriesPage() {
       await categoriesService.update(
         featuredModal.uuid,
         { isFeatured: !featuredModal.currentValue },
-        undefined,
-        token
+        undefined
       );
       toast.success(t('updateSuccess'));
       setFeaturedModal({ isOpen: false, uuid: null, currentValue: false });

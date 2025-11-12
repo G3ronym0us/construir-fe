@@ -52,7 +52,7 @@ export default function NewDiscountPage() {
         ...formData,
       };
 
-      await discountsService.create(dataToSend, token);
+      await discountsService.create(dataToSend);
       toast.success(t('createSuccess'));
       router.push('/admin/dashboard/cupones');
     } catch (error) {

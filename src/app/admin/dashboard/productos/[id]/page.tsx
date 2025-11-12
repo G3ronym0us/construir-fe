@@ -39,7 +39,6 @@ export default function EditProductPage() {
 
       setFormData({
         name: data.name,
-        sku: data.sku,
         inventory: data.inventory,
         price: parseFloat(data.price),
         description: data.description,
@@ -90,24 +89,18 @@ export default function EditProductPage() {
     setSaving(true);
 
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('No estás autenticado');
-        return;
-      }
-
       // Asegurarse de que categoryUuids esté en el formData
       const dataToUpdate = {
         ...formData,
         categoryUuids: selectedCategoryUuids
       };
 
-      await productsService.update(productId, dataToUpdate, token);
+      await productsService.update(productId, dataToUpdate);
       alert('Producto actualizado exitosamente');
       loadProduct();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error updating product:', error);
-      alert(error.message || 'Error al actualizar el producto');
+      alert(error instanceof Error ? error.message : 'Error al actualizar el producto');
     } finally {
       setSaving(false);
     }
@@ -136,19 +129,12 @@ export default function EditProductPage() {
 
     try {
       setUploadingImage(true);
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('No estás autenticado');
-        return;
-      }
-
       const isPrimary = !product?.images || product.images.length === 0;
-      await productsService.uploadImage(productId, file, token, isPrimary);
-      alert('Imagen subida exitosamente');
+      await productsService.uploadImage(productId, file, isPrimary);
       loadProduct();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error uploading image:', error);
-      alert(error.message || 'Error al subir la imagen');
+      alert(error instanceof Error ? error.message : 'Error al subir la imagen');
     } finally {
       setUploadingImage(false);
       e.target.value = '';
@@ -159,27 +145,21 @@ export default function EditProductPage() {
     if (!confirm('¿Eliminar esta imagen?')) return;
 
     try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      await productsService.deleteImage(imageId, token);
+      await productsService.deleteImage(imageId);
       loadProduct();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error deleting image:', error);
-      alert(error.message || 'Error al eliminar la imagen');
+      alert(error instanceof Error ? error.message : 'Error al eliminar la imagen');
     }
   };
 
   const handleSetPrimaryImage = async (imageId: number) => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      await productsService.setPrimaryImage(imageId, token);
+      await productsService.setPrimaryImage(imageId);
       loadProduct();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error setting primary image:', error);
-      alert(error.message || 'Error al establecer imagen principal');
+      alert(error instanceof Error ? error.message : 'Error al establecer imagen principal');
     }
   };
 
@@ -190,17 +170,14 @@ export default function EditProductPage() {
       return;
     }
 
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      await productsService.updateInventory(productId, newInventory, token);
+    try { 
+      await productsService.updateInventory(productId, newInventory);
       alert('Inventario actualizado');
       setInventoryUpdate('');
       loadProduct();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error updating inventory:', error);
-      alert(error.message || 'Error al actualizar inventario');
+      alert(error instanceof Error ? error.message : 'Error al actualizar inventario');
     }
   };
 
@@ -248,18 +225,6 @@ export default function EditProductPage() {
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    SKU
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.sku}
-                    onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -438,7 +403,7 @@ export default function EditProductPage() {
                   </label>
                   <select
                     value={formData.visibility}
-                    onChange={(e) => setFormData({ ...formData, visibility: e.target.value as any })}
+                    onChange={(e) => setFormData({ ...formData, visibility: e.target.value as 'visible' | 'hidden' | 'catalog' | 'search' })}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="visible">Visible</option>
