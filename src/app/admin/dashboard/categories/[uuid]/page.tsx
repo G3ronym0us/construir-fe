@@ -40,6 +40,7 @@ export default function EditCategoryPage() {
         slug: data.slug,
         description: data.description || '',
         isActive: data.isActive,
+        isFeatured: data.isFeatured,
       });
     } catch (error) {
       console.error('Error loading category:', error);
@@ -173,6 +174,19 @@ export default function EditCategoryPage() {
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
             <label htmlFor="isActive" className="ml-2 block text-sm text-gray-900">{t('isActiveLabel')}</label>
+          </div>
+
+          {/* Is Featured */}
+          <div className="flex items-center">
+            <input
+              id="isFeatured"
+              name="isFeatured"
+              type="checkbox"
+              checked={formData.isFeatured ?? false}
+              onChange={handleChange}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label htmlFor="isFeatured" className="ml-2 block text-sm text-gray-900">{t('isFeaturedLabel')}</label>
           </div>
         </div>
 

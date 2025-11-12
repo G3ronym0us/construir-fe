@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { categoriesService } from '@/services/categories';
 import type { Category, CategoryStats } from '@/types';
-import { PlusCircle, Edit, Trash2, ListTree, CheckCircle, XCircle } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, ListTree, CheckCircle, XCircle, Star } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { ConfirmModal } from '@/components/ConfirmModal';
 
@@ -19,6 +19,15 @@ export default function CategoriesPage() {
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; uuid: string | null }>({
     isOpen: false,
     uuid: null,
+  });
+  const [featuredModal, setFeaturedModal] = useState<{
+    isOpen: boolean;
+    uuid: string | null;
+    currentValue: boolean
+  }>({
+    isOpen: false,
+    uuid: null,
+    currentValue: false,
   });
 
   useEffect(() => {
@@ -65,6 +74,36 @@ export default function CategoriesPage() {
 
   const handleDeleteCancel = () => {
     setDeleteModal({ isOpen: false, uuid: null });
+  };
+
+  const handleToggleFeaturedClick = (uuid: string, currentValue: boolean) => {
+    setFeaturedModal({ isOpen: true, uuid, currentValue });
+  };
+
+  const handleToggleFeaturedConfirm = async () => {
+    if (!featuredModal.uuid) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      await categoriesService.update(
+        featuredModal.uuid,
+        { isFeatured: !featuredModal.currentValue },
+        undefined,
+        token
+      );
+      toast.success(t('updateSuccess'));
+      setFeaturedModal({ isOpen: false, uuid: null, currentValue: false });
+      loadData();
+    } catch (error) {
+      console.error('Error updating category:', error);
+      toast.error(t('updateError'));
+    }
+  };
+
+  const handleToggleFeaturedCancel = () => {
+    setFeaturedModal({ isOpen: false, uuid: null, currentValue: false });
   };
 
   return (
@@ -120,6 +159,7 @@ export default function CategoriesPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('name')}</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('slug')}</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('status')}</th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">{t('featured')}</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">{t('actions')}</th>
               </tr>
             </thead>
@@ -138,6 +178,21 @@ export default function CategoriesPage() {
                     >
                       {category.isActive ? t('activeStatus') : t('inactiveStatus')}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <button
+                      onClick={() => handleToggleFeaturedClick(category.uuid, category.isFeatured)}
+                      className="inline-flex items-center justify-center transition-colors"
+                      title={category.isFeatured ? t('unmarkFeatured') : t('markFeatured')}
+                    >
+                      <Star
+                        className={`w-5 h-5 transition-all ${
+                          category.isFeatured
+                            ? 'fill-yellow-400 text-yellow-400 hover:fill-yellow-500 hover:text-yellow-500'
+                            : 'text-gray-400 hover:text-yellow-400'
+                        }`}
+                      />
+                    </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-4">
                     <Link
@@ -169,6 +224,21 @@ export default function CategoriesPage() {
         onConfirm={handleDeleteConfirm}
         onCancel={handleDeleteCancel}
         type="danger"
+      />
+
+      <ConfirmModal
+        isOpen={featuredModal.isOpen}
+        title={featuredModal.currentValue ? t('unmarkFeatured') : t('markFeatured')}
+        message={
+          featuredModal.currentValue
+            ? t('unmarkFeaturedConfirm')
+            : t('markFeaturedConfirm')
+        }
+        confirmText={tCommon('confirm')}
+        cancelText={tCommon('cancel')}
+        onConfirm={handleToggleFeaturedConfirm}
+        onCancel={handleToggleFeaturedCancel}
+        type="warning"
       />
     </div>
   );

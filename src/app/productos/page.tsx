@@ -3,19 +3,18 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useAuth } from "@/context/AuthContext";
 import { productsService } from "@/services/products";
-import type { Product } from "@/types";
+import { categoriesService } from "@/services/categories";
+import type { Product, Category } from "@/types";
 
 export default function ProductsPage() {
-  const { user, logout } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [lastPage, setLastPage] = useState(1);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [search, setSearch] = useState("");
 
@@ -51,7 +50,7 @@ export default function ProductsPage() {
 
   const loadCategories = async () => {
     try {
-      const cats = await productsService.getCategories();
+      const cats = await categoriesService.getActive();
       setCategories(cats);
     } catch (err) {
       console.error('Error loading categories:', err);
@@ -66,38 +65,6 @@ export default function ProductsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Construir</h1>
-            <p className="text-sm text-gray-600">Ferretería Online</p>
-          </div>
-          <div className="flex items-center gap-4">
-            {user ? (
-              <>
-                <span className="text-sm text-gray-700">
-                  {user.firstName} {user.lastName}
-                </span>
-                <button
-                  onClick={logout}
-                  className="px-4 py-2 text-sm text-white bg-red-600 rounded-md hover:bg-red-700"
-                >
-                  Cerrar Sesión
-                </button>
-              </>
-            ) : (
-              <Link
-                href="/login"
-                className="px-4 py-2 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700"
-              >
-                Iniciar Sesión
-              </Link>
-            )}
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
@@ -125,8 +92,8 @@ export default function ProductsPage() {
             >
               <option value="">Todas las categorías</option>
               {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
+                <option key={cat.uuid} value={cat.slug}>
+                  {cat.name}
                 </option>
               ))}
             </select>

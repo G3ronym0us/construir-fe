@@ -18,6 +18,7 @@ export default function NewCategoryPage() {
     slug: '',
     description: '',
     isActive: true,
+    isFeatured: false,
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -143,6 +144,19 @@ export default function NewCategoryPage() {
               className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
             <label htmlFor="isActive" className="ml-2 block text-sm text-gray-900">{t('isActiveLabel')}</label>
+          </div>
+
+          {/* Is Featured */}
+          <div className="flex items-center">
+            <input
+              id="isFeatured"
+              name="isFeatured"
+              type="checkbox"
+              checked={formData.isFeatured}
+              onChange={handleChange}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label htmlFor="isFeatured" className="ml-2 block text-sm text-gray-900">{t('isFeaturedLabel')}</label>
           </div>
         </div>
 

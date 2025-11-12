@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -7,29 +8,23 @@ import { useForm } from "react-hook-form";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/context/ToastContext";
-import { Loader2, Package, Mail, Phone, MapPin, CreditCard, Navigation } from "lucide-react";
+import { Loader2, Package } from "lucide-react";
 import { getProducts } from "@/services/products";
 import { ordersService } from "@/services/orders";
-import { PAYMENT_METHODS } from "@/config/payment";
-import ZelleForm from "@/components/payment/ZelleForm";
-import PagoMovilForm from "@/components/payment/PagoMovilForm";
-import TransferenciaForm from "@/components/payment/TransferenciaForm";
-import DeliveryMethodSelector from "@/components/checkout/DeliveryMethodSelector";
-import StoreInfo from "@/components/checkout/StoreInfo";
-import LocationMethodSelector, { LocationMethod } from "@/components/checkout/LocationMethodSelector";
-import MapPicker from "@/components/checkout/MapPicker";
+import { discountsService } from "@/services/discounts";
+
 import CheckoutStepper from "@/components/checkout/CheckoutStepper";
 import Step1ContactInfo from "@/components/checkout/steps/Step1ContactInfo";
 import Step2DeliveryMethod from "@/components/checkout/steps/Step2DeliveryMethod";
 import Step3Location from "@/components/checkout/steps/Step3Location";
 import Step4Payment from "@/components/checkout/steps/Step4Payment";
+import DiscountCodeInput from "@/components/checkout/DiscountCodeInput";
 import type { CheckoutData, Product, PaymentMethod, ZellePayment, PagoMovilPayment, TransferenciaPayment, CreateOrderDto, DeliveryMethod } from "@/types";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const t = useTranslations('checkout');
-  const tCommon = useTranslations('common');
-  const tCart = useTranslations('cart');
+
   const { user } = useAuth();
   const { cart, localCart, getTotalItems } = useCart();
 
@@ -38,6 +33,12 @@ export default function CheckoutPage() {
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [locationMethod, setLocationMethod] = useState<LocationMethod>('manual');
   const [currentStep, setCurrentStep] = useState(0);
+
+  // Discount state
+  const [discountCode, setDiscountCode] = useState<string | null>(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [discountError, setDiscountError] = useState<string | null>(null);
+  const [isApplyingDiscount, setIsApplyingDiscount] = useState(false);
 
   const toast = useToast();
 
@@ -183,39 +184,26 @@ export default function CheckoutPage() {
 
   // Cargar productos para carrito local
   useEffect(() => {
+    const loadLocalCartProducts = async () => {
+      try {
+        setLoadingProducts(true);
+        const productIds = localCart.items.map((item) => item.productId);
+        const response = await getProducts({ page: 1, limit: 100, published: true });
+        const matchedProducts = response.data.filter((p) => productIds.includes(p.id));
+        setProducts(matchedProducts);
+      } catch (error) {
+        console.error("Error loading products:", error);
+      } finally {
+        setLoadingProducts(false);
+      }
+    };
+
     if (!isAuthenticated && localCart.items.length > 0) {
       loadLocalCartProducts();
     } else {
       setLoadingProducts(false);
     }
   }, [isAuthenticated, localCart]);
-
-  // Redirigir si el carrito está vacío
-  useEffect(() => {
-    if (!loadingProducts && totalItems === 0) {
-      router.push("/");
-    }
-  }, [loadingProducts, totalItems]);
-
-  const loadLocalCartProducts = async () => {
-    try {
-      setLoadingProducts(true);
-      const productIds = localCart.items.map((item) => item.productId);
-      const response = await getProducts({
-        page: 1,
-        limit: 100,
-        published: true,
-      });
-      const matchedProducts = response.data.filter((p) =>
-        productIds.includes(p.id)
-      );
-      setProducts(matchedProducts);
-    } catch (error) {
-      console.error("Error loading products:", error);
-    } finally {
-      setLoadingProducts(false);
-    }
-  };
 
   // Calcular items y subtotal
   const enrichedLocalItems = localCart.items
@@ -240,10 +228,37 @@ export default function CheckoutPage() {
 
   const shipping = 0; // TODO: Calcular envío
   const tax = subtotal * 0.16; // IVA 16%
-  const total = subtotal + shipping + tax;
+  const total = subtotal + shipping + tax - discountAmount;
 
   const handlePaymentMethodChange = (method: PaymentMethod) => {
     setValue('paymentMethod', method);
+  };
+
+  const handleApplyDiscount = async (code: string) => {
+    setIsApplyingDiscount(true);
+    setDiscountError(null);
+    try {
+      const response = await discountsService.validate({ code, orderTotal: subtotal });
+      if (response.valid && response.discount) {
+        setDiscountAmount(response.discount.discountAmount);
+        setDiscountCode(code);
+        toast.success(t('discountApplied'));
+      } else {
+        setDiscountAmount(0);
+        setDiscountCode(null);
+        setDiscountError(response.error || t('errors.invalidDiscount'));
+      }
+    } catch (error) {
+      setDiscountAmount(0);
+      setDiscountCode(null);
+      if (error instanceof Error) {
+        setDiscountError(error.message);
+      } else {
+        setDiscountError(t('errors.invalidDiscount'));
+      }
+    } finally {
+      setIsApplyingDiscount(false);
+    }
   };
 
   const validatePaymentData = (): boolean => {
@@ -407,6 +422,7 @@ export default function CheckoutPage() {
         ...(!isAuthenticated ? {
           items: localCart.items,
         } : {}),
+        discountCode,
       };
 
       // Crear la orden
@@ -419,16 +435,14 @@ export default function CheckoutPage() {
 
       // Redirigir a confirmación
       router.push("/checkout/confirmacion");
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error processing checkout:", error);
 
       // Mostrar mensaje de error más específico
       let errorMessage = "Error al procesar la orden. Intenta nuevamente.";
 
-      if (error.message) {
+      if (error instanceof Error) {
         errorMessage = error.message;
-      } else if (error.error) {
-        errorMessage = error.error;
       } else if (typeof error === 'string') {
         errorMessage = error;
       }
@@ -552,7 +566,6 @@ export default function CheckoutPage() {
           </div>
 
           {/* Resumen */}
-          {/* Resumen */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg p-6 sticky top-8">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
@@ -561,7 +574,7 @@ export default function CheckoutPage() {
 
               {/* Items */}
               <div className="space-y-3 mb-6 max-h-64 overflow-y-auto">
-                {items.map((item: any) => (
+                {items.map((item: { productId: string; quantity: number; product: Product }) => (
                   <div key={item.productId} className="flex gap-3">
                     <div className="w-16 h-16 bg-gray-100 rounded flex-shrink-0 flex items-center justify-center">
                       <Package className="w-8 h-8 text-gray-400" />
@@ -590,17 +603,31 @@ export default function CheckoutPage() {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">{t('shipping')}:</span>
                   <span className="font-medium">
-                    {shipping === 0 ? t('free') : `$${shipping.toFixed(2)}`}
+                    {shipping === 0 ? t('free') : `${shipping.toFixed(2)}`}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">{t('tax')} (16%):</span>
                   <span className="font-medium">${tax.toFixed(2)}</span>
                 </div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span className="font-medium">{t('discount')} ({discountCode}):</span>
+                    <span className="font-medium">-${discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="border-t pt-2 flex justify-between text-lg font-bold">
                   <span>{t('total')}:</span>
                   <span className="text-blue-600">${total.toFixed(2)}</span>
                 </div>
+              </div>
+
+              <div className="mt-6">
+                <DiscountCodeInput
+                  onApply={handleApplyDiscount}
+                  error={discountError}
+                  isApplying={isApplyingDiscount}
+                />
               </div>
             </div>
           </div>
@@ -609,3 +636,4 @@ export default function CheckoutPage() {
     </div>
   );
 }
+

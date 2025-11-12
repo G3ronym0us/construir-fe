@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { productsService } from '@/services/products';
-import type { Product, UpdateProductDto } from '@/types';
+import { categoriesService } from '@/services/categories';
+import type { Product, UpdateProductDto, Category } from '@/types';
 import Image from 'next/image';
 
 export default function EditProductPage() {
@@ -14,8 +15,9 @@ export default function EditProductPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [product, setProduct] = useState<Product | null>(null);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [formData, setFormData] = useState<UpdateProductDto>({});
+  const [selectedCategoryUuids, setSelectedCategoryUuids] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
   const [inventoryUpdate, setInventoryUpdate] = useState('');
@@ -30,12 +32,16 @@ export default function EditProductPage() {
       setLoading(true);
       const data = await productsService.getById(productId);
       setProduct(data);
+
+      // Extraer los UUIDs de las categorías actuales del producto
+      const categoryUuids = data.categories?.map(cat => cat.uuid) || [];
+      setSelectedCategoryUuids(categoryUuids);
+
       setFormData({
         name: data.name,
         sku: data.sku,
         inventory: data.inventory,
         price: parseFloat(data.price),
-        category: data.category,
         description: data.description,
         shortDescription: data.shortDescription,
         type: data.type,
@@ -44,6 +50,7 @@ export default function EditProductPage() {
         visibility: data.visibility,
         barcode: data.barcode,
         tags: data.tags,
+        categoryUuids: categoryUuids,
       });
     } catch (error) {
       console.error('Error loading product:', error);
@@ -55,11 +62,27 @@ export default function EditProductPage() {
 
   const loadCategories = async () => {
     try {
-      const cats = await productsService.getCategories();
+      const cats = await categoriesService.getActive();
       setCategories(cats);
     } catch (error) {
       console.error('Error loading categories:', error);
     }
+  };
+
+  const handleCategoryToggle = (categoryUuid: string) => {
+    setSelectedCategoryUuids(prev => {
+      const newSelection = prev.includes(categoryUuid)
+        ? prev.filter(uuid => uuid !== categoryUuid)
+        : [...prev, categoryUuid];
+
+      // Actualizar formData con los nuevos UUIDs
+      setFormData(current => ({
+        ...current,
+        categoryUuids: newSelection
+      }));
+
+      return newSelection;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -73,7 +96,13 @@ export default function EditProductPage() {
         return;
       }
 
-      await productsService.update(productId, formData, token);
+      // Asegurarse de que categoryUuids esté en el formData
+      const dataToUpdate = {
+        ...formData,
+        categoryUuids: selectedCategoryUuids
+      };
+
+      await productsService.update(productId, dataToUpdate, token);
       alert('Producto actualizado exitosamente');
       loadProduct();
     } catch (error: any) {
@@ -274,22 +303,45 @@ export default function EditProductPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Categoría
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Categorías
                   </label>
-                  <input
-                    type="text"
-                    list="categories"
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                  <datalist id="categories">
-                    {categories.map((cat) => (
-                      <option key={cat} value={cat} />
-                    ))}
-                  </datalist>
+                  <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-gray-50">
+                    {categories.length === 0 ? (
+                      <p className="text-sm text-gray-500">No hay categorías disponibles</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {[...categories]
+                          .sort((a, b) => {
+                            const aSelected = selectedCategoryUuids.includes(a.uuid);
+                            const bSelected = selectedCategoryUuids.includes(b.uuid);
+                            if (aSelected && !bSelected) return -1;
+                            if (!aSelected && bSelected) return 1;
+                            return a.name.localeCompare(b.name);
+                          })
+                          .map((category) => (
+                            <label
+                              key={category.uuid}
+                              className="flex items-center gap-2 p-2 hover:bg-white rounded cursor-pointer transition-colors"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedCategoryUuids.includes(category.uuid)}
+                                onChange={() => handleCategoryToggle(category.uuid)}
+                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              />
+                              <span className="text-sm text-gray-900">{category.name}</span>
+                            </label>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                  {selectedCategoryUuids.length > 0 && (
+                    <p className="mt-2 text-xs text-gray-500">
+                      {selectedCategoryUuids.length} {selectedCategoryUuids.length === 1 ? 'categoría seleccionada' : 'categorías seleccionadas'}
+                    </p>
+                  )}
                 </div>
 
                 <div>

@@ -10,6 +10,10 @@ export const categoriesService = {
     return apiClient.get<Category[]>("/categories/active");
   },
 
+  async getFeatured(): Promise<Category[]> {
+    return apiClient.get<Category[]>("/categories/featured");
+  },
+
   async getStats(): Promise<CategoryStats> {
     return apiClient.get<CategoryStats>("/categories/stats");
   },
@@ -39,7 +43,8 @@ export const categoriesService = {
   async update(
     uuid: string,
     data: UpdateCategoryDto,
-    image?: File
+    image?: File,
+    token?: string
   ): Promise<Category> {
     const formData = new FormData();
     for (const key in data) {
@@ -51,10 +56,10 @@ export const categoriesService = {
     if (image) {
       formData.append('image', image);
     }
-    return apiClient.patch<Category>(`/categories/${uuid}`, formData);
+    return apiClient.patch<Category>(`/categories/${uuid}`, formData, token);
   },
 
-  async delete(uuid: string): Promise<{ message: string }> {
-    return apiClient.delete<{ message: string }>(`/categories/${uuid}`);
+  async delete(uuid: string, token?: string): Promise<{ message: string }> {
+    return apiClient.delete<{ message: string }>(`/categories/${uuid}`, token);
   },
 };

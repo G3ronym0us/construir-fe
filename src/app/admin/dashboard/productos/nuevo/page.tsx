@@ -3,18 +3,20 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { productsService } from '@/services/products';
-import type { CreateProductDto } from '@/types';
+import { categoriesService } from '@/services/categories';
+import type { CreateProductDto, Category } from '@/types';
 
 export default function NewProductPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategoryUuids, setSelectedCategoryUuids] = useState<string[]>([]);
   const [formData, setFormData] = useState<CreateProductDto>({
     name: '',
     sku: '',
     inventory: 0,
     price: 0,
-    category: '',
+    categoryUuids: [],
     description: '',
     shortDescription: '',
     type: 'simple',
@@ -32,11 +34,27 @@ export default function NewProductPage() {
 
   const loadCategories = async () => {
     try {
-      const cats = await productsService.getCategories();
+      const cats = await categoriesService.getActive();
       setCategories(cats);
     } catch (error) {
       console.error('Error loading categories:', error);
     }
+  };
+
+  const handleCategoryToggle = (categoryUuid: string) => {
+    setSelectedCategoryUuids(prev => {
+      const newSelection = prev.includes(categoryUuid)
+        ? prev.filter(uuid => uuid !== categoryUuid)
+        : [...prev, categoryUuid];
+
+      // Actualizar formData con los nuevos UUIDs
+      setFormData(current => ({
+        ...current,
+        categoryUuids: newSelection
+      }));
+
+      return newSelection;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,7 +68,13 @@ export default function NewProductPage() {
         return;
       }
 
-      await productsService.create(formData, token);
+      // Asegurarse de que categoryUuids esté en el formData
+      const dataToCreate = {
+        ...formData,
+        categoryUuids: selectedCategoryUuids
+      };
+
+      await productsService.create(dataToCreate, token);
       alert('Producto creado exitosamente');
       router.push('/admin/dashboard/productos');
     } catch (error: any) {
@@ -162,25 +186,45 @@ export default function NewProductPage() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Categoría *
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Categorías
               </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  required
-                  list="categories"
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-                <datalist id="categories">
-                  {categories.map((cat) => (
-                    <option key={cat} value={cat} />
-                  ))}
-                </datalist>
+              <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-gray-50">
+                {categories.length === 0 ? (
+                  <p className="text-sm text-gray-500">No hay categorías disponibles</p>
+                ) : (
+                  <div className="space-y-2">
+                    {[...categories]
+                      .sort((a, b) => {
+                        const aSelected = selectedCategoryUuids.includes(a.uuid);
+                        const bSelected = selectedCategoryUuids.includes(b.uuid);
+                        if (aSelected && !bSelected) return -1;
+                        if (!aSelected && bSelected) return 1;
+                        return a.name.localeCompare(b.name);
+                      })
+                      .map((category) => (
+                        <label
+                          key={category.uuid}
+                          className="flex items-center gap-2 p-2 hover:bg-white rounded cursor-pointer transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedCategoryUuids.includes(category.uuid)}
+                            onChange={() => handleCategoryToggle(category.uuid)}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-900">{category.name}</span>
+                        </label>
+                      ))}
+                  </div>
+                )}
               </div>
+              {selectedCategoryUuids.length > 0 && (
+                <p className="mt-2 text-xs text-gray-500">
+                  {selectedCategoryUuids.length} {selectedCategoryUuids.length === 1 ? 'categoría seleccionada' : 'categorías seleccionadas'}
+                </p>
+              )}
             </div>
 
             <div>

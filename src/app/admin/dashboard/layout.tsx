@@ -122,6 +122,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             >
               {t('categories')}
             </Link>
+            <Link
+              href="/admin/dashboard/cupones"
+              className={`block px-4 py-3 rounded-lg transition-colors ${
+                pathname.startsWith('/admin/dashboard/cupones')
+                  ? 'bg-blue-50 text-blue-700 font-medium'
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              {t('coupons')}
+            </Link>
           </nav>
         </aside>
 

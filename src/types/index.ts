@@ -17,6 +17,7 @@ export interface Category {
   image?: string;
   order: number;
   isActive: boolean;
+  isFeatured: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -116,6 +117,7 @@ export interface CreateCategoryDto {
   image?: string;
   order?: number;
   isActive?: boolean;
+  isFeatured?: boolean;
 }
 
 export interface UpdateCategoryDto {
@@ -125,6 +127,7 @@ export interface UpdateCategoryDto {
   image?: string;
   order?: number;
   isActive?: boolean;
+  isFeatured?: boolean;
 }
 
 export interface PaginatedResponse<T> {
@@ -371,6 +374,9 @@ export interface Order {
   subtotal: number;
   tax: number;
   shipping: number;
+  discountCode?: string | null;
+  discountAmount?: number;
+  discount?: Discount | null;
   total: number;
   totalItems: number;
   notes?: string;
@@ -388,6 +394,7 @@ export interface CreateOrderDto {
   shippingAddress?: ShippingAddress;
   paymentMethod: PaymentMethod;
   paymentDetails: Record<string, string>;
+  discountCode?: string;
   notes?: string;
   createAccount?: boolean;
   password?: string;
@@ -412,4 +419,79 @@ export interface OrderSummary {
   total: number;
   totalItems: number;
   createdAt: string;
+}
+
+// Discount types
+export type DiscountType = 'percentage' | 'fixed';
+
+export interface Discount {
+  id: number;
+  uuid: string;
+  code: string;
+  description?: string;
+  type: DiscountType;
+  value: number;
+  minPurchaseAmount?: number;
+  maxDiscountAmount?: number;
+  startDate?: string;
+  endDate?: string;
+  maxUses?: number;
+  currentUses: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+}
+
+export interface CreateDiscountDto {
+  code: string;
+  description?: string;
+  type: DiscountType;
+  value: number;
+  minPurchaseAmount?: number;
+  maxDiscountAmount?: number;
+  startDate?: string;
+  endDate?: string;
+  maxUses?: number;
+  isActive?: boolean;
+}
+
+export interface UpdateDiscountDto {
+  code?: string;
+  description?: string;
+  type?: DiscountType;
+  value?: number;
+  minPurchaseAmount?: number;
+  maxDiscountAmount?: number;
+  startDate?: string;
+  endDate?: string;
+  maxUses?: number;
+  isActive?: boolean;
+}
+
+export interface ValidateDiscountDto {
+  code: string;
+  orderTotal: number;
+}
+
+export interface ValidateDiscountResponse {
+  valid: boolean;
+  discount?: {
+    uuid: string;
+    code: string;
+    description?: string;
+    type: DiscountType;
+    value: number;
+    discountAmount: number;
+    finalTotal: number;
+  };
+  error?: string;
+}
+
+export interface DiscountStats {
+  total: number;
+  active: number;
+  inactive: number;
+  expired: number;
+  maxedOut: number;
 }

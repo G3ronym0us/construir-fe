@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import BannerCarousel from "@/components/BannerCarousel";
+import FeaturedCategories from "@/components/FeaturedCategories";
 import FeaturedProducts from "@/components/FeaturedProducts";
 
 export default function Home() {
@@ -12,6 +13,9 @@ export default function Home() {
 
       {/* Featured Products */}
       <FeaturedProducts />
+
+      {/* Featured Categories */}
+      <FeaturedCategories />
 
       {/* Hero Section */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
