@@ -1,7 +1,9 @@
 "use client";
 
 import { Upload, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { PAYMENT_CONFIG } from "@/config/payment";
+import BankSelector from "./BankSelector";
 import type { TransferenciaPayment } from "@/types";
 
 interface TransferenciaFormProps {
@@ -11,6 +13,8 @@ interface TransferenciaFormProps {
 }
 
 export default function TransferenciaForm({ data, onChange, total }: TransferenciaFormProps) {
+  const t = useTranslations('payment');
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     onChange({ ...data, receipt: file });
@@ -68,19 +72,13 @@ export default function TransferenciaForm({ data, onChange, total }: Transferenc
         />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Banco Emisor *
-        </label>
-        <input
-          type="text"
-          value={data.bank}
-          onChange={(e) => onChange({ ...data, bank: e.target.value })}
-          required
-          placeholder="Banco desde donde realizó el pago"
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-        />
-      </div>
+      <BankSelector
+        value={data.bankCode}
+        onChange={(bankCode) => onChange({ ...data, bankCode })}
+        required
+        label={t('senderBank', { defaultValue: 'Banco Emisor *' })}
+        placeholder={t('selectBank', { defaultValue: 'Seleccione el banco desde donde realizó el pago' })}
+      />
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">

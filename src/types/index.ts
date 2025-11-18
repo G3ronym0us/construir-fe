@@ -151,6 +151,16 @@ export interface ApiError {
   error: string;
 }
 
+// Bank types
+export interface Bank {
+  id: number;
+  code: string;
+  name: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Banner types
 export interface BannerImageVariants {
   desktop: {
@@ -283,14 +293,14 @@ export interface ZellePayment {
 export interface PagoMovilPayment {
   phoneNumber: string;
   cedula: string;
-  bank: string;
+  bankCode: string;
   referenceCode: string;
   receipt: File | null;
 }
 
 export interface TransferenciaPayment {
   accountName: string;
-  bank: string;
+  bankCode: string;
   referenceNumber: string;
   receipt: File | null;
 }

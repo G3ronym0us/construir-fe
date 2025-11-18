@@ -414,5 +414,9 @@
     "couponApplied": "Coupon applied",
     "discount": "Discount",
     "couponError": "Invalid or expired coupon"
+  },
+  "payment": {
+    "senderBank": "Sender Bank *",
+    "selectBank": "Select the bank from which you made the payment"
   }
 }

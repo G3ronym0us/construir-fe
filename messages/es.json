@@ -414,5 +414,9 @@
     "couponApplied": "Cupón aplicado",
     "discount": "Descuento",
     "couponError": "Cupón inválido o expirado"
+  },
+  "payment": {
+    "senderBank": "Banco Emisor *",
+    "selectBank": "Seleccione el banco desde donde realizó el pago"
   }
 }

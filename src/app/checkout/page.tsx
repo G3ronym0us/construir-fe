@@ -81,14 +81,14 @@ export default function CheckoutPage() {
   const [pagomovilPayment, setPagomovilPayment] = useState<PagoMovilPayment>({
     phoneNumber: "",
     cedula: "",
-    bank: "",
+    bankCode: "",
     referenceCode: "",
     receipt: null,
   });
 
   const [transferenciaPayment, setTransferenciaPayment] = useState<TransferenciaPayment>({
     accountName: "",
-    bank: "",
+    bankCode: "",
     referenceNumber: "",
     receipt: null,
   });
@@ -268,13 +268,13 @@ export default function CheckoutPage() {
       }
     } else if (paymentMethod === 'pagomovil') {
       if (!pagomovilPayment.phoneNumber || !pagomovilPayment.cedula ||
-          !pagomovilPayment.bank || !pagomovilPayment.referenceCode ||
+          !pagomovilPayment.bankCode || !pagomovilPayment.referenceCode ||
           !pagomovilPayment.receipt) {
         alert("Por favor completa todos los campos del Pago Móvil");
         return false;
       }
     } else if (paymentMethod === 'transferencia') {
-      if (!transferenciaPayment.accountName || !transferenciaPayment.bank ||
+      if (!transferenciaPayment.accountName || !transferenciaPayment.bankCode ||
           !transferenciaPayment.referenceNumber || !transferenciaPayment.receipt) {
         alert("Por favor completa todos los campos de la Transferencia");
         return false;
@@ -361,14 +361,14 @@ export default function CheckoutPage() {
         paymentDetails = {
           phoneNumber: pagomovilPayment.phoneNumber,
           cedula: pagomovilPayment.cedula,
-          bank: pagomovilPayment.bank,
+          bankCode: pagomovilPayment.bankCode,
           referenceCode: pagomovilPayment.referenceCode,
         };
         receiptFile = pagomovilPayment.receipt;
       } else if (formData.paymentMethod === 'transferencia') {
         paymentDetails = {
           accountName: transferenciaPayment.accountName,
-          bank: transferenciaPayment.bank,
+          transferBankCode: transferenciaPayment.bankCode,
           referenceNumber: transferenciaPayment.referenceNumber,
         };
         receiptFile = transferenciaPayment.receipt;
