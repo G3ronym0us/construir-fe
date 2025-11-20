@@ -41,7 +41,9 @@ export default function CategoriesPage() {
         categoriesService.getAll(),
         categoriesService.getStats(),
       ]);
-      setCategories(categoriesData);
+      // Flatten categories to show hierarchy: parents followed by their children
+      const flattenedCategories = flattenCategories(categoriesData);
+      setCategories(flattenedCategories);
       setStats(statsData);
     } catch (error) {
       console.error('Error loading categories:', error);
@@ -49,6 +51,24 @@ export default function CategoriesPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to flatten categories for hierarchical display
+  const flattenCategories = (categories: Category[]): Category[] => {
+    const flattened: Category[] = [];
+    // First, get only parent categories (those without a parent)
+    const parents = categories.filter(cat => !cat.parent);
+
+    parents.forEach(parent => {
+      // Add the parent
+      flattened.push(parent);
+      // Add its children if any
+      if (parent.childrens && parent.childrens.length > 0) {
+        flattened.push(...parent.childrens);
+      }
+    });
+
+    return flattened;
   };
 
   const handleDeleteClick = (uuid: string) => {
@@ -156,6 +176,7 @@ export default function CategoriesPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('name')}</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('type')}</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('slug')}</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{t('status')}</th>
                 <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">{t('featured')}</th>
@@ -163,52 +184,84 @@ export default function CategoriesPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {categories.map((category) => (
-                <tr key={category.uuid} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{category.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{category.slug}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        category.isActive
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}
-                    >
-                      {category.isActive ? t('activeStatus') : t('inactiveStatus')}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center">
-                    <button
-                      onClick={() => handleToggleFeaturedClick(category.uuid, category.isFeatured)}
-                      className="inline-flex items-center justify-center transition-colors"
-                      title={category.isFeatured ? t('unmarkFeatured') : t('markFeatured')}
-                    >
-                      <Star
-                        className={`w-5 h-5 transition-all ${
-                          category.isFeatured
-                            ? 'fill-yellow-400 text-yellow-400 hover:fill-yellow-500 hover:text-yellow-500'
-                            : 'text-gray-400 hover:text-yellow-400'
+              {categories.map((category) => {
+                const isChild = !!category.parent;
+                const hasChildren = category.childrens && category.childrens.length > 0;
+
+                return (
+                  <tr
+                    key={category.uuid}
+                    className={`hover:bg-gray-50 ${isChild ? 'bg-gray-50/50' : ''}`}
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      <div className="flex items-center gap-2">
+                        {isChild && (
+                          <span className="text-gray-400 ml-4">└─</span>
+                        )}
+                        <span className={isChild ? 'text-gray-700' : 'text-gray-900 font-semibold'}>
+                          {category.name}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {isChild ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                          {t('subcategory')}
+                        </span>
+                      ) : hasChildren ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                          {t('parent')} ({category.childrens.length})
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                          {t('standalone')}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{category.slug}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          category.isActive
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
                         }`}
-                      />
-                    </button>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-4">
-                    <Link
-                      href={`/admin/dashboard/categories/${category.uuid}`}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      {t('edit')}
-                    </Link>
-                    <button
-                      onClick={() => handleDeleteClick(category.uuid)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      {t('delete')}
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                      >
+                        {category.isActive ? t('activeStatus') : t('inactiveStatus')}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <button
+                        onClick={() => handleToggleFeaturedClick(category.uuid, category.isFeatured)}
+                        className="inline-flex items-center justify-center transition-colors"
+                        title={category.isFeatured ? t('unmarkFeatured') : t('markFeatured')}
+                      >
+                        <Star
+                          className={`w-5 h-5 transition-all ${
+                            category.isFeatured
+                              ? 'fill-yellow-400 text-yellow-400 hover:fill-yellow-500 hover:text-yellow-500'
+                              : 'text-gray-400 hover:text-yellow-400'
+                          }`}
+                        />
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-4">
+                      <Link
+                        href={`/admin/dashboard/categories/${category.uuid}`}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        {t('edit')}
+                      </Link>
+                      <button
+                        onClick={() => handleDeleteClick(category.uuid)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        {t('delete')}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

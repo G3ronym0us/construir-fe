@@ -18,6 +18,10 @@ export interface Category {
   order: number;
   isActive: boolean;
   isFeatured: boolean;
+  parent?: Category | null;
+  childrens?: Category[];
+  products?: Product[];
+  deletedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -130,6 +134,10 @@ export interface UpdateCategoryDto {
   isFeatured?: boolean;
 }
 
+export interface AssignParentDto {
+  parentUuid: string | null;
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   total: number;
@@ -157,6 +165,38 @@ export interface Bank {
   code: string;
   name: string;
   active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Identification types
+export enum IdentificationType {
+  V = 'V',  // Venezolano
+  E = 'E',  // Extranjero
+  J = 'J',  // Jurídico
+  G = 'G',  // Gobierno
+  P = 'P',  // Pasaporte
+}
+
+// Guest Customer types
+export interface GuestCustomer {
+  id: number;
+  identificationType: IdentificationType;
+  identificationNumber: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  additionalInfo?: string;
+  latitude?: number;
+  longitude?: number;
+  ordersCount: number;
+  lastOrderDate?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -267,7 +307,32 @@ export interface UpdateCartItemDto {
 // Checkout types
 export type DeliveryMethod = 'pickup' | 'delivery';
 
+// Customer info (always required for guests)
+export interface CustomerInfoDto {
+  identificationType: IdentificationType;
+  identificationNumber: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+}
+
+// Shipping address (only required for delivery)
+export interface ShippingAddressDto {
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+  additionalInfo?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+// Deprecated: Use CustomerInfoDto and ShippingAddressDto instead
 export interface ShippingAddress {
+  identificationType?: IdentificationType;
+  identificationNumber?: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -308,8 +373,9 @@ export interface TransferenciaPayment {
 export interface CheckoutData {
   // Método de entrega
   deliveryMethod: DeliveryMethod;
-  // Email para guest con pickup
-  guestEmail?: string;
+  // Identificación (para guests)
+  identificationType?: IdentificationType;
+  identificationNumber?: string;
   // Información de envío (opcional para pickup)
   firstName?: string;
   lastName?: string;
@@ -400,8 +466,8 @@ export interface Order {
 
 export interface CreateOrderDto {
   deliveryMethod: DeliveryMethod;
-  guestEmail?: string;
-  shippingAddress?: ShippingAddress;
+  customerInfo?: CustomerInfoDto; // Required for guests
+  shippingAddress?: ShippingAddressDto; // Required for delivery
   paymentMethod: PaymentMethod;
   paymentDetails: Record<string, string>;
   discountCode?: string;

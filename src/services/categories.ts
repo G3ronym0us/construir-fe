@@ -1,5 +1,5 @@
 import { apiClient } from "@/lib/api";
-import type { Category, CategoryStats, CreateCategoryDto, UpdateCategoryDto } from "@/types";
+import type { Category, CategoryStats, CreateCategoryDto, UpdateCategoryDto, AssignParentDto } from "@/types";
 
 export const categoriesService = {
   async getAll(): Promise<Category[]> {
@@ -12,6 +12,14 @@ export const categoriesService = {
 
   async getFeatured(): Promise<Category[]> {
     return apiClient.get<Category[]>("/categories/featured");
+  },
+
+  async getParents(): Promise<Category[]> {
+    return apiClient.get<Category[]>("/categories/parents");
+  },
+
+  async getChildren(parentUuid: string): Promise<Category[]> {
+    return apiClient.get<Category[]>(`/categories/parent/${parentUuid}/children`);
   },
 
   async getStats(): Promise<CategoryStats> {
@@ -56,6 +64,10 @@ export const categoriesService = {
       formData.append('image', image);
     }
     return apiClient.patch<Category>(`/categories/${uuid}`, formData);
+  },
+
+  async assignParent(uuid: string, data: AssignParentDto): Promise<Category> {
+    return apiClient.patch<Category>(`/categories/${uuid}/parent`, data);
   },
 
   async delete(uuid: string): Promise<{ message: string }> {
