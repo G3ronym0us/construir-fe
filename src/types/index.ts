@@ -16,7 +16,7 @@ export interface Category {
   description?: string;
   image?: string;
   order: number;
-  isActive: boolean;
+  visible: boolean;
   isFeatured: boolean;
   parent?: Category | null;
   childrens?: Category[];
@@ -28,8 +28,8 @@ export interface Category {
 
 export interface CategoryStats {
   total: number;
-  active: number;
-  inactive: number;
+  visible: number;
+  hidden: number;
 }
 
 export interface ProductImage {
@@ -120,7 +120,7 @@ export interface CreateCategoryDto {
   description?: string;
   image?: string;
   order?: number;
-  isActive?: boolean;
+  visible?: boolean;
   isFeatured?: boolean;
 }
 
@@ -130,7 +130,7 @@ export interface UpdateCategoryDto {
   description?: string;
   image?: string;
   order?: number;
-  isActive?: boolean;
+  visible?: boolean;
   isFeatured?: boolean;
 }
 

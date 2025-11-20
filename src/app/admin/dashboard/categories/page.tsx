@@ -150,15 +150,15 @@ export default function CategoriesPage() {
           </div>
           <div className="bg-white rounded-lg shadow p-6 flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">{t('active')}</p>
-              <p className="text-2xl font-bold text-green-600">{stats.active}</p>
+              <p className="text-sm text-gray-600">{t('visible')}</p>
+              <p className="text-2xl font-bold text-green-600">{stats.visible}</p>
             </div>
             <CheckCircle className="w-10 h-10 text-green-600" />
           </div>
           <div className="bg-white rounded-lg shadow p-6 flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">{t('inactive')}</p>
-              <p className="text-2xl font-bold text-red-600">{stats.inactive}</p>
+              <p className="text-sm text-gray-600">{t('hidden')}</p>
+              <p className="text-2xl font-bold text-red-600">{stats.hidden}</p>
             </div>
             <XCircle className="w-10 h-10 text-red-600" />
           </div>
@@ -222,12 +222,12 @@ export default function CategoriesPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          category.isActive
+                          category.visible
                             ? 'bg-green-100 text-green-800'
                             : 'bg-red-100 text-red-800'
                         }`}
                       >
-                        {category.isActive ? t('activeStatus') : t('inactiveStatus')}
+                        {category.visible ? t('visibleStatus') : t('hiddenStatus')}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">

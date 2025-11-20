@@ -6,8 +6,8 @@ export const categoriesService = {
     return apiClient.get<Category[]>("/categories");
   },
 
-  async getActive(): Promise<Category[]> {
-    return apiClient.get<Category[]>("/categories/active");
+  async getVisible(): Promise<Category[]> {
+    return apiClient.get<Category[]>("/categories/visible");
   },
 
   async getFeatured(): Promise<Category[]> {

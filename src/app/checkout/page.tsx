@@ -12,6 +12,7 @@ import { Loader2, Package } from "lucide-react";
 import { getProducts } from "@/services/products";
 import { ordersService } from "@/services/orders";
 import { discountsService } from "@/services/discounts";
+import { guestCustomersService } from "@/services/guest-customers";
 
 import CheckoutStepper from "@/components/checkout/CheckoutStepper";
 import Step1ContactInfo from "@/components/checkout/steps/Step1ContactInfo";
@@ -19,14 +20,15 @@ import Step2DeliveryMethod from "@/components/checkout/steps/Step2DeliveryMethod
 import Step3Location from "@/components/checkout/steps/Step3Location";
 import Step4Payment from "@/components/checkout/steps/Step4Payment";
 import DiscountCodeInput from "@/components/checkout/DiscountCodeInput";
-import type { CheckoutData, Product, PaymentMethod, ZellePayment, PagoMovilPayment, TransferenciaPayment, CreateOrderDto, DeliveryMethod } from "@/types";
+import type { CheckoutData, Product, PaymentMethod, ZellePayment, PagoMovilPayment, TransferenciaPayment, CreateOrderDto, CustomerInfoDto, ShippingAddressDto, GuestCustomer } from "@/types";
+import { IdentificationType } from "@/types";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const t = useTranslations('checkout');
 
   const { user } = useAuth();
-  const { cart, localCart, getTotalItems } = useCart();
+  const { cart, localCart } = useCart();
 
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
@@ -40,13 +42,19 @@ export default function CheckoutPage() {
   const [discountError, setDiscountError] = useState<string | null>(null);
   const [isApplyingDiscount, setIsApplyingDiscount] = useState(false);
 
+  // Guest customer identification state
+  const [identificationType, setIdentificationType] = useState<IdentificationType>(IdentificationType.V);
+  const [identificationNumber, setIdentificationNumber] = useState('');
+  const [isSearchingGuest, setIsSearchingGuest] = useState(false);
+  const [showGuestDataModal, setShowGuestDataModal] = useState(false);
+  const [foundGuestData, setFoundGuestData] = useState<GuestCustomer | null>(null);
+
   const toast = useToast();
 
   // React Hook Form
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<CheckoutData>({
     defaultValues: {
       deliveryMethod: 'pickup',
-      guestEmail: "",
       firstName: user?.firstName || "",
       lastName: user?.lastName || "",
       email: user?.email || "",
@@ -260,6 +268,63 @@ export default function CheckoutPage() {
     }
   };
 
+  // Actualizar el state sin buscar
+  const handleIdentificationChange = (type: IdentificationType, number: string) => {
+    setIdentificationType(type);
+    setIdentificationNumber(number);
+  };
+
+  // Buscar cuando el usuario termina de escribir (onBlur)
+  const handleIdentificationSearch = async () => {
+    // Solo buscar si el número tiene al menos 7 caracteres
+    if (identificationNumber.length >= 7 && !isAuthenticated) {
+      setIsSearchingGuest(true);
+      try {
+        const guestData = await guestCustomersService.searchByIdentification(
+          identificationType,
+          identificationNumber
+        );
+        if (guestData) {
+          // Guardar datos encontrados y mostrar modal
+          setFoundGuestData(guestData);
+          setShowGuestDataModal(true);
+        }
+      } catch (error) {
+        console.error('Error searching guest customer:', error);
+      } finally {
+        setIsSearchingGuest(false);
+      }
+    }
+  };
+
+  // Confirmar y autocompletar con los datos encontrados
+  const handleConfirmGuestData = () => {
+    if (foundGuestData) {
+      setValue('firstName', foundGuestData.firstName);
+      setValue('lastName', foundGuestData.lastName);
+      setValue('email', foundGuestData.email);
+      setValue('phone', foundGuestData.phone);
+
+      if (foundGuestData.address) setValue('address', foundGuestData.address);
+      if (foundGuestData.city) setValue('city', foundGuestData.city);
+      if (foundGuestData.state) setValue('state', foundGuestData.state);
+      if (foundGuestData.zipCode) setValue('zipCode', foundGuestData.zipCode);
+      if (foundGuestData.country) setValue('country', foundGuestData.country);
+      if (foundGuestData.additionalInfo) setValue('additionalInfo', foundGuestData.additionalInfo);
+      if (foundGuestData.latitude) setValue('latitude', foundGuestData.latitude);
+      if (foundGuestData.longitude) setValue('longitude', foundGuestData.longitude);
+
+      setShowGuestDataModal(false);
+      setFoundGuestData(null);
+    }
+  };
+
+  // Cancelar autocompletado
+  const handleCancelGuestData = () => {
+    setShowGuestDataModal(false);
+    setFoundGuestData(null);
+  };
+
   const validatePaymentData = (): boolean => {
     if (paymentMethod === 'zelle') {
       if (!zellePayment.senderName || !zellePayment.senderBank || !zellePayment.receipt) {
@@ -374,42 +439,45 @@ export default function CheckoutPage() {
         receiptFile = transferenciaPayment.receipt;
       }
 
+      // Preparar customerInfo (solo para guests)
+      const customerInfo: CustomerInfoDto | undefined = !isAuthenticated ? {
+        identificationType: identificationType,
+        identificationNumber: identificationNumber,
+        firstName: formData.firstName!,
+        lastName: formData.lastName!,
+        email: formData.email!,
+        phone: formData.phone!,
+      } : undefined;
+
+      // Preparar shippingAddress (solo para delivery)
+      const shippingAddress: ShippingAddressDto | undefined = formData.deliveryMethod === 'delivery' ? {
+        // Solo incluir dirección completa si es método manual
+        ...(locationMethod === 'manual' ? {
+          address: formData.address!,
+          city: formData.city!,
+          state: formData.state!,
+          zipCode: formData.zipCode!,
+          country: formData.country || 'Venezuela',
+        } : {
+          // Para métodos automático y mapa, enviar campos vacíos o valores por defecto
+          address: 'Coordenadas GPS',
+          city: 'Por GPS',
+          state: 'Por GPS',
+          zipCode: '0000',
+          country: 'Venezuela',
+        }),
+        additionalInfo: formData.additionalInfo,
+        ...(formData.latitude && formData.longitude ? {
+          latitude: formData.latitude,
+          longitude: formData.longitude,
+        } : {}),
+      } : undefined;
+
       // Preparar DTO para crear orden
       const createOrderDto: CreateOrderDto = {
         deliveryMethod: formData.deliveryMethod,
-        // Email para guest con pickup
-        ...(formData.deliveryMethod === 'pickup' && !isAuthenticated ? {
-          guestEmail: formData.guestEmail,
-        } : {}),
-        // Dirección solo si es delivery
-        ...(formData.deliveryMethod === 'delivery' ? {
-          shippingAddress: {
-            firstName: formData.firstName!,
-            lastName: formData.lastName!,
-            email: formData.email!,
-            phone: formData.phone!,
-            // Solo incluir dirección completa si es método manual
-            ...(locationMethod === 'manual' ? {
-              address: formData.address!,
-              city: formData.city!,
-              state: formData.state!,
-              zipCode: formData.zipCode!,
-              country: formData.country || 'Venezuela',
-            } : {
-              // Para métodos automático y mapa, enviar campos vacíos o valores por defecto
-              address: 'Coordenadas GPS',
-              city: 'Por GPS',
-              state: 'Por GPS',
-              zipCode: '0000',
-              country: 'Venezuela',
-            }),
-            additionalInfo: formData.additionalInfo,
-            ...(formData.latitude && formData.longitude ? {
-              latitude: formData.latitude,
-              longitude: formData.longitude,
-            } : {}),
-          },
-        } : {}),
+        customerInfo,
+        shippingAddress,
         paymentMethod: formData.paymentMethod,
         paymentDetails,
         // Solo enviar createAccount y password si el usuario quiere crear cuenta
@@ -481,6 +549,12 @@ export default function CheckoutPage() {
                 <Step1ContactInfo
                   register={register}
                   errors={errors}
+                  isAuthenticated={isAuthenticated}
+                  identificationType={identificationType}
+                  identificationNumber={identificationNumber}
+                  onIdentificationChange={handleIdentificationChange}
+                  onIdentificationBlur={handleIdentificationSearch}
+                  isSearching={isSearchingGuest}
                 />
               )}
 
@@ -636,6 +710,64 @@ export default function CheckoutPage() {
             </div>
           </div>
         </div>
+
+        {/* Modal de confirmación de datos encontrados */}
+        {showGuestDataModal && foundGuestData && (
+          <div
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
+            onClick={handleCancelGuestData}
+          >
+            <div
+              className="bg-white rounded-lg max-w-md w-full p-6 shadow-2xl animate-in zoom-in-95 duration-300"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-xl font-bold text-gray-900 mb-4">
+                {t('guestDataFound')}
+              </h3>
+              <p className="text-gray-700 mb-4">
+                {t('guestDataFoundMessage', {
+                  count: foundGuestData.ordersCount
+                })}
+              </p>
+              <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-2">
+                <p className="text-sm">
+                  <span className="font-medium text-gray-700">{t('name')}:</span>{' '}
+                  <span className="text-gray-900">{foundGuestData.firstName} {foundGuestData.lastName}</span>
+                </p>
+                <p className="text-sm">
+                  <span className="font-medium text-gray-700">{t('email')}:</span>{' '}
+                  <span className="text-gray-900">{foundGuestData.email}</span>
+                </p>
+                <p className="text-sm">
+                  <span className="font-medium text-gray-700">{t('phone')}:</span>{' '}
+                  <span className="text-gray-900">{foundGuestData.phone}</span>
+                </p>
+                {foundGuestData.address && (
+                  <p className="text-sm">
+                    <span className="font-medium text-gray-700">{t('address')}:</span>{' '}
+                    <span className="text-gray-900">{foundGuestData.address}</span>
+                  </p>
+                )}
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={handleCancelGuestData}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-all duration-200"
+                >
+                  {t('cancel')}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmGuestData}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                >
+                  {t('autofillData')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

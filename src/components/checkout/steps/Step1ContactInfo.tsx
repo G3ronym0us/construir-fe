@@ -1,16 +1,32 @@
 'use client';
 
-import { Mail } from 'lucide-react';
+import { Mail, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { UseFormRegister, FieldErrors } from 'react-hook-form';
 import type { CheckoutData } from '@/types';
+import { IdentificationType } from '@/types';
 
 interface Step1ContactInfoProps {
   register: UseFormRegister<CheckoutData>;
   errors: FieldErrors<CheckoutData>;
+  isAuthenticated: boolean;
+  identificationType?: IdentificationType;
+  identificationNumber?: string;
+  onIdentificationChange: (type: IdentificationType, number: string) => void;
+  onIdentificationBlur?: () => void;
+  isSearching?: boolean;
 }
 
-export default function Step1ContactInfo({ register, errors }: Step1ContactInfoProps) {
+export default function Step1ContactInfo({
+  register,
+  errors,
+  isAuthenticated,
+  identificationType,
+  identificationNumber,
+  onIdentificationChange,
+  onIdentificationBlur,
+  isSearching
+}: Step1ContactInfoProps) {
   const t = useTranslations('checkout');
 
   return (
@@ -24,6 +40,59 @@ export default function Step1ContactInfo({ register, errors }: Step1ContactInfoP
           {t('contactInfoDescription', { defaultValue: 'Ingresa tu información de contacto para procesar tu pedido' })}
         </p>
       </div>
+
+      {/* Campos de Identificación (solo para guests) */}
+      {!isAuthenticated && (
+        <div className="border border-blue-200 bg-blue-50 rounded-lg p-4 space-y-4">
+          <div className="flex items-center gap-2 text-blue-900 font-medium">
+            <Search className="w-4 h-4" />
+            <span>{t('identification', { defaultValue: 'Identificación' })}</span>
+          </div>
+          <p className="text-sm text-blue-700">
+            {t('identificationDescription', { defaultValue: 'Ingresa tu identificación para autocompletar tus datos si ya has comprado antes' })}
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t('identificationType', { defaultValue: 'Tipo' })}
+              </label>
+              <select
+                value={identificationType || IdentificationType.V}
+                onChange={(e) => onIdentificationChange(e.target.value as IdentificationType, identificationNumber || '')}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value={IdentificationType.V}>V - Venezolano</option>
+                <option value={IdentificationType.E}>E - Extranjero</option>
+                <option value={IdentificationType.J}>J - Jurídico</option>
+                <option value={IdentificationType.G}>G - Gobierno</option>
+                <option value={IdentificationType.P}>P - Pasaporte</option>
+              </select>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t('identificationNumber', { defaultValue: 'Número de Identificación' })}
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={identificationNumber || ''}
+                  onChange={(e) => onIdentificationChange(identificationType || IdentificationType.V, e.target.value)}
+                  onBlur={onIdentificationBlur}
+                  placeholder={t('identificationPlaceholder', { defaultValue: 'Ej: 12345678' })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                {isSearching && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>

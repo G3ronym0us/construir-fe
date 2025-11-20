@@ -16,7 +16,7 @@ interface CategoryFormData {
   slug: string;
   description: string;
   parentUuid: string;
-  isActive: boolean;
+  visible: boolean;
   isFeatured: boolean;
 }
 
@@ -40,7 +40,7 @@ export default function NewCategoryPage() {
       slug: '',
       description: '',
       parentUuid: '',
-      isActive: true,
+      visible: true,
       isFeatured: false,
     },
   });
@@ -84,7 +84,7 @@ export default function NewCategoryPage() {
         name: data.name,
         slug: data.slug,
         description: data.description || undefined,
-        isActive: data.isActive,
+        visible: data.visible,
         isFeatured: data.isFeatured,
       };
 
@@ -234,12 +234,12 @@ export default function NewCategoryPage() {
             <h3 className="text-sm font-semibold text-gray-700">Estado y Visibilidad</h3>
 
             <Controller
-              name="isActive"
+              name="visible"
               control={control}
               render={({ field }) => (
                 <Toggle
-                  id="isActive"
-                  label={t('isActiveLabel')}
+                  id="visible"
+                  label={t('visibleLabel')}
                   description="La categoría estará visible para los usuarios en la tienda"
                   checked={field.value}
                   onChange={field.onChange}
