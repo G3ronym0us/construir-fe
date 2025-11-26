@@ -7,8 +7,8 @@ export const productsService = {
     return apiClient.get<Product[]>("/products");
   },
 
-  async getById(id: number): Promise<Product> {
-    return apiClient.get<Product>(`/products/${id}`);
+  async getByUuid(uuid: string): Promise<Product> {
+    return apiClient.get<Product>(`/products/${uuid}`);
   },
 
   async create(data: CreateProductDto): Promise<Product> {
@@ -16,14 +16,14 @@ export const productsService = {
   },
 
   async update(
-    id: number,
+    uuid: string,
     data: UpdateProductDto,
   ): Promise<Product> {
-    return apiClient.patch<Product>(`/products/${id}`, data);
+    return apiClient.patch<Product>(`/products/${uuid}`, data);
   },
 
-  async delete(id: number): Promise<{ message: string }> {
-    return apiClient.delete<{ message: string }>(`/products/${id}`);
+  async delete(uuid: string): Promise<{ message: string }> {
+    return apiClient.delete<{ message: string }>(`/products/${uuid}`);
   },
 
   // Admin - Listado y Filtros
@@ -72,36 +72,36 @@ export const productsService = {
 
   // Gestión de Inventario
   async updateInventory(
-    id: number,
+    uuid: string,
     inventory: number,
   ): Promise<Product> {
-    return apiClient.patch<Product>(`/products/${id}/inventory`, { inventory });
+    return apiClient.patch<Product>(`/products/${uuid}/inventory`, { inventory });
   },
 
   // Operaciones Masivas
   async bulkPublish(
-    ids: number[],
+    uuids: string[],
     published: boolean,
   ): Promise<{ message: string; updated: number }> {
     return apiClient.patch<{ message: string; updated: number }>(
       '/products/bulk/publish',
-      { ids, published },
+      { uuids, published },
     );
   },
 
   async bulkFeature(
-    ids: number[],
+    uuids: string[],
     featured: boolean,
   ): Promise<{ message: string; updated: number }> {
     return apiClient.patch<{ message: string; updated: number }>(
       '/products/bulk/feature',
-      { ids, featured },
+      { uuids, featured },
     );
   },
 
   // Gestión de Imágenes
   async uploadImage(
-    id: number,
+    uuid: string,
     file: File,
     isPrimary?: boolean,
     order?: number
@@ -113,7 +113,7 @@ export const productsService = {
     if (isPrimary !== undefined) queryParams.append('isPrimary', isPrimary.toString());
     if (order !== undefined) queryParams.append('order', order.toString());
 
-    const url = `/products/${id}/images${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const url = `/products/${uuid}/images${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
 
     // FormData request
     const response = await apiClient.post<{ message: string; image: ProductImage }>(url, formData);
@@ -121,15 +121,15 @@ export const productsService = {
   },
 
   async deleteImage(
-    imageId: number,
+    imageUuid: string,
   ): Promise<{ message: string }> {
-    return apiClient.delete<{ message: string }>(`/products/images/${imageId}`);
+    return apiClient.delete<{ message: string }>(`/products/images/${imageUuid}`);
   },
 
   async setPrimaryImage(
-    imageId: number,
+    imageUuid: string,
   ): Promise<{ message: string }> {
-    return apiClient.patch<{ message: string }>(`/products/images/${imageId}/primary`, {});
+    return apiClient.patch<{ message: string }>(`/products/images/${imageUuid}/primary`, {});
   },
 };
 

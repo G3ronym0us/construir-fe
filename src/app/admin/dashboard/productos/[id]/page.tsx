@@ -10,7 +10,7 @@ import Image from 'next/image';
 export default function EditProductPage() {
   const router = useRouter();
   const params = useParams();
-  const productId = parseInt(params.id as string);
+  const productUuid = params.id;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -29,8 +29,10 @@ export default function EditProductPage() {
 
   const loadProduct = async () => {
     try {
+      if(!productUuid) return;
+
       setLoading(true);
-      const data = await productsService.getById(productId);
+      const data = await productsService.getByUuid(productUuid as string);
       setProduct(data);
 
       // Extraer los UUIDs de las categorías actuales del producto
@@ -95,7 +97,7 @@ export default function EditProductPage() {
         categoryUuids: selectedCategoryUuids
       };
 
-      await productsService.update(productId, dataToUpdate);
+      await productsService.update(productUuid as string, dataToUpdate);
       alert('Producto actualizado exitosamente');
       loadProduct();
     } catch (error: unknown) {
@@ -130,7 +132,7 @@ export default function EditProductPage() {
     try {
       setUploadingImage(true);
       const isPrimary = !product?.images || product.images.length === 0;
-      await productsService.uploadImage(productId, file, isPrimary);
+      await productsService.uploadImage(productUuid as string, file, isPrimary);
       loadProduct();
     } catch (error: unknown) {
       console.error('Error uploading image:', error);
@@ -141,11 +143,11 @@ export default function EditProductPage() {
     }
   };
 
-  const handleDeleteImage = async (imageId: number) => {
+  const handleDeleteImage = async (imageUuid: string) => {
     if (!confirm('¿Eliminar esta imagen?')) return;
 
     try {
-      await productsService.deleteImage(imageId);
+      await productsService.deleteImage(imageUuid);
       loadProduct();
     } catch (error: unknown) {
       console.error('Error deleting image:', error);
@@ -153,9 +155,9 @@ export default function EditProductPage() {
     }
   };
 
-  const handleSetPrimaryImage = async (imageId: number) => {
+  const handleSetPrimaryImage = async (imageUuid: string) => {
     try {
-      await productsService.setPrimaryImage(imageId);
+      await productsService.setPrimaryImage(imageUuid);
       loadProduct();
     } catch (error: unknown) {
       console.error('Error setting primary image:', error);
@@ -171,7 +173,7 @@ export default function EditProductPage() {
     }
 
     try { 
-      await productsService.updateInventory(productId, newInventory);
+      await productsService.updateInventory(productUuid as string, newInventory);
       alert('Inventario actualizado');
       setInventoryUpdate('');
       loadProduct();
@@ -459,36 +461,6 @@ export default function EditProductPage() {
 
         {/* Sidebar - Imágenes e Inventario */}
         <div className="space-y-6">
-          {/* Gestión de Inventario */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              Inventario Rápido
-            </h2>
-            <div className="space-y-3">
-              <div>
-                <div className="text-sm text-gray-600">Stock actual:</div>
-                <div className="text-2xl font-bold text-gray-900">
-                  {product.inventory} unidades
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  min="0"
-                  value={inventoryUpdate}
-                  onChange={(e) => setInventoryUpdate(e.target.value)}
-                  placeholder="Nuevo stock"
-                  className="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  onClick={handleUpdateInventory}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                >
-                  Actualizar
-                </button>
-              </div>
-            </div>
-          </div>
 
           {/* Gestión de Imágenes */}
           <div className="bg-white rounded-lg shadow p-6">
@@ -534,14 +506,14 @@ export default function EditProductPage() {
                       <div className="flex gap-2">
                         {!image.isPrimary && (
                           <button
-                            onClick={() => handleSetPrimaryImage(image.id)}
+                            onClick={() => handleSetPrimaryImage(image.uuid)}
                             className="text-xs text-blue-600 hover:text-blue-800"
                           >
                             Marcar principal
                           </button>
                         )}
                         <button
-                          onClick={() => handleDeleteImage(image.id)}
+                          onClick={() => handleDeleteImage(image.uuid)}
                           className="text-xs text-red-600 hover:text-red-800"
                         >
                           Eliminar

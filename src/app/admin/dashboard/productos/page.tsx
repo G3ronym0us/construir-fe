@@ -12,7 +12,7 @@ export default function ProductsPage() {
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
 
   // Filtros
@@ -60,11 +60,11 @@ export default function ProductsPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (uuid: string) => {
     if (!confirm('¿Estás seguro de eliminar este producto?')) return;
 
     try {
-      await productsService.delete(id);
+      await productsService.delete(uuid);
       loadProducts();
     } catch (error) {
       console.error('Error deleting product:', error);
@@ -103,9 +103,9 @@ export default function ProductsPage() {
     }
   };
 
-  const toggleSelectProduct = (id: number) => {
+  const toggleSelectProduct = (uuid: string) => {
     setSelectedProducts(prev =>
-      prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
+      prev.includes(uuid) ? prev.filter(p => p !== uuid) : [...prev, uuid]
     );
   };
 
@@ -113,7 +113,7 @@ export default function ProductsPage() {
     if (selectedProducts.length === products.length) {
       setSelectedProducts([]);
     } else {
-      setSelectedProducts(products.map(p => p.id));
+      setSelectedProducts(products.map(p => p.uuid));
     }
   };
 
@@ -320,12 +320,12 @@ export default function ProductsPage() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {products.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50">
+                  <tr key={product.uuid} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <input
                         type="checkbox"
-                        checked={selectedProducts.includes(product.id)}
-                        onChange={() => toggleSelectProduct(product.id)}
+                        checked={selectedProducts.includes(product.uuid)}
+                        onChange={() => toggleSelectProduct(product.uuid)}
                         className="rounded"
                       />
                     </td>
@@ -372,13 +372,13 @@ export default function ProductsPage() {
                     </td>
                     <td className="px-4 py-3 text-right space-x-2">
                       <Link
-                        href={`/admin/dashboard/productos/${product.id}`}
+                        href={`/admin/dashboard/productos/${product.uuid}`}
                         className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                       >
                         Editar
                       </Link>
                       <button
-                        onClick={() => handleDelete(product.id)}
+                        onClick={() => handleDelete(product.uuid)}
                         className="text-red-600 hover:text-red-800 text-sm font-medium"
                       >
                         Eliminar
