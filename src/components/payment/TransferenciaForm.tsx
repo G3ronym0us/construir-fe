@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { PAYMENT_CONFIG } from "@/config/payment";
 import BankSelector from "./BankSelector";
 import type { TransferenciaPayment } from "@/types";
+import CopyButton from "@/components/ui/CopyButton";
 
 interface TransferenciaFormProps {
   data: TransferenciaPayment;
@@ -32,21 +33,33 @@ export default function TransferenciaForm({ data, onChange, total }: Transferenc
           Datos para realizar la Transferencia:
         </h3>
         <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span className="text-gray-600">Banco:</span>
-            <span className="font-medium">{PAYMENT_CONFIG.transferencia.bank}</span>
+            <div className="flex items-center gap-1">
+              <span className="font-medium">{PAYMENT_CONFIG.transferencia.bank}</span>
+              <CopyButton text={PAYMENT_CONFIG.transferencia.bank} />
+            </div>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span className="text-gray-600">Número de Cuenta:</span>
-            <span className="font-medium">{PAYMENT_CONFIG.transferencia.accountNumber}</span>
+            <div className="flex items-center gap-1">
+              <span className="font-medium">{PAYMENT_CONFIG.transferencia.accountNumber}</span>
+              <CopyButton text={PAYMENT_CONFIG.transferencia.accountNumber} />
+            </div>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span className="text-gray-600">RIF:</span>
-            <span className="font-medium">{PAYMENT_CONFIG.transferencia.rif}</span>
+            <div className="flex items-center gap-1">
+              <span className="font-medium">{PAYMENT_CONFIG.transferencia.rif}</span>
+              <CopyButton text={PAYMENT_CONFIG.transferencia.rif} />
+            </div>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span className="text-gray-600">Beneficiario:</span>
-            <span className="font-medium">{PAYMENT_CONFIG.transferencia.beneficiary}</span>
+            <div className="flex items-center gap-1">
+              <span className="font-medium">{PAYMENT_CONFIG.transferencia.beneficiary}</span>
+              <CopyButton text={PAYMENT_CONFIG.transferencia.beneficiary} />
+            </div>
           </div>
           <div className="flex justify-between border-t pt-2 mt-2">
             <span className="text-gray-600">Monto a pagar:</span>
@@ -55,6 +68,18 @@ export default function TransferenciaForm({ data, onChange, total }: Transferenc
             </span>
           </div>
         </div>
+        <button
+          type="button"
+          onClick={() => {
+            const accountNumber = PAYMENT_CONFIG.transferencia.accountNumber.replace(/-/g, '');
+            const rif = PAYMENT_CONFIG.transferencia.rif.replace(/-/g, '');
+            const allData = `${PAYMENT_CONFIG.transferencia.bank} ${PAYMENT_CONFIG.transferencia.bankCode}\n${accountNumber}\n${rif}\n${PAYMENT_CONFIG.transferencia.beneficiary}\nBs. ${total.toFixed(2)}`;
+            navigator.clipboard.writeText(allData);
+          }}
+          className="w-full mt-3 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+        >
+          Copiar todos los datos
+        </button>
       </div>
 
       {/* Formulario */}

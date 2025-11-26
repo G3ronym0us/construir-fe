@@ -7,6 +7,7 @@ import Image from "next/image";
 import { productsService } from "@/services/products";
 import type { Product } from "@/types";
 import { CategoryMenu } from "@/components/CategoryMenu";
+import { formatVES, formatUSD, parsePrice } from "@/lib/currency";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -176,13 +177,15 @@ export default function ProductsPage() {
                               {product.shortDescription}
                             </p>
                           )}
-                          <div className="flex items-baseline gap-1 mb-3">
-                            <span className="text-2xl font-bold text-blue-600">
-                              US$ {parseFloat(product.price).toFixed(0)}
-                            </span>
-                            <span className="text-sm text-gray-600">
-                              {(parseFloat(product.price) % 1).toFixed(2).slice(1)}
-                            </span>
+                          <div className="mb-3">
+                            {product.priceVes && (
+                              <div className="text-2xl font-bold text-blue-600">
+                                {formatVES(parsePrice(product.priceVes))}
+                              </div>
+                            )}
+                            <div className={`${product.priceVes ? 'text-sm text-gray-600' : 'text-2xl font-bold text-blue-600'}`}>
+                              {formatUSD(parsePrice(product.price))}
+                            </div>
                           </div>
                           {product.inventory > 0 ? (
                             <div className="text-sm font-semibold text-green-600">

@@ -13,6 +13,7 @@ import {
   ShoppingCart,
   FolderTree,
   Tag,
+  Users,
   Menu,
   X,
   LogOut,
@@ -60,6 +61,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: '/admin/dashboard/productos', label: t('products'), icon: Package },
     { href: '/admin/dashboard/banners', label: t('banners'), icon: ImageIcon },
     { href: '/admin/dashboard/ordenes', label: t('orders'), icon: ShoppingCart },
+    { href: '/admin/dashboard/clientes', label: 'Clientes', icon: Users },
     { href: '/admin/dashboard/categories', label: t('categories'), icon: FolderTree },
     { href: '/admin/dashboard/cupones', label: t('coupons'), icon: Tag },
   ];
@@ -166,7 +168,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 sm:p-6 md:p-8 min-h-[calc(100vh-57px)] sm:min-h-[calc(100vh-65px)]">
+        <main className="flex-1 p-4 sm:p-6 md:p-8 min-h-[calc(100vh-57px)] sm:min-h-[calc(100vh-65px)] w-full max-w-full overflow-x-hidden">
           {children}
         </main>
       </div>

@@ -2,11 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { productsService } from '@/services/products';
+import { dashboardService, type DashboardStats } from '@/services/dashboard';
 import type { ProductStats, Product } from '@/types';
+import { DollarSign, ShoppingCart, TrendingUp } from 'lucide-react';
+import MetricCard from '@/components/admin/MetricCard';
+import { formatUSD, formatVES } from '@/lib/currency';
 import Link from 'next/link';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<ProductStats | null>(null);
+  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -17,12 +22,14 @@ export default function AdminDashboard() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [statsData, lowStock] = await Promise.all([
+      const [statsData, lowStock, dashStats] = await Promise.all([
         productsService.getStats(),
         productsService.getLowStock(10),
+        dashboardService.getDashboardStats(),
       ]);
       setStats(statsData);
       setLowStockProducts(lowStock);
+      setDashboardStats(dashStats);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
     } finally {
@@ -33,6 +40,51 @@ export default function AdminDashboard() {
   return (
     <div>
       <h1 className="text-3xl font-bold text-gray-900 mb-6">Dashboard</h1>
+
+      {/* Métricas de Ventas e Ingresos */}
+      <div className="mb-8">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Ventas e Ingresos del Mes</h2>
+        {loading ? (
+          <div className="text-gray-500">Cargando métricas...</div>
+        ) : dashboardStats && dashboardStats.currentMonth && dashboardStats.previousMonth ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <MetricCard
+              title="Ingresos del Mes (VES)"
+              value={formatVES(dashboardStats.currentMonth.totalVes || 0)}
+              secondaryValue={formatUSD(dashboardStats.currentMonth.total || 0)}
+              percentageChange={dashboardStats.currentMonth.percentageChangeVes || 0}
+              icon={DollarSign}
+              iconColor="text-green-600"
+              iconBgColor="bg-green-50"
+            />
+            <MetricCard
+              title="Ventas del Mes"
+              value={(dashboardStats.currentMonth.count || 0).toString()}
+              percentageChange={dashboardStats.currentMonth.percentageChangeCount || 0}
+              icon={ShoppingCart}
+              iconColor="text-blue-600"
+              iconBgColor="bg-blue-50"
+            />
+            <MetricCard
+              title="Promedio por Orden"
+              value={formatVES(dashboardStats.averageOrderValueVes || 0)}
+              secondaryValue={formatUSD(dashboardStats.averageOrderValue || 0)}
+              percentageChange={
+                dashboardStats.currentMonth.count && dashboardStats.currentMonth.count > 0
+                  ? ((dashboardStats.currentMonth.totalVes / dashboardStats.currentMonth.count -
+                      dashboardStats.previousMonth.totalVes / (dashboardStats.previousMonth.count || 1)) /
+                      (dashboardStats.previousMonth.totalVes / (dashboardStats.previousMonth.count || 1)) * 100)
+                  : 0
+              }
+              icon={TrendingUp}
+              iconColor="text-purple-600"
+              iconBgColor="bg-purple-50"
+            />
+          </div>
+        ) : (
+          <div className="text-gray-500">No hay datos disponibles</div>
+        )}
+      </div>
 
       {/* Estadísticas de Productos */}
       <div className="mb-8">
@@ -128,31 +180,6 @@ export default function AdminDashboard() {
           )}
         </div>
       )}
-
-      {/* Acciones Rápidas */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Acciones Rápidas</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Link
-            href="/admin/dashboard/productos"
-            className="block px-4 py-3 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
-          >
-            Gestionar Productos
-          </Link>
-          <Link
-            href="/admin/dashboard/productos/nuevo"
-            className="block px-4 py-3 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors"
-          >
-            Crear Nuevo Producto
-          </Link>
-          <Link
-            href="/admin/dashboard/banners"
-            className="block px-4 py-3 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors"
-          >
-            Gestionar Banners
-          </Link>
-        </div>
-      </div>
     </div>
   );
 }

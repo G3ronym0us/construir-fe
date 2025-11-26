@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Package } from "lucide-react";
 import AddToCartButton from "./cart/AddToCartButton";
 import type { Product } from "@/types";
+import { formatVES, formatUSD, parsePrice } from "@/lib/currency";
 
 interface ProductCardProps {
   product: Product;
@@ -13,7 +14,8 @@ interface ProductCardProps {
 export default function ProductCard({ product }: ProductCardProps) {
   const primaryImage = product.images?.find((img) => img.isPrimary);
   const imageUrl = primaryImage?.url || "/placeholder-product.png";
-  const price = parseFloat(product.price);
+  const priceUSD = parsePrice(product.price);
+  const priceVES = product.priceVes ? parsePrice(product.priceVes) : null;
 
   const isLowStock = product.inventory > 0 && product.inventory <= 5;
   const isOutOfStock = product.inventory === 0;
@@ -84,9 +86,17 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         {/* Precio y stock */}
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-2xl font-bold text-blue-600">${price.toFixed(2)}</p>
-            <div className="flex items-center gap-1 text-sm text-gray-500">
+          <div className="flex-1">
+            {/* Precio VES destacado */}
+            {priceVES && (
+              <p className="text-2xl font-bold text-blue-600">{formatVES(priceVES)}</p>
+            )}
+            {/* Precio USD más pequeño */}
+            <p className={`${priceVES ? 'text-sm text-gray-600' : 'text-2xl font-bold text-blue-600'}`}>
+              {formatUSD(priceUSD)}
+            </p>
+            {/* Stock */}
+            <div className="flex items-center gap-1 text-sm text-gray-500 mt-1">
               <Package className="w-4 h-4" />
               <span>{product.inventory} en stock</span>
             </div>

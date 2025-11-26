@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { categoriesService } from '@/services/categories';
 import type { Category } from '@/types';
 import { ChevronDown, ChevronRight, Grid } from 'lucide-react';
@@ -125,7 +125,7 @@ export function CategoryMenu() {
                     {category.name}
                     {hasChildren && (
                       <span className="ml-2 text-xs text-gray-500">
-                        ({category.childrens.length})
+                        ({category.childrens?.length || 0})
                       </span>
                     )}
                   </Link>
@@ -134,7 +134,7 @@ export function CategoryMenu() {
                 {/* Subcategories */}
                 {hasChildren && isExpanded && (
                   <div className="ml-6 mt-1 space-y-1">
-                    {category.childrens.map((child) => {
+                    {category.childrens?.map((child) => {
                       const isChildActive = currentCategory === child.slug;
 
                       return (

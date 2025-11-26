@@ -47,6 +47,7 @@ export interface Product {
   sku: string;
   inventory: number;
   price: string;
+  priceVes: string | null;
   categories?: {
     uuid: string;
     name: string;
@@ -267,7 +268,9 @@ export interface CartItem {
   productId: number;
   quantity: number;
   price: string;
+  priceVes: string | null;
   subtotal: number;
+  subtotalVes: number | null;
   product: Product;
   createdAt: string;
   updatedAt: string;
@@ -280,6 +283,7 @@ export interface Cart {
   items: CartItem[];
   totalItems: number;
   subtotal: number;
+  subtotalVes: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -423,7 +427,9 @@ export interface OrderItem {
   productSku: string;
   quantity: number;
   price: string;
+  priceVes: string | null;
   subtotal: number;
+  subtotalVes: number | null;
 }
 
 export interface PaymentInfo {
@@ -448,12 +454,18 @@ export interface Order {
   shippingAddress: ShippingAddress | null;
   paymentInfo: PaymentInfo;
   subtotal: number;
+  subtotalVes: number | null;
   tax: number;
+  taxVes: number | null;
   shipping: number;
+  shippingVes: number | null;
   discountCode?: string | null;
   discountAmount?: number;
+  discountAmountVes?: number | null;
   discount?: Discount | null;
   total: number;
+  totalVes: number | null;
+  exchangeRate: number | null;
   totalItems: number;
   notes?: string;
   trackingNumber?: string;
@@ -559,6 +571,7 @@ export interface ValidateDiscountResponse {
     type: DiscountType;
     value: number;
     discountAmount: number;
+    discountAmountVes?: number;
     finalTotal: number;
   };
   error?: string;
@@ -570,4 +583,74 @@ export interface DiscountStats {
   inactive: number;
   expired: number;
   maxedOut: number;
+}
+
+// Exchange Rate types
+export interface ExchangeRate {
+  id: number;
+  date: string;
+  rate: number;
+  source: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Customer types
+export type CustomerType = 'registered' | 'guest';
+
+export interface CustomerResponseDto {
+  id: string;
+  type: CustomerType;
+  name: string;
+  email: string;
+  phone: string | null;
+  identification: string | null;
+  totalOrders: number;
+  totalSpent: number;
+  totalSpentVes: number;
+  firstOrderDate: string | null;
+  lastOrderDate: string | null;
+  createdAt: string;
+}
+
+export interface CustomerListResponseDto {
+  data: CustomerResponseDto[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface CustomerDetailResponseDto {
+  customer: {
+    id: string;
+    type: CustomerType;
+    name: string;
+    email: string;
+    phone: string | null;
+    identification: string | null;
+    createdAt: string;
+  };
+  stats: {
+    totalOrders: number;
+    totalSpentUSD: number;
+    totalSpentVES: number;
+    averageOrderValue: number;
+    firstOrderDate: string | null;
+    lastOrderDate: string | null;
+  };
+  recentOrders: Array<{
+    id: number;
+    orderNumber: string;
+    date: string;
+    total: number;
+    status: string;
+  }>;
+  addresses: Array<{
+    address: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    usedInOrders: number;
+  }>;
 }

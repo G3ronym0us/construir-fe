@@ -9,6 +9,7 @@ import { Package, Loader2 } from "lucide-react";
 import { productsService } from "@/services/products";
 import AddToCartButton from "@/components/cart/AddToCartButton";
 import type { Product } from "@/types";
+import { formatVES, formatUSD, parsePrice } from "@/lib/currency";
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -70,7 +71,8 @@ export default function ProductDetailPage() {
     );
   }
 
-  const price = parseFloat(product.price);
+  const priceUSD = parsePrice(product.price);
+  const priceVES = product.priceVes ? parsePrice(product.priceVes) : null;
   const isOutOfStock = product.inventory === 0;
   const isLowStock = product.inventory > 0 && product.inventory <= 5;
 
@@ -180,8 +182,13 @@ export default function ProductDetailPage() {
 
             {/* Price */}
             <div className="mb-6">
-              <p className="text-4xl font-bold text-blue-600">
-                ${price.toFixed(2)}
+              {priceVES && (
+                <p className="text-4xl font-bold text-blue-600">
+                  {formatVES(priceVES)}
+                </p>
+              )}
+              <p className={`${priceVES ? 'text-xl text-gray-600' : 'text-4xl font-bold text-blue-600'}`}>
+                {formatUSD(priceUSD)}
               </p>
             </div>
 

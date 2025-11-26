@@ -20,7 +20,8 @@ interface Step4PaymentProps {
   onPagomovilChange: (data: PagoMovilPayment) => void;
   transferenciaPayment: TransferenciaPayment;
   onTransferenciaChange: (data: TransferenciaPayment) => void;
-  total: number;
+  totalUSD: number;
+  totalVES: number | null;
   isAuthenticated: boolean;
   createAccount: boolean;
 }
@@ -36,7 +37,8 @@ export default function Step4Payment({
   onPagomovilChange,
   transferenciaPayment,
   onTransferenciaChange,
-  total,
+  totalUSD,
+  totalVES,
   isAuthenticated,
   createAccount
 }: Step4PaymentProps) {
@@ -79,7 +81,7 @@ export default function Step4Payment({
         <ZelleForm
           data={zellePayment}
           onChange={onZelleChange}
-          total={total}
+          total={totalUSD}
         />
       )}
 
@@ -87,7 +89,7 @@ export default function Step4Payment({
         <PagoMovilForm
           data={pagomovilPayment}
           onChange={onPagomovilChange}
-          total={total}
+          total={totalVES || 0}
         />
       )}
 
@@ -95,7 +97,7 @@ export default function Step4Payment({
         <TransferenciaForm
           data={transferenciaPayment}
           onChange={onTransferenciaChange}
-          total={total}
+          total={totalVES || 0}
         />
       )}
 

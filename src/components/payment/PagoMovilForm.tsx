@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { PAYMENT_CONFIG } from "@/config/payment";
 import BankSelector from "./BankSelector";
 import type { PagoMovilPayment } from "@/types";
+import CopyButton from "@/components/ui/CopyButton";
 
 interface PagoMovilFormProps {
   data: PagoMovilPayment;
@@ -32,17 +33,26 @@ export default function PagoMovilForm({ data, onChange, total }: PagoMovilFormPr
           Datos para realizar el Pago Móvil:
         </h3>
         <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span className="text-gray-600">Banco:</span>
-            <span className="font-medium">{PAYMENT_CONFIG.pagomovil.bank}</span>
+            <div className="flex items-center gap-1">
+              <span className="font-medium">{PAYMENT_CONFIG.pagomovil.bank}</span>
+              <CopyButton text={PAYMENT_CONFIG.pagomovil.bank} />
+            </div>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span className="text-gray-600">Teléfono:</span>
-            <span className="font-medium">{PAYMENT_CONFIG.pagomovil.phone}</span>
+            <div className="flex items-center gap-1">
+              <span className="font-medium">{PAYMENT_CONFIG.pagomovil.phone}</span>
+              <CopyButton text={PAYMENT_CONFIG.pagomovil.phone} />
+            </div>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span className="text-gray-600">Cédula:</span>
-            <span className="font-medium">{PAYMENT_CONFIG.pagomovil.cedula}</span>
+            <div className="flex items-center gap-1">
+              <span className="font-medium">{PAYMENT_CONFIG.pagomovil.cedula}</span>
+              <CopyButton text={PAYMENT_CONFIG.pagomovil.cedula} />
+            </div>
           </div>
           <div className="flex justify-between border-t pt-2 mt-2">
             <span className="text-gray-600">Monto a pagar:</span>
@@ -51,6 +61,18 @@ export default function PagoMovilForm({ data, onChange, total }: PagoMovilFormPr
             </span>
           </div>
         </div>
+        <button
+          type="button"
+          onClick={() => {
+            const phone = PAYMENT_CONFIG.pagomovil.phone.replace(/-/g, '');
+            const cedula = PAYMENT_CONFIG.pagomovil.cedula.replace(/-/g, '');
+            const allData = `${PAYMENT_CONFIG.pagomovil.bank} ${PAYMENT_CONFIG.pagomovil.bankCode}\n${phone}\n${cedula}\nBs. ${total.toFixed(2)}`;
+            navigator.clipboard.writeText(allData);
+          }}
+          className="w-full mt-3 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+        >
+          Copiar todos los datos
+        </button>
       </div>
 
       {/* Formulario */}

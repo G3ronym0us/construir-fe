@@ -13,6 +13,8 @@ import { getProducts } from "@/services/products";
 import { ordersService } from "@/services/orders";
 import { discountsService } from "@/services/discounts";
 import { guestCustomersService } from "@/services/guest-customers";
+import { exchangeRateService } from "@/services/exchangeRate";
+import { formatVES, formatUSD, parsePrice } from "@/lib/currency";
 
 import CheckoutStepper from "@/components/checkout/CheckoutStepper";
 import Step1ContactInfo from "@/components/checkout/steps/Step1ContactInfo";
@@ -39,8 +41,12 @@ export default function CheckoutPage() {
   // Discount state
   const [discountCode, setDiscountCode] = useState<string | null>(null);
   const [discountAmount, setDiscountAmount] = useState(0);
+  const [discountAmountVes, setDiscountAmountVes] = useState<number | null>(null);
   const [discountError, setDiscountError] = useState<string | null>(null);
   const [isApplyingDiscount, setIsApplyingDiscount] = useState(false);
+
+  // Exchange rate state
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
 
   // Guest customer identification state
   const [identificationType, setIdentificationType] = useState<IdentificationType>(IdentificationType.V);
@@ -212,6 +218,28 @@ export default function CheckoutPage() {
     }
   }, [isAuthenticated, localCart]);
 
+  // Cargar tipo de cambio
+  useEffect(() => {
+    const loadExchangeRate = async () => {
+      try {
+        console.log('🔄 Loading exchange rate...');
+        const rate = await exchangeRateService.getCurrentRate();
+        console.log('✅ Exchange rate loaded:', rate);
+        if (rate && typeof rate.rate === 'number') {
+          setExchangeRate(rate.rate);
+          console.log('✅ Exchange rate set:', rate.rate);
+        } else {
+          console.warn('⚠️ Invalid exchange rate format:', rate);
+        }
+      } catch (error) {
+        console.error("❌ Error loading exchange rate:", error);
+        toast.error('No se pudo cargar el tipo de cambio. Los precios en VES no estarán disponibles.');
+      }
+    };
+
+    loadExchangeRate();
+  }, []);
+
   // Calcular items y subtotal
   const enrichedLocalItems = localCart.items
     .map((item) => {
@@ -233,9 +261,52 @@ export default function CheckoutPage() {
         return acc + parseFloat(item.product.price) * item.quantity;
       }, 0);
 
+  const subtotalVES = isAuthenticated
+    ? cart?.subtotalVes || null
+    : enrichedLocalItems.reduce((acc, item) => {
+        if (!item || !item.product.priceVes) return acc;
+        return acc + parsePrice(item.product.priceVes) * item.quantity;
+      }, 0);
+
   const shipping = 0; // TODO: Calcular envío
-  const tax = subtotal * 0.16; // IVA 16%
-  const total = subtotal + shipping + tax - discountAmount;
+  const total = subtotal + shipping - discountAmount;
+
+  // Calcular total VES
+  // Si tenemos subtotalVES, calculamos el total
+  // Solo necesitamos exchangeRate para convertir shipping y discounts (si existen y son > 0)
+  const totalVES = (subtotalVES !== null && subtotalVES !== undefined)
+    ? (() => {
+        let vesTotal = subtotalVES;
+
+        // Agregar shipping en VES (solo si es > 0 y tenemos exchangeRate)
+        if (shipping > 0 && exchangeRate && typeof exchangeRate === 'number') {
+          vesTotal += shipping * exchangeRate;
+        }
+
+        // Restar descuento en VES (usar valor directo del backend, NO convertir)
+        if (discountAmountVes !== null && discountAmountVes > 0) {
+          vesTotal -= discountAmountVes;
+        }
+
+        return vesTotal;
+      })()
+    : null;
+
+  // Debug logs
+  console.log('🔍 Checkout Debug:', {
+    subtotal,
+    subtotalVES,
+    exchangeRate,
+    total,
+    totalVES,
+    discountAmount,
+    discountAmountVes,
+    paymentMethod,
+    isAuthenticated,
+    cartSubtotalVes: cart?.subtotalVes,
+    itemsCount: items.length,
+    firstItemPriceVes: items[0]?.product?.priceVes
+  });
 
   const handlePaymentMethodChange = (method: PaymentMethod) => {
     setValue('paymentMethod', method);
@@ -248,15 +319,18 @@ export default function CheckoutPage() {
       const response = await discountsService.validate({ code, orderTotal: subtotal });
       if (response.valid && response.discount) {
         setDiscountAmount(response.discount.discountAmount);
+        setDiscountAmountVes(response.discount.discountAmountVes || null);
         setDiscountCode(code);
         toast.success(t('discountApplied'));
       } else {
         setDiscountAmount(0);
+        setDiscountAmountVes(null);
         setDiscountCode(null);
         setDiscountError(response.error || t('errors.invalidDiscount'));
       }
     } catch (error) {
       setDiscountAmount(0);
+      setDiscountAmountVes(null);
       setDiscountCode(null);
       if (error instanceof Error) {
         setDiscountError(error.message);
@@ -593,7 +667,8 @@ export default function CheckoutPage() {
                   onPagomovilChange={setPagomovilPayment}
                   transferenciaPayment={transferenciaPayment}
                   onTransferenciaChange={setTransferenciaPayment}
-                  total={total}
+                  totalUSD={total}
+                  totalVES={totalVES}
                   isAuthenticated={isAuthenticated}
                   createAccount={createAccount || false}
                 />
@@ -651,6 +726,10 @@ export default function CheckoutPage() {
                   if (!item) {
                     return null;
                   }
+                  const itemPriceUSD = parseFloat(item.product.price) * item.quantity;
+                  const itemPriceVES = item.product.priceVes ? parsePrice(item.product.priceVes) * item.quantity : null;
+                  const showVES = paymentMethod && ['pagomovil', 'transferencia'].includes(paymentMethod);
+
                   return (
                     <div key={item.productId} className="flex gap-3">
                     <div className="w-16 h-16 bg-gray-100 rounded flex-shrink-0 flex items-center justify-center">
@@ -664,7 +743,9 @@ export default function CheckoutPage() {
                         Cantidad: {item.quantity}
                       </p>
                       <p className="text-sm font-semibold text-blue-600">
-                        ${(parseFloat(item.product.price) * item.quantity).toFixed(2)}
+                        {showVES && itemPriceVES
+                          ? formatVES(itemPriceVES)
+                          : formatUSD(itemPriceUSD)}
                       </p>
                     </div>
                   </div>
@@ -674,29 +755,45 @@ export default function CheckoutPage() {
 
               {/* Totales */}
               <div className="border-t pt-4 space-y-2">
+                {/* Mostrar tipo de cambio si es pago en VES */}
+                {paymentMethod && ['pagomovil', 'transferencia'].includes(paymentMethod) && exchangeRate && typeof exchangeRate === 'number' && (
+                  <div className="flex justify-between text-xs bg-blue-50 p-2 rounded">
+                    <span className="text-gray-600">Tipo de cambio:</span>
+                    <span className="font-medium">1 USD = {exchangeRate.toFixed(2)} Bs</span>
+                  </div>
+                )}
+
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">{t('subtotal')}:</span>
-                  <span className="font-medium">${subtotal.toFixed(2)}</span>
+                  <span className="font-medium">
+                    {paymentMethod && ['pagomovil', 'transferencia'].includes(paymentMethod) && subtotalVES !== null && subtotalVES !== undefined
+                      ? formatVES(subtotalVES)
+                      : formatUSD(subtotal)}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">{t('shipping')}:</span>
                   <span className="font-medium">
-                    {shipping === 0 ? t('free') : `$${(shipping as unknown as number).toFixed(2)}`}
+                    {shipping === 0 ? t('free') : formatUSD(shipping)}
                   </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">{t('tax')} (16%):</span>
-                  <span className="font-medium">${tax.toFixed(2)}</span>
                 </div>
                 {discountAmount > 0 && (
                   <div className="flex justify-between text-sm text-green-600">
                     <span className="font-medium">{t('discount')} ({discountCode}):</span>
-                    <span className="font-medium">-${discountAmount.toFixed(2)}</span>
+                    <span className="font-medium">
+                      -{paymentMethod && ['pagomovil', 'transferencia'].includes(paymentMethod) && discountAmountVes !== null
+                        ? formatVES(discountAmountVes)
+                        : formatUSD(discountAmount)}
+                    </span>
                   </div>
                 )}
                 <div className="border-t pt-2 flex justify-between text-lg font-bold">
                   <span>{t('total')}:</span>
-                  <span className="text-blue-600">${total.toFixed(2)}</span>
+                  <span className="text-blue-600">
+                    {paymentMethod && ['pagomovil', 'transferencia'].includes(paymentMethod) && totalVES !== null && totalVES !== undefined
+                      ? formatVES(totalVES)
+                      : formatUSD(total)}
+                  </span>
                 </div>
               </div>
 

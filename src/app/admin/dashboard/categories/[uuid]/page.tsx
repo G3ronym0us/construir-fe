@@ -224,7 +224,7 @@ export default function EditCategoryPage() {
             {hasChildren ? (
               <div className="mt-1">
                 <div className="px-3 py-2 border border-amber-300 rounded-md bg-amber-50 text-amber-800 text-sm">
-                  {t('cannotChangeParentHasChildren', { count: category.childrens.length })}
+                  {t('cannotChangeParentHasChildren', { count: category.childrens?.length || 0 })}
                 </div>
                 <p className="mt-1 text-sm text-gray-500">{t('removeChildrenFirst')}</p>
               </div>

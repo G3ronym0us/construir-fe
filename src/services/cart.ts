@@ -7,6 +7,7 @@ import type {
   UpdateCartItemDto,
   Product,
 } from '@/types';
+import { parsePrice } from '@/lib/currency';
 
 const CART_STORAGE_KEY = 'cart';
 
@@ -198,6 +199,7 @@ export const cartService = {
  */
 export function calculateCartTotals(items: LocalCartItem[], products: Product[]) {
   let subtotal = 0;
+  let subtotalVes = 0;
   let totalItems = 0;
 
   const enrichedItems = items.map((item) => {
@@ -210,11 +212,19 @@ export function calculateCartTotals(items: LocalCartItem[], products: Product[])
     subtotal += itemSubtotal;
     totalItems += item.quantity;
 
+    // Calcular subtotal VES si existe el precio en VES
+    if (product.priceVes) {
+      const priceVes = parsePrice(product.priceVes);
+      subtotalVes += priceVes * item.quantity;
+    }
+
     return {
       ...item,
       product,
       price: product.price,
+      priceVes: product.priceVes,
       subtotal: itemSubtotal,
+      subtotalVes: product.priceVes ? parsePrice(product.priceVes) * item.quantity : null,
     };
   }).filter(Boolean);
 
@@ -222,5 +232,6 @@ export function calculateCartTotals(items: LocalCartItem[], products: Product[])
     items: enrichedItems,
     totalItems,
     subtotal,
+    subtotalVes: subtotalVes > 0 ? subtotalVes : null,
   };
 }

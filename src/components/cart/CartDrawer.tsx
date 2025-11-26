@@ -9,6 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getProducts } from "@/services/products";
 import CartItem from "./CartItem";
 import type { Product } from "@/types";
+import { formatVES, formatUSD, parsePrice } from "@/lib/currency";
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -95,6 +96,14 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
           ? parseFloat(item.product.price)
           : item.product.price;
         return acc + (price * item.quantity);
+      }, 0);
+
+  const subtotalVES = isAuthenticated
+    ? cart?.subtotalVes || null
+    : enrichedLocalItems.reduce((acc, item) => {
+        if (!item.product.priceVes) return acc;
+        const priceVes = parsePrice(item.product.priceVes);
+        return acc + (priceVes * item.quantity);
       }, 0);
 
   const handleClearCart = async () => {
@@ -204,9 +213,18 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
         {items.length > 0 && (
           <div className="border-t p-4 space-y-4">
             {/* Subtotal */}
-            <div className="flex items-center justify-between text-lg font-bold">
-              <span>{t('subtotal')}:</span>
-              <span className="text-blue-600">${subtotal.toFixed(2)}</span>
+            <div className="flex items-center justify-between">
+              <span className="text-lg font-bold">{t('subtotal')}:</span>
+              <div className="text-right">
+                {subtotalVES && subtotalVES > 0 && (
+                  <div className="text-lg font-bold text-blue-600">
+                    {formatVES(subtotalVES)}
+                  </div>
+                )}
+                <div className={`${subtotalVES && subtotalVES > 0 ? 'text-sm text-gray-600' : 'text-lg font-bold text-blue-600'}`}>
+                  {formatUSD(subtotal)}
+                </div>
+              </div>
             </div>
 
             {/* Botón checkout */}

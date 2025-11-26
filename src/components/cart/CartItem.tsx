@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import type { CartItem as CartItemType, Product } from "@/types";
+import { formatVES, formatUSD, parsePrice } from "@/lib/currency";
 
 interface CartItemProps {
   item: CartItemType | { productId: number; quantity: number; product: Product };
@@ -22,8 +23,10 @@ export default function CartItem({
 
   const itemId = 'id' in item ? item.id : 0;
   const { product, quantity, productId } = item;
-  const price = parseFloat(product.price);
-  const subtotal = price * quantity;
+  const priceUSD = parsePrice(product.price);
+  const priceVES = product.priceVes ? parsePrice(product.priceVes) : null;
+  const subtotalUSD = priceUSD * quantity;
+  const subtotalVES = priceVES ? priceVES * quantity : null;
 
   const primaryImage = product.images?.find((img) => img.isPrimary);
   const imageUrl = primaryImage?.url || "/placeholder-product.png";
@@ -69,9 +72,16 @@ export default function CartItem({
       <div className="flex-1 min-w-0">
         <h3 className="font-medium text-gray-900 truncate">{product.name}</h3>
         <p className="text-sm text-gray-500">SKU: {product.sku}</p>
-        <p className="text-lg font-semibold text-blue-600 mt-1">
-          ${price.toFixed(2)}
-        </p>
+        <div className="mt-1">
+          {priceVES && (
+            <p className="text-lg font-semibold text-blue-600">
+              {formatVES(priceVES)}
+            </p>
+          )}
+          <p className={`${priceVES ? 'text-xs text-gray-600' : 'text-lg font-semibold text-blue-600'}`}>
+            {formatUSD(priceUSD)}
+          </p>
+        </div>
 
         {/* Stock warning */}
         {quantity > product.inventory && (
@@ -109,9 +119,16 @@ export default function CartItem({
 
         {/* Subtotal y botón eliminar */}
         <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold text-gray-900">
-            ${subtotal.toFixed(2)}
-          </p>
+          <div className="text-right">
+            {subtotalVES && (
+              <p className="text-sm font-semibold text-gray-900">
+                {formatVES(subtotalVES)}
+              </p>
+            )}
+            <p className={`${subtotalVES ? 'text-xs text-gray-600' : 'text-sm font-semibold text-gray-900'}`}>
+              {formatUSD(subtotalUSD)}
+            </p>
+          </div>
           <button
             onClick={handleRemove}
             disabled={loading}

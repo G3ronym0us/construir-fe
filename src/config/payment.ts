@@ -8,11 +8,13 @@ export const PAYMENT_CONFIG = {
   },
   pagomovil: {
     bank: 'Banco de Venezuela',
+    bankCode: '0102',
     phone: '0414-1234567',
     cedula: 'J-12345678-9',
   },
   transferencia: {
     bank: 'Banco de Venezuela',
+    bankCode: '0102',
     accountNumber: '0102-0123-45-1234567890',
     rif: 'J-12345678-9',
     beneficiary: 'Construir Ferretería C.A.',

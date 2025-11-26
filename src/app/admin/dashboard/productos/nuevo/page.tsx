@@ -34,7 +34,7 @@ export default function NewProductPage() {
 
   const loadCategories = async () => {
     try {
-      const cats = await categoriesService.getActive();
+      const cats = await categoriesService.getVisible();
       setCategories(cats);
     } catch (error) {
       console.error('Error loading categories:', error);

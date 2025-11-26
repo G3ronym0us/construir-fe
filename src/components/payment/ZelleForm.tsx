@@ -3,6 +3,7 @@
 import { Upload, X } from "lucide-react";
 import { PAYMENT_CONFIG } from "@/config/payment";
 import type { ZellePayment } from "@/types";
+import CopyButton from "@/components/ui/CopyButton";
 
 interface ZelleFormProps {
   data: ZellePayment;
@@ -28,13 +29,19 @@ export default function ZelleForm({ data, onChange, total }: ZelleFormProps) {
           Datos para enviar el pago:
         </h3>
         <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span className="text-gray-600">Email Zelle:</span>
-            <span className="font-medium">{PAYMENT_CONFIG.zelle.email}</span>
+            <div className="flex items-center gap-1">
+              <span className="font-medium">{PAYMENT_CONFIG.zelle.email}</span>
+              <CopyButton text={PAYMENT_CONFIG.zelle.email} />
+            </div>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span className="text-gray-600">Beneficiario:</span>
-            <span className="font-medium">{PAYMENT_CONFIG.zelle.beneficiary}</span>
+            <div className="flex items-center gap-1">
+              <span className="font-medium">{PAYMENT_CONFIG.zelle.beneficiary}</span>
+              <CopyButton text={PAYMENT_CONFIG.zelle.beneficiary} />
+            </div>
           </div>
           <div className="flex justify-between border-t pt-2 mt-2">
             <span className="text-gray-600">Monto a pagar:</span>
@@ -43,6 +50,16 @@ export default function ZelleForm({ data, onChange, total }: ZelleFormProps) {
             </span>
           </div>
         </div>
+        <button
+          type="button"
+          onClick={() => {
+            const allData = `${PAYMENT_CONFIG.zelle.email}\n${PAYMENT_CONFIG.zelle.beneficiary}\n$${total.toFixed(2)} USD`;
+            navigator.clipboard.writeText(allData);
+          }}
+          className="w-full mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+        >
+          Copiar todos los datos
+        </button>
       </div>
 
       {/* Formulario */}
