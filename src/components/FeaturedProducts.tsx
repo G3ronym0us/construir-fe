@@ -1,12 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { productsService } from '@/services/products';
 import type { Product } from '@/types';
+import ProductCard from './product/ProductCard';
+import ProductCardSkeleton from './product/ProductCardSkeleton';
 
 export default function FeaturedProducts() {
+  const t = useTranslations('products');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,11 +38,15 @@ export default function FeaturedProducts() {
 
   if (loading) {
     return (
-      <div className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center text-gray-600">Cargando productos...</div>
+      <section className="relative -mt-20 py-16 bg-transparent">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <ProductCardSkeleton key={i} variant="compact" />
+            ))}
+          </div>
         </div>
-      </div>
+      </section>
     );
   }
 
@@ -47,99 +54,23 @@ export default function FeaturedProducts() {
     return null;
   }
 
-  const getPrimaryImage = (product: Product) => {
-    if (!product.images || product.images.length === 0) return null;
-    const primary = product.images.find(img => img.isPrimary);
-    return primary || product.images[0];
-  };
-
   return (
     <section className="relative -mt-20 py-16 bg-transparent">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {products.map((product) => {
-            const primaryImage = getPrimaryImage(product);
-
-            return (
-              <Link
-                key={product.uuid}
-                href={`/productos/${product.uuid}`}
-                className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow group"
-              >
-                {/* Imagen del producto */}
-                <div className="relative bg-gray-50 h-64 flex items-center justify-center p-6">
-                  {primaryImage ? (
-                    <Image
-                      src={primaryImage.url}
-                      alt={product.name}
-                      width={200}
-                      height={200}
-                      className="object-contain group-hover:scale-105 transition-transform"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-                      <svg
-                        className="w-20 h-20 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                        />
-                      </svg>
-                    </div>
-                  )}
-                </div>
-
-                {/* Información del producto */}
-                <div className="p-4">
-                  {/* Categoría */}
-                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                    {product.categories?.[0]?.name}
-                  </div>
-
-                  {/* Nombre del producto */}
-                  <h3 className="text-sm text-gray-800 font-medium mb-3 line-clamp-2 min-h-[40px]">
-                    {product.name}
-                  </h3>
-
-                  {/* Descripción corta (si existe) */}
-                  {product.shortDescription && (
-                    <p className="text-xs text-gray-600 mb-3 line-clamp-2">
-                      {product.shortDescription}
-                    </p>
-                  )}
-
-                  {/* Precio */}
-                  <div className="flex items-baseline gap-1 mb-3">
-                    <span className="text-2xl font-bold text-gray-900">
-                      US$ {parseFloat(product.price).toFixed(0)}
-                    </span>
-                    <span className="text-sm text-gray-600">
-                      {(parseFloat(product.price) % 1).toFixed(2).slice(1)}
-                    </span>
-                  </div>
-
-                  {/* Stock disponible */}
-                  {product.inventory > 0 ? (
-                    <div className="text-sm font-semibold text-green-600">
-                      {product.inventory < 10
-                        ? `Solo ${product.inventory} disponibles`
-                        : 'Disponible'}
-                    </div>
-                  ) : (
-                    <div className="text-sm font-semibold text-red-600">
-                      Sin stock
-                    </div>
-                  )}
-                </div>
-              </Link>
-            );
-          })}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+          {products.map((product, index) => (
+            <ProductCard
+              key={product.uuid}
+              product={product}
+              variant="compact"
+              showAddToCart={false}
+              showBadges={false}
+              showSku={false}
+              showDescription={false}
+              showStock={false}
+              priority={index < 4}
+            />
+          ))}
         </div>
 
         {/* Ver más productos */}
@@ -148,7 +79,7 @@ export default function FeaturedProducts() {
             href="/productos"
             className="inline-block px-8 py-3 text-lg font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Ver todos los productos
+            {t('viewAllProducts')}
           </Link>
         </div>
       </div>

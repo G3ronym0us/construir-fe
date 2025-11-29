@@ -133,7 +133,7 @@ export default function ProductDetailPage() {
               <div className="grid grid-cols-4 gap-2">
                 {product.images.map((image) => (
                   <button
-                    key={image.id}
+                    key={image.uuid}
                     onClick={() => setSelectedImage(image.url)}
                     className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
                       selectedImage === image.url
@@ -236,7 +236,7 @@ export default function ProductDetailPage() {
             {/* Add to Cart Button */}
             {!isOutOfStock && (
               <AddToCartButton
-                productId={product.id}
+                productUuid={product.uuid}
                 quantity={quantity}
                 className="w-full mb-4"
               />

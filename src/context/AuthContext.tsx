@@ -48,7 +48,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = async (data: RegisterDto) => {
-    const user = await authService.register(data);
     const loginResponse = await authService.login({
       email: data.email,
       password: data.password,

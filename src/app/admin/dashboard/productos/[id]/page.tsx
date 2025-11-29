@@ -485,7 +485,7 @@ export default function EditProductPage() {
               {product.images && product.images.length > 0 ? (
                 product.images.map((image) => (
                   <div
-                    key={image.id}
+                    key={image.uuid}
                     className="relative border rounded-lg overflow-hidden"
                   >
                     <Image

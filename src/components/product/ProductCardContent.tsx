@@ -1,0 +1,133 @@
+'use client';
+
+import { Package } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import AddToCartButton from '../cart/AddToCartButton';
+import { formatVES, formatUSD } from '@/lib/currency';
+import type { Product } from '@/types';
+
+interface ProductCardContentProps {
+  product: Product;
+  variant: 'default' | 'compact';
+  classes: {
+    padding: string;
+    nameSize: string;
+    priceSize: string;
+    categorySize: string;
+    minHeight: string;
+    spacingY: string;
+  };
+  showSku: boolean;
+  showDescription: boolean;
+  showStock: boolean;
+  showAddToCart: boolean;
+  priceUSD: number;
+  priceVES: number | null;
+  isOutOfStock: boolean;
+}
+
+export default function ProductCardContent({
+  product,
+  variant,
+  classes,
+  showSku,
+  showDescription,
+  showStock,
+  showAddToCart,
+  priceUSD,
+  priceVES,
+  isOutOfStock,
+}: ProductCardContentProps) {
+  const tCart = useTranslations('cart');
+  const isCompact = variant === 'compact';
+
+  return (
+    <div className={`${classes.padding} ${classes.spacingY}`}>
+      {/* Categories */}
+      {product.categories && product.categories.length > 0 && (
+        <div className={`${classes.categorySize} font-semibold text-gray-500 uppercase tracking-wide`}>
+          {isCompact ? (
+            // Compact: solo primera categoría
+            <span>{product.categories[0]?.name}</span>
+          ) : (
+            // Default: hasta 2 categorías clickeables
+            <div className="flex flex-wrap gap-1">
+              {product.categories.slice(0, 2).map((category) => (
+                <span
+                  key={category.uuid}
+                  className="text-blue-600 hover:text-blue-800"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {category.name}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Nombre del producto */}
+      <h3 className={`${classes.nameSize} text-gray-800 line-clamp-2 ${classes.minHeight} group-hover:text-blue-600 transition-colors`}>
+        {product.name}
+      </h3>
+
+      {/* SKU - solo si showSku y no compact */}
+      {showSku && !isCompact && (
+        <p className="text-sm text-gray-500">{tCart('sku')}: {product.sku}</p>
+      )}
+
+      {/* Descripción corta - solo si showDescription y no compact */}
+      {showDescription && !isCompact && product.shortDescription && (
+        <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 hidden sm:block">
+          {product.shortDescription}
+        </p>
+      )}
+
+      {/* Precio */}
+      <div className="flex items-baseline gap-1">
+        {isCompact ? (
+          // Compact: solo USD
+          <span className={`${classes.priceSize} font-bold text-gray-900`}>
+            {formatUSD(priceUSD)}
+          </span>
+        ) : (
+          // Default: VES destacado + USD secundario
+          <div className="flex-1">
+            {priceVES && (
+              <p className="text-2xl font-bold text-blue-600">{formatVES(priceVES)}</p>
+            )}
+            <p className={`${priceVES ? 'text-sm text-gray-600' : 'text-2xl font-bold text-blue-600'}`}>
+              {formatUSD(priceUSD)}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Stock - solo si showStock y no compact */}
+      {showStock && !isCompact && (
+        <div className="flex items-center gap-1 text-sm text-gray-500">
+          <Package className="w-4 h-4" />
+          <span>{product.inventory} {tCart('stock')}</span>
+        </div>
+      )}
+
+      {/* Botón agregar al carrito - solo si showAddToCart */}
+      {showAddToCart && product.published && !isOutOfStock && (
+        <AddToCartButton
+          productUuid={product.uuid}
+          quantity={1}
+          className="w-full"
+        />
+      )}
+
+      {showAddToCart && isOutOfStock && (
+        <button
+          disabled
+          className="w-full px-6 py-3 bg-gray-300 text-gray-600 rounded-lg font-semibold cursor-not-allowed"
+        >
+          {tCart('notAvailable')}
+        </button>
+      )}
+    </div>
+  );
+}

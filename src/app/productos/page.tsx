@@ -126,7 +126,7 @@ export default function ProductsPage() {
 
                     return (
                       <Link
-                        key={product.id}
+                        key={product.uuid}
                         href={`/productos/${product.uuid}`}
                         className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow group"
                       >

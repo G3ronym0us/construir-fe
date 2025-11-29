@@ -10,7 +10,7 @@ import {
 } from "react";
 import { useAuth } from "./AuthContext";
 import { cartService, localCartService } from "@/services/cart";
-import type { Cart, LocalCart, Product } from "@/types";
+import type { Cart, LocalCart } from "@/types";
 
 interface CartContextType {
   // Estado
@@ -20,15 +20,15 @@ interface CartContextType {
   error: string | null;
 
   // Métodos
-  addToCart: (productId: number, quantity: number) => Promise<void>;
-  updateQuantity: (itemId: number, productId: number, quantity: number) => Promise<void>;
-  removeFromCart: (itemId: number, productId: number) => Promise<void>;
+  addToCart: (productUuid: string, quantity: number) => Promise<void>;
+  updateQuantity: (itemUuid: string, productUuid: string, quantity: number) => Promise<void>;
+  removeFromCart: (itemUuid: string, productUuid: string) => Promise<void>;
   clearCart: () => Promise<void>;
   refreshCart: () => Promise<void>;
 
   // Utilidades
   getTotalItems: () => number;
-  getItemQuantity: (productId: number) => number;
+  getItemQuantity: (productUuid: string) => number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -104,18 +104,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
   /**
    * Agrega un producto al carrito
    */
-  const addToCart = async (productId: number, quantity: number) => {
+  const addToCart = async (productUuid: string, quantity: number) => {
     try {
       setLoading(true);
       setError(null);
 
       if (token) {
         // Usuario autenticado: agregar al servidor
-        const updatedCart = await cartService.addItem({ productId, quantity });
+        const updatedCart = await cartService.addItem({ productUuid, quantity });
         setCart(updatedCart);
       } else {
         // Usuario no autenticado: agregar a localStorage
-        const updatedLocalCart = localCartService.addItem(productId, quantity);
+        const updatedLocalCart = localCartService.addItem(productUuid, quantity);
         setLocalCart(updatedLocalCart);
       }
     } catch (err: unknown) {
@@ -131,8 +131,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
    * Actualiza la cantidad de un producto
    */
   const updateQuantity = async (
-    itemId: number,
-    productId: number,
+    itemUuid: string,
+    productUuid: string,
     quantity: number
   ) => {
     try {
@@ -141,11 +141,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       if (token) {
         // Usuario autenticado
-        const updatedCart = await cartService.updateItem(itemId, { quantity });
+        const updatedCart = await cartService.updateItem(itemUuid, { quantity });
         setCart(updatedCart);
       } else {
         // Usuario no autenticado
-        const updatedLocalCart = localCartService.updateItem(productId, quantity);
+        const updatedLocalCart = localCartService.updateItem(productUuid, quantity);
         setLocalCart(updatedLocalCart);
       }
     } catch (err: unknown) {
@@ -160,18 +160,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
   /**
    * Elimina un producto del carrito
    */
-  const removeFromCart = async (itemId: number, productId: number) => {
+  const removeFromCart = async (itemUuid: string, producUuid: string) => {
     try {
       setLoading(true);
       setError(null);
 
       if (token) {
         // Usuario autenticado
-        const updatedCart = await cartService.removeItem(itemId);
+        const updatedCart = await cartService.removeItem(itemUuid);
         setCart(updatedCart);
       } else {
         // Usuario no autenticado
-        const updatedLocalCart = localCartService.removeItem(productId);
+        const updatedLocalCart = localCartService.removeItem(producUuid);
         setLocalCart(updatedLocalCart);
       }
     } catch (err: unknown) {
@@ -234,13 +234,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   /**
    * Obtiene la cantidad de un producto específico en el carrito
    */
-  const getItemQuantity = useCallback((productId: number): number => {
+  const getItemQuantity = useCallback((productUuid: string): number => {
     if (token && cart) {
-      const item = cart.items.find((item) => item.productId === productId);
+      const item = cart.items.find((item) => item.product.uuid === productUuid);
       return item?.quantity || 0;
     }
 
-    const item = localCart.items.find((item) => item.productId === productId);
+    const item = localCart.items.find((item) => item.productUuid === productUuid);
     return item?.quantity || 0;
   }, [token, cart, localCart]);
 

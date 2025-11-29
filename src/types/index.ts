@@ -1,5 +1,4 @@
 export interface User {
-  id: number;
   uuid: string;
   firstName: string;
   lastName: string;
@@ -9,7 +8,6 @@ export interface User {
 }
 
 export interface Category {
-  id: number;
   uuid: string;
   name: string;
   slug: string;
@@ -33,7 +31,6 @@ export interface CategoryStats {
 }
 
 export interface ProductImage {
-  id: number;
   uuid: string;
   url: string;
   isPrimary: boolean;
@@ -41,7 +38,6 @@ export interface ProductImage {
 }
 
 export interface Product {
-  id: number;
   uuid: string;
   name: string;
   sku: string;
@@ -55,10 +51,10 @@ export interface Product {
   }[];
   description?: string;
   shortDescription?: string;
-  type?: 'simple' | 'variable';
+  type?: "simple" | "variable";
   published: boolean;
   featured: boolean;
-  visibility?: 'visible' | 'hidden' | 'catalog' | 'search';
+  visibility?: "visible" | "hidden" | "catalog" | "search";
   barcode?: string;
   tags?: string[];
   images?: ProductImage[];
@@ -92,10 +88,10 @@ export interface CreateProductDto {
   categoryUuids?: string[];
   description?: string;
   shortDescription?: string;
-  type?: 'simple' | 'variable';
+  type?: "simple" | "variable";
   published?: boolean;
   featured?: boolean;
-  visibility?: 'visible' | 'hidden' | 'catalog' | 'search';
+  visibility?: "visible" | "hidden" | "catalog" | "search";
   barcode?: string;
   tags?: string[];
 }
@@ -107,10 +103,10 @@ export interface UpdateProductDto {
   categoryUuids?: string[];
   description?: string;
   shortDescription?: string;
-  type?: 'simple' | 'variable';
+  type?: "simple" | "variable";
   published?: boolean;
   featured?: boolean;
-  visibility?: 'visible' | 'hidden' | 'catalog' | 'search';
+  visibility?: "visible" | "hidden" | "catalog" | "search";
   barcode?: string;
   tags?: string[];
 }
@@ -162,7 +158,7 @@ export interface ApiError {
 
 // Bank types
 export interface Bank {
-  id: number;
+  uuid: string;
   code: string;
   name: string;
   active: boolean;
@@ -172,16 +168,16 @@ export interface Bank {
 
 // Identification types
 export enum IdentificationType {
-  V = 'V',  // Venezolano
-  E = 'E',  // Extranjero
-  J = 'J',  // Jurídico
-  G = 'G',  // Gobierno
-  P = 'P',  // Pasaporte
+  V = "V", // Venezolano
+  E = "E", // Extranjero
+  J = "J", // Jurídico
+  G = "G", // Gobierno
+  P = "P", // Pasaporte
 }
 
 // Guest Customer types
 export interface GuestCustomer {
-  id: number;
+  uuid: string;
   identificationType: IdentificationType;
   identificationNumber: string;
   firstName: string;
@@ -219,7 +215,6 @@ export interface BannerImageVariants {
 }
 
 export interface Banner {
-  id: number;
   uuid: string;
   title: string;
   description?: string;
@@ -264,8 +259,7 @@ export interface UpdateBannerDto {
 
 // Cart types
 export interface CartItem {
-  id: number;
-  productId: number;
+  uuid: string;
   quantity: number;
   price: string;
   priceVes: string | null;
@@ -277,7 +271,6 @@ export interface CartItem {
 }
 
 export interface Cart {
-  id: number;
   uuid: string;
   userId: number;
   items: CartItem[];
@@ -290,7 +283,7 @@ export interface Cart {
 
 // Local cart types (para localStorage)
 export interface LocalCartItem {
-  productId: number;
+  productUuid: string;
   quantity: number;
 }
 
@@ -300,7 +293,7 @@ export interface LocalCart {
 
 // DTOs para el carrito
 export interface AddToCartDto {
-  productId: number;
+  productUuid: string;
   quantity: number;
 }
 
@@ -309,7 +302,7 @@ export interface UpdateCartItemDto {
 }
 
 // Checkout types
-export type DeliveryMethod = 'pickup' | 'delivery';
+export type DeliveryMethod = "pickup" | "delivery";
 
 // Customer info (always required for guests)
 export interface CustomerInfoDto {
@@ -351,7 +344,7 @@ export interface ShippingAddress {
   longitude?: number;
 }
 
-export type PaymentMethod = 'zelle' | 'pagomovil' | 'transferencia';
+export type PaymentMethod = "zelle" | "pagomovil" | "transferencia";
 
 export interface ZellePayment {
   senderName: string;
@@ -405,24 +398,19 @@ export interface CheckoutData {
 
 // Order types
 export type OrderStatus =
-  | 'pending'
-  | 'payment_review'
-  | 'confirmed'
-  | 'processing'
-  | 'shipped'
-  | 'delivered'
-  | 'cancelled'
-  | 'refunded';
+  | "pending"
+  | "payment_review"
+  | "confirmed"
+  | "processing"
+  | "shipped"
+  | "delivered"
+  | "cancelled"
+  | "refunded";
 
-export type PaymentStatus =
-  | 'pending'
-  | 'verified'
-  | 'rejected'
-  | 'refunded';
+export type PaymentStatus = "pending" | "verified" | "rejected" | "refunded";
 
 export interface OrderItem {
-  id: number;
-  productId: number;
+  uuid: string;
   productName: string;
   productSku: string;
   quantity: number;
@@ -433,7 +421,6 @@ export interface OrderItem {
 }
 
 export interface PaymentInfo {
-  id: number;
   method: PaymentMethod;
   status: PaymentStatus;
   receiptUrl?: string;
@@ -444,7 +431,6 @@ export interface PaymentInfo {
 }
 
 export interface Order {
-  id: number;
   uuid: string;
   orderNumber: string;
   userId: number;
@@ -487,7 +473,7 @@ export interface CreateOrderDto {
   createAccount?: boolean;
   password?: string;
   items?: Array<{
-    productId: number;
+    productUuid: string;
     quantity: number;
   }>;
 }
@@ -500,7 +486,6 @@ export interface UpdateOrderStatusDto {
 }
 
 export interface OrderSummary {
-  id: number;
   uuid: string;
   orderNumber: string;
   status: OrderStatus;
@@ -510,10 +495,9 @@ export interface OrderSummary {
 }
 
 // Discount types
-export type DiscountType = 'percentage' | 'fixed';
+export type DiscountType = "percentage" | "fixed";
 
 export interface Discount {
-  id: number;
   uuid: string;
   code: string;
   description?: string;
@@ -587,7 +571,6 @@ export interface DiscountStats {
 
 // Exchange Rate types
 export interface ExchangeRate {
-  id: number;
   date: string;
   rate: number;
   source: string;
@@ -596,10 +579,10 @@ export interface ExchangeRate {
 }
 
 // Customer types
-export type CustomerType = 'registered' | 'guest';
+export type CustomerType = "registered" | "guest";
 
 export interface CustomerResponseDto {
-  id: string;
+  uuid: string;
   type: CustomerType;
   name: string;
   email: string;
@@ -623,7 +606,6 @@ export interface CustomerListResponseDto {
 
 export interface CustomerDetailResponseDto {
   customer: {
-    id: string;
     type: CustomerType;
     name: string;
     email: string;
@@ -640,13 +622,13 @@ export interface CustomerDetailResponseDto {
     lastOrderDate: string | null;
   };
   recentOrders: Array<{
-    id: number;
+    uuid: string;
     orderNumber: string;
     date: string;
     total: number;
     status: string;
   }>;
-  addresses: Array<{
+  addresses?: Array<{
     address: string;
     city: string;
     state: string;

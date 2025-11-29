@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { customersService, type GetCustomersParams } from '@/services/customers';
-import type { CustomerResponseDto, CustomerListResponseDto } from '@/types';
+import type { CustomerResponseDto } from '@/types';
 import { Users, Search, Download, ChevronUp, ChevronDown } from 'lucide-react';
 import { formatUSD, formatVES } from '@/lib/currency';
 import Link from 'next/link';
@@ -195,7 +195,7 @@ export default function CustomersPage() {
                 </tr>
               ) : (
                 customers.map((customer) => (
-                  <tr key={customer.id} className="hover:bg-gray-50">
+                  <tr key={customer.uuid} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
@@ -245,7 +245,7 @@ export default function CustomersPage() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Link
-                        href={`/admin/dashboard/clientes/${customer.id}`}
+                        href={`/admin/dashboard/clientes/${customer.uuid}`}
                         className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                       >
                         Ver detalle

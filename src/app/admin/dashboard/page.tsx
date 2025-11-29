@@ -147,7 +147,7 @@ export default function AdminDashboard() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {lowStockProducts.slice(0, 5).map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50">
+                  <tr key={product.uuid} className="hover:bg-gray-50">
                     <td className="px-4 py-3 text-sm text-gray-900">{product.sku}</td>
                     <td className="px-4 py-3 text-sm text-gray-900">{product.name}</td>
                     <td className="px-4 py-3">
@@ -157,7 +157,7 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Link
-                        href={`/admin/dashboard/productos/${product.id}`}
+                        href={`/admin/dashboard/productos/${product.uuid}`}
                         className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                       >
                         Ver producto

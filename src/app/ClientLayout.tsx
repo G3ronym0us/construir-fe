@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { ToastProvider } from "@/context/ToastContext";
 import { initGA, trackPageView } from "@/lib/analytics";
 import { analyticsService } from "@/services/analytics";
@@ -39,7 +40,10 @@ export default function ClientLayout({
   return (
     <ToastProvider>
       {!isAdminRoute && <Navbar />}
-      {children}
+      <main className="min-h-screen">
+        {children}
+      </main>
+      {!isAdminRoute && <Footer />}
     </ToastProvider>
   );
 }

@@ -64,7 +64,7 @@ export default function OrderDetailPage() {
     try {
       setUpdating(true);
 
-      await ordersService.updateOrderStatus(order.id, {
+      await ordersService.updateOrderStatus(order.uuid, {
         orderStatus,
         paymentStatus,
         adminNotes: adminNotes || undefined,
@@ -142,7 +142,7 @@ export default function OrderDetailPage() {
             <div className="space-y-4">
               {order.items.map((item) => (
                 <div
-                  key={item.id}
+                  key={item.uuid}
                   className="flex justify-between items-start border-b pb-4"
                 >
                   <div>

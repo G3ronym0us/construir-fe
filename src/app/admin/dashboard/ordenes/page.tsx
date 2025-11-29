@@ -334,7 +334,7 @@ export default function AdminOrdenesPage() {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {orders.map((order) => (
-              <tr key={order.id} className="hover:bg-gray-50">
+              <tr key={order.uuid} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   {order.orderNumber}
                 </td>
@@ -358,7 +358,7 @@ export default function AdminOrdenesPage() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   <Link
-                    href={`/admin/dashboard/ordenes/${order.id}`}
+                    href={`/admin/dashboard/ordenes/${order.uuid}`}
                     className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
                   >
                     <Eye className="w-4 h-4" />

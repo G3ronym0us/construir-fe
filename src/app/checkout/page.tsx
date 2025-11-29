@@ -200,9 +200,9 @@ export default function CheckoutPage() {
     const loadLocalCartProducts = async () => {
       try {
         setLoadingProducts(true);
-        const productIds = localCart.items.map((item) => item.productId);
+        const productUuids = localCart.items.map((item) => item.productUuid);
         const response = await getProducts({ page: 1, limit: 100, published: true });
-        const matchedProducts = response.data.filter((p) => productIds.includes(p.id));
+        const matchedProducts = response.data.filter((p) => productUuids.includes(p.uuid));
         setProducts(matchedProducts);
       } catch (error) {
         console.error("Error loading products:", error);
@@ -243,10 +243,10 @@ export default function CheckoutPage() {
   // Calcular items y subtotal
   const enrichedLocalItems = localCart.items
     .map((item) => {
-      const product = products.find((p) => p.id === item.productId);
+      const product = products.find((p) => p.uuid === item.productUuid);
       if (!product) return null;
       return {
-        productId: item.productId,
+        productUuid: item.productUuid,
         quantity: item.quantity,
         product,
       };
@@ -571,7 +571,7 @@ export default function CheckoutPage() {
 
       // Subir el comprobante de pago
       if (receiptFile) {
-        await ordersService.uploadReceipt(order.id, receiptFile);
+        await ordersService.uploadReceipt(order.uuid, receiptFile);
       }
 
       // Redirigir a confirmación
@@ -731,7 +731,7 @@ export default function CheckoutPage() {
                   const showVES = paymentMethod && ['pagomovil', 'transferencia'].includes(paymentMethod);
 
                   return (
-                    <div key={item.productId} className="flex gap-3">
+                    <div key={item.product.uuid} className="flex gap-3">
                     <div className="w-16 h-16 bg-gray-100 rounded flex-shrink-0 flex items-center justify-center">
                       <Package className="w-8 h-8 text-gray-400" />
                     </div>

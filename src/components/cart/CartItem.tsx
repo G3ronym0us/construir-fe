@@ -7,22 +7,20 @@ import type { CartItem as CartItemType, Product } from "@/types";
 import { formatVES, formatUSD, parsePrice } from "@/lib/currency";
 
 interface CartItemProps {
-  item: CartItemType | { productId: number; quantity: number; product: Product };
-  onUpdateQuantity: (itemId: number, productId: number, quantity: number) => Promise<void>;
-  onRemove: (itemId: number, productId: number) => Promise<void>;
-  isAuthenticated: boolean;
+  item: CartItemType | { productUuid: string; quantity: number; product: Product };
+  onUpdateQuantity: (itemUuid: string, productUuid: string, quantity: number) => Promise<void>;
+  onRemove: (itemUuid: string, productUuid: string) => Promise<void>;
 }
 
 export default function CartItem({
   item,
   onUpdateQuantity,
   onRemove,
-  isAuthenticated,
 }: CartItemProps) {
   const [loading, setLoading] = useState(false);
 
-  const itemId = 'id' in item ? item.id : 0;
-  const { product, quantity, productId } = item;
+  const itemUuid = 'uuid' in item ? item.uuid : '';
+  const { product, quantity } = item;
   const priceUSD = parsePrice(product.price);
   const priceVES = product.priceVes ? parsePrice(product.priceVes) : null;
   const subtotalUSD = priceUSD * quantity;
@@ -36,7 +34,7 @@ export default function CartItem({
 
     try {
       setLoading(true);
-      await onUpdateQuantity(itemId, productId, newQuantity);
+      await onUpdateQuantity(itemUuid, product.uuid , newQuantity);
     } catch (error) {
       console.error("Error updating quantity:", error);
     } finally {
@@ -47,7 +45,7 @@ export default function CartItem({
   const handleRemove = async () => {
     try {
       setLoading(true);
-      await onRemove(itemId, productId);
+      await onRemove(itemUuid, product.uuid);
     } catch (error) {
       console.error("Error removing item:", error);
     } finally {

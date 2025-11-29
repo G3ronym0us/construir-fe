@@ -90,7 +90,7 @@ export default function MapPicker({ latitude, longitude, onLocationSelect }: Map
         mapInstanceRef.current = null;
       }
     };
-  }, [isClient]);
+  }, [isClient, onLocationSelect, selectedLat, selectedLng]);
 
   // Actualizar marcador y centrar mapa cuando cambian las coordenadas
   useEffect(() => {

@@ -47,14 +47,14 @@ export const localCartService = {
   /**
    * Agrega un producto al carrito local
    */
-  addItem(productId: number, quantity: number): LocalCart {
+  addItem(productUuid: string, quantity: number): LocalCart {
     const cart = this.getCart();
-    const existingItem = cart.items.find((item) => item.productId === productId);
+    const existingItem = cart.items.find((item) => item.productUuid === productUuid);
 
     if (existingItem) {
       existingItem.quantity += quantity;
     } else {
-      cart.items.push({ productId, quantity });
+      cart.items.push({ productUuid, quantity });
     }
 
     this.saveCart(cart);
@@ -64,9 +64,9 @@ export const localCartService = {
   /**
    * Actualiza la cantidad de un producto
    */
-  updateItem(productId: number, quantity: number): LocalCart {
+  updateItem(productUuid: string, quantity: number): LocalCart {
     const cart = this.getCart();
-    const item = cart.items.find((item) => item.productId === productId);
+    const item = cart.items.find((item) => item.productUuid === productUuid);
 
     if (item) {
       item.quantity = quantity;
@@ -79,9 +79,9 @@ export const localCartService = {
   /**
    * Elimina un producto del carrito
    */
-  removeItem(productId: number): LocalCart {
+  removeItem(productUuid: string): LocalCart {
     const cart = this.getCart();
-    cart.items = cart.items.filter((item) => item.productId !== productId);
+    cart.items = cart.items.filter((item) => item.productUuid !== productUuid);
     this.saveCart(cart);
     return cart;
   },
@@ -132,15 +132,15 @@ export const cartService = {
   /**
    * Actualiza la cantidad de un item en el carrito
    */
-  async updateItem(itemId: number, data: UpdateCartItemDto): Promise<Cart> {
-    return apiClient.patch<Cart>(`/cart/items/${itemId}`, data);
+  async updateItem(itemUuid: string, data: UpdateCartItemDto): Promise<Cart> {
+    return apiClient.patch<Cart>(`/cart/items/${itemUuid}`, data);
   },
 
   /**
    * Elimina un item del carrito
    */
-  async removeItem(itemId: number): Promise<Cart> {
-    return apiClient.delete<Cart>(`/cart/items/${itemId}`);
+  async removeItem(itemUuid: string): Promise<Cart> {
+    return apiClient.delete<Cart>(`/cart/items/${itemUuid}`);
   },
 
   /**
@@ -173,11 +173,11 @@ export const cartService = {
     for (const item of localCart.items) {
       try {
         await this.addItem({
-          productId: item.productId,
+          productUuid: item.productUuid,
           quantity: item.quantity,
         });
       } catch (error) {
-        console.error(`Error syncing item ${item.productId}:`, error);
+        console.error(`Error syncing item ${item.productUuid}:`, error);
         // Continuar con los demás items aunque uno falle
       }
     }
@@ -203,7 +203,7 @@ export function calculateCartTotals(items: LocalCartItem[], products: Product[])
   let totalItems = 0;
 
   const enrichedItems = items.map((item) => {
-    const product = products.find((p) => p.id === item.productId);
+    const product = products.find((p) => p.uuid === item.productUuid);
     if (!product) return null;
 
     const price = parseFloat(product.price);

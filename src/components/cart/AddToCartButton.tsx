@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useCart } from "@/context/CartContext";
 
 interface AddToCartButtonProps {
-  productId: number;
+  productUuid: string;
   quantity?: number;
   className?: string;
   variant?: "default" | "icon";
@@ -14,7 +14,7 @@ interface AddToCartButtonProps {
 }
 
 export default function AddToCartButton({
-  productId,
+  productUuid,
   quantity = 1,
   className = "",
   variant = "default",
@@ -27,7 +27,7 @@ export default function AddToCartButton({
 
   const handleAddToCart = async () => {
     try {
-      await addToCart(productId, quantity);
+      await addToCart(productUuid, quantity);
 
       if (showSuccessMessage) {
         setJustAdded(true);

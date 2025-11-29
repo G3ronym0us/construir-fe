@@ -81,7 +81,7 @@ export default function BankSelector({
       >
         <option value="">{placeholder}</option>
         {banks.map((bank) => (
-          <option key={bank.id} value={bank.code}>
+          <option key={bank.uuid} value={bank.code}>
             {bank.name}
           </option>
         ))}

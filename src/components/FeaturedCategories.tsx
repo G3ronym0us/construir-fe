@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
 import { categoriesService } from '@/services/categories';
 import type { Category } from '@/types';
-import { Package } from 'lucide-react';
+import CategoryCard from './category/CategoryCard';
+import CategoryCardSkeleton from './category/CategoryCardSkeleton';
 
 export default function FeaturedCategories() {
   const t = useTranslations('categories');
@@ -30,17 +30,18 @@ export default function FeaturedCategories() {
 
   if (loading) {
     return (
-      <div className="py-12 bg-gray-50">
+      <div className="py-16 bg-gradient-to-b from-white via-blue-50/30 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
-            {t('featuredCategories', { defaultValue: 'Categorías Destacadas' })}
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-white rounded-lg shadow-sm p-6 animate-pulse">
-                <div className="w-full h-32 bg-gray-200 rounded-lg mb-4" />
-                <div className="h-4 bg-gray-200 rounded w-3/4" />
-              </div>
+          {/* Header Skeleton */}
+          <div className="text-center mb-12">
+            <div className="h-10 bg-gray-200 rounded-lg w-96 mx-auto mb-4 animate-pulse" />
+            <div className="h-4 bg-gray-200 rounded w-64 mx-auto animate-pulse" />
+          </div>
+
+          {/* Cards Skeleton */}
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <CategoryCardSkeleton key={i} />
             ))}
           </div>
         </div>
@@ -53,42 +54,19 @@ export default function FeaturedCategories() {
   }
 
   return (
-    <div className="py-12 bg-gray-50">
+    <div className="py-16 bg-gradient-to-b from-white via-blue-50/30 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
-          {t('featuredCategories', { defaultValue: 'Categorías Destacadas' })}
-        </h2>
+        {/* Header mejorado */}
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
+            {t('featuredCategories', { defaultValue: 'Categorías Destacadas' })}
+          </h2>
+        </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {categories.map((category) => (
-            <Link
-              key={category.uuid}
-              href={`/productos?category=${category.slug}`}
-              className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
-            >
-              <div className="aspect-square relative bg-gradient-to-br from-blue-50 to-gray-100 flex items-center justify-center p-6">
-                {category.image ? (
-                  <img
-                    src={category.image}
-                    alt={category.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                  />
-                ) : (
-                  <Package className="w-16 h-16 text-gray-400 group-hover:text-blue-600 transition-colors" />
-                )}
-              </div>
-
-              <div className="p-4">
-                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors text-center">
-                  {category.name}
-                </h3>
-                {category.description && (
-                  <p className="text-sm text-gray-500 mt-1 line-clamp-2 text-center">
-                    {category.description}
-                  </p>
-                )}
-              </div>
-            </Link>
+        {/* Grid de categorías mejorado */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          {categories.map((category, index) => (
+            <CategoryCard key={category.uuid} category={category} index={index} />
           ))}
         </div>
       </div>

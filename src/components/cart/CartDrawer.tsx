@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { X, ShoppingBag, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from 'next-intl';
+import { useTranslations } from "next-intl";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { getProducts } from "@/services/products";
@@ -17,7 +17,7 @@ interface CartDrawerProps {
 }
 
 export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
-  const t = useTranslations('cart');
+  const t = useTranslations("cart");
   const router = useRouter();
   const { token } = useAuth();
   const {
@@ -32,7 +32,9 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
-  const [loadedProductIds, setLoadedProductIds] = useState<Set<number>>(new Set());
+  const [loadedProductUuids, setLoadedProductUuids] = useState<Set<string>>(
+    new Set()
+  );
 
   const isAuthenticated = !!token;
   const totalItems = getTotalItems();
@@ -40,33 +42,41 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   // Cargar productos para el carrito local cuando se abre el drawer
   useEffect(() => {
     if (!isAuthenticated && localCart.items.length > 0) {
-      const productIds = localCart.items.map((item) => item.productId);
-      const needsLoading = productIds.some(id => !loadedProductIds.has(id));
+      const productUuids = localCart.items.map((item) => item.productUuid);
+      const needsLoading = productUuids.some(
+        (uuid) => !loadedProductUuids.has(uuid)
+      );
 
       if (needsLoading || products.length === 0) {
         loadLocalCartProducts();
       }
     }
-  }, [isAuthenticated, localCart, isOpen]);
+  }, [
+    isAuthenticated,
+    localCart,
+    isOpen,
+    loadedProductUuids,
+    products.length,
+  ]);
 
   const loadLocalCartProducts = async () => {
     try {
       setLoadingProducts(true);
-      const productIds = localCart.items.map((item) => item.productId);
+      const productUuids = localCart.items.map((item) => item.productUuid);
 
       // Cargar productos desde la API
       const response = await getProducts({
         page: 1,
         limit: 100,
-        published: true
+        published: true,
       });
 
       const matchedProducts = response.data.filter((p) =>
-        productIds.includes(p.id)
+        productUuids.includes(p.uuid)
       );
 
       setProducts(matchedProducts);
-      setLoadedProductIds(new Set(matchedProducts.map(p => p.id)));
+      setLoadedProductUuids(new Set(matchedProducts.map((p) => p.uuid)));
     } catch (error) {
       console.error("Error loading products:", error);
     } finally {
@@ -77,11 +87,11 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   // Calcular items enriquecidos para carrito local
   const enrichedLocalItems = localCart.items
     .map((item) => {
-      const product = products.find((p) => p.id === item.productId);
+      const product = products.find((p) => p.uuid === item.productUuid);
       if (!product) return null;
 
       return {
-        productId: item.productId,
+        productUuid: item.productUuid,
         quantity: item.quantity,
         product,
       };
@@ -92,10 +102,11 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const subtotal = isAuthenticated
     ? cart?.subtotal || 0
     : enrichedLocalItems.reduce((acc, item) => {
-        const price = typeof item.product.price === 'string'
-          ? parseFloat(item.product.price)
-          : item.product.price;
-        return acc + (price * item.quantity);
+        const price =
+          typeof item.product.price === "string"
+            ? parseFloat(item.product.price)
+            : item.product.price;
+        return acc + price * item.quantity;
       }, 0);
 
   const subtotalVES = isAuthenticated
@@ -103,18 +114,18 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     : enrichedLocalItems.reduce((acc, item) => {
         if (!item.product.priceVes) return acc;
         const priceVes = parsePrice(item.product.priceVes);
-        return acc + (priceVes * item.quantity);
+        return acc + priceVes * item.quantity;
       }, 0);
 
   const handleClearCart = async () => {
-    if (confirm(t('clearCartConfirm'))) {
+    if (confirm(t("clearCartConfirm"))) {
       await clearCart();
     }
   };
 
   const handleCheckout = () => {
     // Siempre permitir ir a checkout (con o sin login)
-    router.push('/checkout');
+    router.push("/checkout");
     onClose();
   };
 
@@ -151,12 +162,12 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-xl font-bold text-gray-900">
-            {t('title')} ({totalItems})
+            {t("title")} ({totalItems})
           </h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            aria-label={t('title')}
+            aria-label={t("title")}
           >
             <X className="w-5 h-5" />
           </button>
@@ -172,16 +183,16 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
             <div className="flex flex-col items-center justify-center h-full text-center">
               <ShoppingBag className="w-16 h-16 text-gray-300 mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {t('empty')}
+                {t("empty")}
               </h3>
               <p className="text-sm text-gray-500 mb-4">
-                {t('emptyDescription')}
+                {t("emptyDescription")}
               </p>
               <button
                 onClick={onClose}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
-                {t('continueShopping')}
+                {t("continueShopping")}
               </button>
             </div>
           ) : (
@@ -192,7 +203,6 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   item={item}
                   onUpdateQuantity={updateQuantity}
                   onRemove={removeFromCart}
-                  isAuthenticated={isAuthenticated}
                 />
               ))}
 
@@ -202,7 +212,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   onClick={handleClearCart}
                   className="w-full mt-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                 >
-                  {t('clearCart')}
+                  {t("clearCart")}
                 </button>
               )}
             </>
@@ -214,14 +224,20 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
           <div className="border-t p-4 space-y-4">
             {/* Subtotal */}
             <div className="flex items-center justify-between">
-              <span className="text-lg font-bold">{t('subtotal')}:</span>
+              <span className="text-lg font-bold">{t("subtotal")}:</span>
               <div className="text-right">
                 {subtotalVES && subtotalVES > 0 && (
                   <div className="text-lg font-bold text-blue-600">
                     {formatVES(subtotalVES)}
                   </div>
                 )}
-                <div className={`${subtotalVES && subtotalVES > 0 ? 'text-sm text-gray-600' : 'text-lg font-bold text-blue-600'}`}>
+                <div
+                  className={`${
+                    subtotalVES && subtotalVES > 0
+                      ? "text-sm text-gray-600"
+                      : "text-lg font-bold text-blue-600"
+                  }`}
+                >
                   {formatUSD(subtotal)}
                 </div>
               </div>
@@ -232,14 +248,14 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
               onClick={handleCheckout}
               className="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
             >
-              {t('checkout')}
+              {t("checkout")}
             </button>
 
             <button
               onClick={onClose}
               className="w-full py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              {t('continueShopping')}
+              {t("continueShopping")}
             </button>
           </div>
         )}

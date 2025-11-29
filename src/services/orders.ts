@@ -20,7 +20,7 @@ export const ordersService = {
   /**
    * Sube el comprobante de pago para una orden
    */
-  async uploadReceipt(orderId: number, receipt: File): Promise<Order> {
+  async uploadReceipt(orderUuid: string, receipt: File): Promise<Order> {
     const formData = new FormData();
     formData.append('receipt', receipt);
 
@@ -32,7 +32,7 @@ export const ordersService = {
     }
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/orders/${orderId}/receipt`,
+      `${process.env.NEXT_PUBLIC_API_URL}/orders/${orderUuid}/receipt`,
       {
         method: 'POST',
         body: formData,
@@ -86,10 +86,10 @@ export const ordersService = {
    * Actualiza el estado de una orden (Solo Admin)
    */
   async updateOrderStatus(
-    id: number,
+    uuid: string,
     data: UpdateOrderStatusDto
   ): Promise<Order> {
-    return apiClient.patch<Order>(`/orders/${id}/status`, data);
+    return apiClient.patch<Order>(`/orders/${uuid}/status`, data);
   },
 
   /**
