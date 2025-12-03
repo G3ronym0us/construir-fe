@@ -28,6 +28,6 @@ export const dashboardService = {
    * Get dashboard statistics for admin panel
    */
   async getDashboardStats(): Promise<DashboardStats> {
-    return apiClient.get<DashboardStats>('/orders/admin/dashboard-stats');
+    return apiClient.get<DashboardStats>('/orders/admin/stats');
   },
 };

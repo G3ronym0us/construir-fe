@@ -1,43 +1,82 @@
-// Configuración de métodos de pago
-// TODO: Mover a base de datos o variables de entorno
+import { PaymentMethod } from "@/lib/enums";
 
-export const PAYMENT_CONFIG = {
-  zelle: {
-    email: 'pagos@construir.com',
-    beneficiary: 'Construir Ferretería C.A.',
-  },
-  pagomovil: {
-    bank: 'Banco de Venezuela',
-    bankCode: '0102',
-    phone: '0414-1234567',
-    cedula: 'J-12345678-9',
-  },
-  transferencia: {
-    bank: 'Banco de Venezuela',
-    bankCode: '0102',
-    accountNumber: '0102-0123-45-1234567890',
-    rif: 'J-12345678-9',
-    beneficiary: 'Construir Ferretería C.A.',
-  },
-} as const;
+export interface PaymentMethodDetails {
+  // Zelle
+  email?: string;
+  beneficiary?: string;
+  // PagoMóvil
+  bank?: string;
+  bankCode?: string;
+  phone?: string;
+  cedula?: string;
+  // Transferencia
+  accountNumber?: string;
+  rif?: string;
+}
 
-export const PAYMENT_METHODS = [
-  {
-    id: 'zelle',
-    name: 'Zelle',
-    description: 'Pago mediante Zelle (USD)',
-    icon: '💵',
+export interface PaymentMethodConfig {
+  type: PaymentMethod;
+  enabled: boolean;
+  details: PaymentMethodDetails;
+}
+
+// Configuración de métodos de pago desde variables de entorno
+export const paymentConfig: Record<PaymentMethod, PaymentMethodConfig> = {
+  [PaymentMethod.ZELLE]: {
+    type: PaymentMethod.ZELLE,
+    enabled: process.env.NEXT_PUBLIC_ZELLE_ENABLED === 'true',
+    details: {
+      email: process.env.NEXT_PUBLIC_ZELLE_EMAIL,
+      beneficiary: process.env.NEXT_PUBLIC_ZELLE_BENEFICIARY,
+    },
   },
-  {
-    id: 'pagomovil',
-    name: 'Pago Móvil',
-    description: 'Pago móvil interbancario (VES)',
-    icon: '📱',
+  [PaymentMethod.PAGO_MOVIL]: {
+    type: PaymentMethod.PAGO_MOVIL,
+    enabled: process.env.NEXT_PUBLIC_PAGOMOVIL_ENABLED === 'true',
+    details: {
+      bank: process.env.NEXT_PUBLIC_PAGOMOVIL_BANK,
+      bankCode: process.env.NEXT_PUBLIC_PAGOMOVIL_BANK_CODE,
+      phone: process.env.NEXT_PUBLIC_PAGOMOVIL_PHONE,
+      cedula: process.env.NEXT_PUBLIC_PAGOMOVIL_CEDULA,
+    },
   },
-  {
-    id: 'transferencia',
-    name: 'Transferencia Bancaria',
-    description: 'Transferencia bancaria (VES)',
-    icon: '🏦',
+  [PaymentMethod.TRANSFERENCIA]: {
+    type: PaymentMethod.TRANSFERENCIA,
+    enabled: process.env.NEXT_PUBLIC_TRANSFERENCIA_ENABLED === 'true',
+    details: {
+      bank: process.env.NEXT_PUBLIC_TRANSFERENCIA_BANK,
+      bankCode: process.env.NEXT_PUBLIC_TRANSFERENCIA_BANK_CODE,
+      accountNumber: process.env.NEXT_PUBLIC_TRANSFERENCIA_ACCOUNT_NUMBER,
+      rif: process.env.NEXT_PUBLIC_TRANSFERENCIA_RIF,
+      beneficiary: process.env.NEXT_PUBLIC_TRANSFERENCIA_BENEFICIARY,
+    },
   },
-] as const;
+};
+
+/**
+ * Obtiene la configuración de un método de pago específico
+ */
+export function getPaymentMethodConfig(method: PaymentMethod): PaymentMethodConfig {
+  return paymentConfig[method];
+}
+
+/**
+ * Obtiene solo los métodos de pago activos
+ */
+export function getActivePaymentMethods(): PaymentMethodConfig[] {
+  return Object.values(paymentConfig).filter(config => config.enabled);
+}
+
+/**
+ * Obtiene los detalles de un método de pago específico
+ */
+export function getPaymentMethodDetails(method: PaymentMethod): PaymentMethodDetails {
+  return paymentConfig[method].details;
+}
+
+/**
+ * Verifica si un método de pago está habilitado
+ */
+export function isPaymentMethodEnabled(method: PaymentMethod): boolean {
+  return paymentConfig[method].enabled;
+}

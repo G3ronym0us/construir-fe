@@ -1,9 +1,10 @@
 "use client";
 
 import { Upload, X } from "lucide-react";
-import { PAYMENT_CONFIG } from "@/config/payment";
 import type { ZellePayment } from "@/types";
 import CopyButton from "@/components/ui/CopyButton";
+import { usePaymentMethodDetails } from "@/hooks/usePaymentMethods";
+import { PaymentMethod } from "@/lib/enums";
 
 interface ZelleFormProps {
   data: ZellePayment;
@@ -12,6 +13,7 @@ interface ZelleFormProps {
 }
 
 export default function ZelleForm({ data, onChange, total }: ZelleFormProps) {
+  const { details, loading, error, reload } = usePaymentMethodDetails(PaymentMethod.ZELLE);
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     onChange({ ...data, receipt: file });
@@ -20,6 +22,32 @@ export default function ZelleForm({ data, onChange, total }: ZelleFormProps) {
   const removeFile = () => {
     onChange({ ...data, receipt: null });
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-gray-600">Cargando información de pago...</span>
+      </div>
+    );
+  }
+
+  if (error || !details) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-red-800">
+          No se pudo cargar la información de pago. Por favor, intenta nuevamente.
+        </p>
+        <button
+          type="button"
+          onClick={reload}
+          className="mt-2 text-blue-600 hover:text-blue-800"
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -32,15 +60,15 @@ export default function ZelleForm({ data, onChange, total }: ZelleFormProps) {
           <div className="flex justify-between items-center">
             <span className="text-gray-600">Email Zelle:</span>
             <div className="flex items-center gap-1">
-              <span className="font-medium">{PAYMENT_CONFIG.zelle.email}</span>
-              <CopyButton text={PAYMENT_CONFIG.zelle.email} />
+              <span className="font-medium">{details.email}</span>
+              <CopyButton text={details.email || ''} />
             </div>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-gray-600">Beneficiario:</span>
             <div className="flex items-center gap-1">
-              <span className="font-medium">{PAYMENT_CONFIG.zelle.beneficiary}</span>
-              <CopyButton text={PAYMENT_CONFIG.zelle.beneficiary} />
+              <span className="font-medium">{details.beneficiary}</span>
+              <CopyButton text={details.beneficiary || ''} />
             </div>
           </div>
           <div className="flex justify-between border-t pt-2 mt-2">
@@ -53,7 +81,7 @@ export default function ZelleForm({ data, onChange, total }: ZelleFormProps) {
         <button
           type="button"
           onClick={() => {
-            const allData = `${PAYMENT_CONFIG.zelle.email}\n${PAYMENT_CONFIG.zelle.beneficiary}\n$${total.toFixed(2)} USD`;
+            const allData = `${details.email}\n${details.beneficiary}\n$${total.toFixed(2)} USD`;
             navigator.clipboard.writeText(allData);
           }}
           className="w-full mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"

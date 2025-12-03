@@ -4,7 +4,10 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ordersService } from "@/services/orders";
-import { getOrderStatusColor, getPaymentStatusColor } from "@/lib/order-helpers";
+import {
+  getOrderStatusColor,
+  getPaymentStatusColor,
+} from "@/lib/order-helpers";
 import {
   ArrowLeft,
   Package,
@@ -12,17 +15,21 @@ import {
   CreditCard,
   FileText,
   Save,
-  ExternalLink,
 } from "lucide-react";
-import type { Order, OrderStatus, PaymentStatus } from "@/types";
+import type { Order, OrderStatus, PaymentStatus, ZellePayment } from "@/types";
 import Link from "next/link";
+import { PaymentReceiptViewer } from "@/components/admin/PaymentReceiptViewer";
+import { ZellePaymentDetails } from "@/components/admin/payment-details/ZellePaymentDetails";
+import { PagoMovilPaymentDetails } from "@/components/admin/payment-details/PagoMovilPaymentDetails";
+import { TransferenciaPaymentDetails } from "@/components/admin/payment-details/TransferenciaPaymentDetails";
+import { PaymentMethod } from "@/lib/enums";
 
 export default function OrderDetailPage() {
   const t = useTranslations("orders");
 
   const params = useParams();
   const router = useRouter();
-  const orderId = parseInt(params.id as string);
+  const orderUuid = params.uuid as string;
 
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,12 +43,12 @@ export default function OrderDetailPage() {
 
   useEffect(() => {
     loadOrder();
-  }, [orderId]);
+  }, [orderUuid]);
 
   const loadOrder = async () => {
     try {
       setLoading(true);
-      const orderData = await ordersService.getOrderById(orderId);
+      const orderData = await ordersService.getOrderByUuid(orderUuid);
       setOrder(orderData);
 
       // Initialize editable fields
@@ -57,6 +64,23 @@ export default function OrderDetailPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!order) return;
+    console.log(
+      "zelle",
+      order.paymentInfo.method === PaymentMethod.ZELLE,
+      order.paymentInfo
+    );
+    console.log(
+      "pagomovil",
+      order.paymentInfo.method === PaymentMethod.PAGO_MOVIL
+    );
+    console.log(
+      "transferencia",
+      order.paymentInfo.method === PaymentMethod.TRANSFERENCIA
+    );
+  }, [order]);
 
   const handleUpdateStatus = async () => {
     if (!order) return;
@@ -122,7 +146,14 @@ export default function OrderDetailPage() {
         </Link>
         <div>
           <h1 className="text-3xl font-bold text-gray-900">
-            {t("detailTitle", { orderNumber: order.orderNumber })}
+            {t("detailTitle", { orderNumber: order.orderNumber })}{" "}
+            <span
+              className={`inline-block px-3 py-1 text-sm font-semibold rounded-full ${getOrderStatusColor(
+                order.status
+              )}`}
+            >
+              {t(`statuses.${order.status}`)}
+            </span>
           </h1>
           <p className="text-sm text-gray-500">
             {t("createdAt", { date: formatDate(order.createdAt) })}
@@ -216,9 +247,7 @@ export default function OrderDetailPage() {
                   {order.shippingAddress.city}, {order.shippingAddress.state}{" "}
                   {order.shippingAddress.zipCode}
                 </p>
-                <p className="text-gray-600">
-                  {order.shippingAddress.country}
-                </p>
+                <p className="text-gray-600">{order.shippingAddress.country}</p>
                 {order.shippingAddress.additionalInfo && (
                   <div className="mt-2 pt-2 border-t">
                     <p className="text-xs text-gray-500">
@@ -239,49 +268,59 @@ export default function OrderDetailPage() {
               <CreditCard className="w-5 h-5" />
               {t("paymentInfo")}
             </h2>
-            <div className="space-y-3">
+            <div className="space-y-4">
+              {/* Detalles del Pago según el método */}
               <div>
-                <p className="text-sm text-gray-500">{t("paymentMethod")}</p>
-                <p className="font-medium text-gray-900 capitalize">
-                  {order.paymentInfo.method}
-                </p>
+                {order.paymentInfo.method === PaymentMethod.ZELLE && (
+                  <>
+                    <ZellePaymentDetails
+                      details={{
+                        senderName: order.paymentInfo.senderName || "",
+                        senderBank: order.paymentInfo.senderBank || "",
+                        receipt: null,
+                      }}
+                    />
+                  </>
+                )}
+                {order.paymentInfo.method === PaymentMethod.PAGO_MOVIL && (
+                  <PagoMovilPaymentDetails
+                    details={{
+                      bank: order.paymentInfo.bank || "",
+                      bankCode: order.paymentInfo.bankCode || "",
+                      phone: order.paymentInfo.phone || "",
+                      cedula: order.paymentInfo.cedula || "",
+                      referenceCode: order.paymentInfo.referenceCode || "",
+                    }}
+                  />
+                )}
+                {order.paymentInfo.method === PaymentMethod.TRANSFERENCIA && (
+                  <TransferenciaPaymentDetails
+                    details={{
+                      bank: order.paymentInfo.bank || "",
+                      bankCode: order.paymentInfo.bankCode || "",
+                      beneficiary: order.paymentInfo.beneficiary || "",
+                      rif: order.paymentInfo.rif || "",
+                      accountNumber: order.paymentInfo.accountNumber || "",
+                      referenceCode: order.paymentInfo.referenceCode || "", 
+                    }}
+                  />
+                )}
               </div>
 
-              {order.paymentInfo.details &&
-                Object.keys(order.paymentInfo.details).length > 0 && (
-                  <div>
-                    <p className="text-sm text-gray-500">
-                      {t("paymentDetails")}
-                    </p>
-                    <div className="mt-1 space-y-1">
-                      {Object.entries(order.paymentInfo.details).map(
-                        ([key, value]) => (
-                          <p key={key} className="text-sm text-gray-600">
-                            <span className="font-medium">{key}:</span> {value}
-                          </p>
-                        )
-                      )}
-                    </div>
-                  </div>
-                )}
-
+              {/* Comprobante de Pago */}
               {order.paymentInfo.receiptUrl && (
                 <div>
                   <p className="text-sm text-gray-500 mb-2">
                     {t("paymentReceipt")}
                   </p>
-                  <a
-                    href={order.paymentInfo.receiptUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    {t("viewReceipt")}
-                  </a>
+                  <PaymentReceiptViewer
+                    receiptUrl={order.paymentInfo.receiptUrl}
+                    orderNumber={order.orderNumber}
+                  />
                 </div>
               )}
 
+              {/* Información de Verificación */}
               {order.paymentInfo.verifiedAt && (
                 <div className="pt-3 border-t">
                   <p className="text-sm text-gray-500">
@@ -293,136 +332,6 @@ export default function OrderDetailPage() {
               )}
             </div>
           </div>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Current Status */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              {t("currentStatus")}
-            </h2>
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm text-gray-500 mb-1">
-                  {t("orderStatus")}:
-                </p>
-                <span
-                  className={`inline-block px-3 py-1 text-sm font-semibold rounded-full ${getOrderStatusColor(
-                    order.status
-                  )}`}
-                >
-                  {t(`statuses.${order.status}`)}
-                </span>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 mb-1">
-                  {t("paymentStatusLabel")}
-                </p>
-                <span
-                  className={`inline-block px-3 py-1 text-sm font-semibold rounded-full ${getPaymentStatusColor(
-                    order.paymentInfo.status
-                  )}`}
-                >
-                  {t(`paymentStatuses.${order.paymentInfo.status}`)}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Update Status */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              {t("updateStatus")}
-            </h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t("orderStatus")}
-                </label>
-                <select
-                  value={orderStatus}
-                  onChange={(e) =>
-                    setOrderStatus(e.target.value as OrderStatus)
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  {Object.entries(t.raw("statuses") as Record<string, string>).map(([key, value]) => (
-                    <option key={key} value={key}>
-                      {value}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t("paymentStatus")}
-                </label>
-                <select
-                  value={paymentStatus}
-                  onChange={(e) =>
-                    setPaymentStatus(e.target.value as PaymentStatus)
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  {Object.entries(t.raw("paymentStatuses") as Record<string, string>).map(
-                    ([key, value]) => (
-                      <option key={key} value={key}>
-                        {value}
-                      </option>
-                    )
-                  )}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t("trackingNumberLabel")}
-                </label>
-                <input
-                  type="text"
-                  value={trackingNumber}
-                  onChange={(e) => setTrackingNumber(e.target.value)}
-                  placeholder={t("trackingNumberPlaceholder")}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t("adminNotes")}
-                </label>
-                <textarea
-                  value={adminNotes}
-                  onChange={(e) => setAdminNotes(e.target.value)}
-                  rows={4}
-                  placeholder={t("adminNotesPlaceholder")}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <button
-                onClick={handleUpdateStatus}
-                disabled={updating}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-              >
-                <Save className="w-4 h-4" />
-                {updating ? t("saving") : t("saveChanges")}
-              </button>
-            </div>
-          </div>
-
-          {/* Customer Notes */}
-          {order.notes && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                {t("customerNotes")}
-              </h2>
-              <p className="text-sm text-gray-600">{order.notes}</p>
-            </div>
-          )}
         </div>
       </div>
     </div>

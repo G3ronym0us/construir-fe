@@ -44,7 +44,7 @@ export const ordersService = {
       try {
         const error = await response.json();
         throw new Error(Array.isArray(error.message) ? error.message.join(', ') : error.message);
-      } catch (e) {
+      } catch {
         throw new Error('Error uploading receipt');
       }
     }
@@ -62,8 +62,8 @@ export const ordersService = {
   /**
    * Obtiene los detalles de una orden específica
    */
-  async getOrderById(id: number): Promise<Order> {
-    return apiClient.get<Order>(`/orders/${id}`);
+  async getOrderByUuid(uuid: string): Promise<Order> {
+    return apiClient.get<Order>(`/orders/${uuid}`);
   },
 
   /**
@@ -95,8 +95,8 @@ export const ordersService = {
   /**
    * Cancela una orden y restaura el inventario
    */
-  async cancelOrder(id: number): Promise<Order> {
-    return apiClient.delete<Order>(`/orders/${id}`);
+  async cancelOrder(uuid: string): Promise<Order> {
+    return apiClient.delete<Order>(`/orders/${uuid}`);
   },
 
   // ============================================

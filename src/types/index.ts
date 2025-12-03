@@ -1,3 +1,4 @@
+import { PaymentMethod as PaymentMethodEnum } from "@/lib/enums";
 export interface User {
   uuid: string;
   firstName: string;
@@ -344,7 +345,39 @@ export interface ShippingAddress {
   longitude?: number;
 }
 
-export type PaymentMethod = "zelle" | "pagomovil" | "transferencia";
+export interface ZelleDetails {
+  email: string;
+  beneficiary: string;
+}
+
+export interface PagoMovilDetails {
+  bank: string;
+  bankCode: string;
+  phone: string;
+  cedula: string;
+  referenceCode: string;
+}
+
+export interface TransferenciaDetails {
+  bank: string;
+  bankCode: string;
+  accountNumber: string;
+  rif: string;
+  beneficiary: string;
+  referenceCode: string;
+}
+
+export type AccountDetails =
+  | ZelleDetails
+  | PagoMovilDetails
+  | TransferenciaDetails;
+
+export interface CreatePaymentMethodDto {
+  name: string;
+  description: string;
+  icon: string;
+  accountDetails: AccountDetails;
+}
 
 export interface ZellePayment {
   senderName: string;
@@ -390,7 +423,7 @@ export interface CheckoutData {
   createAccount?: boolean;
   password?: string;
   // Método de pago
-  paymentMethod: PaymentMethod;
+  paymentMethod: PaymentMethodEnum;
   zellePayment?: ZellePayment;
   pagomovilPayment?: PagoMovilPayment;
   transferenciaPayment?: TransferenciaPayment;
@@ -421,13 +454,24 @@ export interface OrderItem {
 }
 
 export interface PaymentInfo {
-  method: PaymentMethod;
+  method: PaymentMethodEnum;
   status: PaymentStatus;
   receiptUrl?: string;
-  details: Record<string, string>;
+  senderName?: string;
+  senderBank?: string;
   verifiedAt?: string;
   verifiedBy?: number;
   adminNotes?: string;
+  // PagoMovil
+  bank?: string;
+  bankCode?: string;
+  phone?: string;
+  cedula?: string;
+  referenceCode?: string;
+  // Transfer 
+  beneficiary: string;
+  rif: string;
+  accountNumber: string;
 }
 
 export interface Order {
@@ -466,7 +510,7 @@ export interface CreateOrderDto {
   deliveryMethod: DeliveryMethod;
   customerInfo?: CustomerInfoDto; // Required for guests
   shippingAddress?: ShippingAddressDto; // Required for delivery
-  paymentMethod: PaymentMethod;
+  paymentMethod: PaymentMethodEnum;
   paymentDetails: Record<string, string>;
   discountCode?: string;
   notes?: string;
@@ -635,4 +679,42 @@ export interface CustomerDetailResponseDto {
     postalCode: string;
     usedInOrders: number;
   }>;
+}
+
+// API Keys types
+export enum ApiKeyPermission {
+  READ = 'read',
+  WRITE = 'write',
+  READ_WRITE = 'read_write',
+}
+
+export interface ApiKey {
+  uuid: string;
+  consumerKey: string;
+  consumerSecret: string; // Siempre "***HIDDEN***" excepto al crear
+  description: string;
+  permissions: ApiKeyPermission;
+  active: boolean;
+  lastUsedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateApiKeyDto {
+  description: string;
+  permissions: ApiKeyPermission;
+}
+
+export interface CreateApiKeyResponse {
+  message: string;
+  apiKey: {
+    uuid: string;
+    consumerKey: string;
+    consumerSecret: string; // "***HIDDEN***"
+    description: string;
+    permissions: string;
+    active: boolean;
+  };
+  consumerSecret: string; // ⚠️ Solo aquí se muestra en texto plano
+  warning: string;
 }

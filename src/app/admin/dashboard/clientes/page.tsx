@@ -182,7 +182,7 @@ export default function CustomersPage() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {loading ? (
-                <tr>
+                <tr key={`loading`}>
                   <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
                     Cargando clientes...
                   </td>

@@ -3,11 +3,12 @@
 import { CreditCard } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { UseFormRegister, FieldErrors } from 'react-hook-form';
-import { PAYMENT_METHODS } from '@/config/payment';
 import ZelleForm from '@/components/payment/ZelleForm';
 import PagoMovilForm from '@/components/payment/PagoMovilForm';
 import TransferenciaForm from '@/components/payment/TransferenciaForm';
-import type { CheckoutData, PaymentMethod, ZellePayment, PagoMovilPayment, TransferenciaPayment } from '@/types';
+import { usePaymentMethods } from '@/hooks/usePaymentMethods';
+import type { CheckoutData, ZellePayment, PagoMovilPayment, TransferenciaPayment } from '@/types';
+import { PaymentMethod } from '@/lib/enums';
 
 interface Step4PaymentProps {
   register: UseFormRegister<CheckoutData>;
@@ -43,6 +44,26 @@ export default function Step4Payment({
   createAccount
 }: Step4PaymentProps) {
   const t = useTranslations('checkout');
+  const { methods: paymentMethods, loading, error } = usePaymentMethods();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-gray-600">Cargando métodos de pago...</span>
+      </div>
+    );
+  }
+
+  if (error || paymentMethods.length === 0) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-red-800">
+          No se pudieron cargar los métodos de pago. Por favor, intenta nuevamente.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -58,13 +79,13 @@ export default function Step4Payment({
 
       {/* Selector de Método de Pago */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {PAYMENT_METHODS.map((method) => (
+        {paymentMethods.map((method) => (
           <button
-            key={method.id}
+            key={method.uuid}
             type="button"
-            onClick={() => onPaymentMethodChange(method.id as PaymentMethod)}
+            onClick={() => onPaymentMethodChange(method.type as PaymentMethod)}
             className={`p-4 border-2 rounded-lg text-left transition-all ${
-              paymentMethod === method.id
+              paymentMethod === method.type
                 ? 'border-blue-500 bg-blue-50'
                 : 'border-gray-300 hover:border-gray-400'
             }`}

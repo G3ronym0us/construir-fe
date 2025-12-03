@@ -17,6 +17,7 @@ import {
   Menu,
   X,
   LogOut,
+  Key,
 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -64,6 +65,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: '/admin/dashboard/clientes', label: 'Clientes', icon: Users },
     { href: '/admin/dashboard/categories', label: t('categories'), icon: FolderTree },
     { href: '/admin/dashboard/cupones', label: t('coupons'), icon: Tag },
+    { href: '/admin/dashboard/api-keys', label: t('apiKeys'), icon: Key },
   ];
 
   return (

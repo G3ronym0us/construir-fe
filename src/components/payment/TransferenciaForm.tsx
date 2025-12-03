@@ -2,10 +2,11 @@
 
 import { Upload, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { PAYMENT_CONFIG } from "@/config/payment";
 import BankSelector from "./BankSelector";
 import type { TransferenciaPayment } from "@/types";
 import CopyButton from "@/components/ui/CopyButton";
+import { usePaymentMethodDetails } from "@/hooks/usePaymentMethods";
+import { PaymentMethod } from "@/lib/enums";
 
 interface TransferenciaFormProps {
   data: TransferenciaPayment;
@@ -15,6 +16,7 @@ interface TransferenciaFormProps {
 
 export default function TransferenciaForm({ data, onChange, total }: TransferenciaFormProps) {
   const t = useTranslations('payment');
+  const { details, loading, error, reload } = usePaymentMethodDetails(PaymentMethod.TRANSFERENCIA);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
@@ -24,6 +26,32 @@ export default function TransferenciaForm({ data, onChange, total }: Transferenc
   const removeFile = () => {
     onChange({ ...data, receipt: null });
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+        <span className="ml-3 text-gray-600">Cargando información de pago...</span>
+      </div>
+    );
+  }
+
+  if (error || !details) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-red-800">
+          No se pudo cargar la información de pago. Por favor, intenta nuevamente.
+        </p>
+        <button
+          type="button"
+          onClick={reload}
+          className="mt-2 text-blue-600 hover:text-blue-800"
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -36,29 +64,29 @@ export default function TransferenciaForm({ data, onChange, total }: Transferenc
           <div className="flex justify-between items-center">
             <span className="text-gray-600">Banco:</span>
             <div className="flex items-center gap-1">
-              <span className="font-medium">{PAYMENT_CONFIG.transferencia.bank}</span>
-              <CopyButton text={PAYMENT_CONFIG.transferencia.bank} />
+              <span className="font-medium">{details.bank}</span>
+              <CopyButton text={details.bank || ''} />
             </div>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-gray-600">Número de Cuenta:</span>
             <div className="flex items-center gap-1">
-              <span className="font-medium">{PAYMENT_CONFIG.transferencia.accountNumber}</span>
-              <CopyButton text={PAYMENT_CONFIG.transferencia.accountNumber} />
+              <span className="font-medium">{details.accountNumber}</span>
+              <CopyButton text={details.accountNumber || ''} />
             </div>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-gray-600">RIF:</span>
             <div className="flex items-center gap-1">
-              <span className="font-medium">{PAYMENT_CONFIG.transferencia.rif}</span>
-              <CopyButton text={PAYMENT_CONFIG.transferencia.rif} />
+              <span className="font-medium">{details.rif}</span>
+              <CopyButton text={details.rif || ''} />
             </div>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-gray-600">Beneficiario:</span>
             <div className="flex items-center gap-1">
-              <span className="font-medium">{PAYMENT_CONFIG.transferencia.beneficiary}</span>
-              <CopyButton text={PAYMENT_CONFIG.transferencia.beneficiary} />
+              <span className="font-medium">{details.beneficiary}</span>
+              <CopyButton text={details.beneficiary || ''} />
             </div>
           </div>
           <div className="flex justify-between border-t pt-2 mt-2">
@@ -71,9 +99,9 @@ export default function TransferenciaForm({ data, onChange, total }: Transferenc
         <button
           type="button"
           onClick={() => {
-            const accountNumber = PAYMENT_CONFIG.transferencia.accountNumber.replace(/-/g, '');
-            const rif = PAYMENT_CONFIG.transferencia.rif.replace(/-/g, '');
-            const allData = `${PAYMENT_CONFIG.transferencia.bank} ${PAYMENT_CONFIG.transferencia.bankCode}\n${accountNumber}\n${rif}\n${PAYMENT_CONFIG.transferencia.beneficiary}\nBs. ${total.toFixed(2)}`;
+            const accountNumber = (details.accountNumber || '').replace(/-/g, '');
+            const rif = (details.rif || '').replace(/-/g, '');
+            const allData = `${details.bank} ${details.bankCode}\n${accountNumber}\n${rif}\n${details.beneficiary}\nBs. ${total.toFixed(2)}`;
             navigator.clipboard.writeText(allData);
           }}
           className="w-full mt-3 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"

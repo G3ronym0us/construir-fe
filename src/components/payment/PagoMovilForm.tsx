@@ -2,10 +2,11 @@
 
 import { Upload, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { PAYMENT_CONFIG } from "@/config/payment";
 import BankSelector from "./BankSelector";
 import type { PagoMovilPayment } from "@/types";
 import CopyButton from "@/components/ui/CopyButton";
+import { usePaymentMethodDetails } from "@/hooks/usePaymentMethods";
+import { PaymentMethod } from "@/lib/enums";
 
 interface PagoMovilFormProps {
   data: PagoMovilPayment;
@@ -15,6 +16,7 @@ interface PagoMovilFormProps {
 
 export default function PagoMovilForm({ data, onChange, total }: PagoMovilFormProps) {
   const t = useTranslations('payment');
+  const { details, loading, error, reload } = usePaymentMethodDetails(PaymentMethod.PAGO_MOVIL);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
@@ -24,6 +26,32 @@ export default function PagoMovilForm({ data, onChange, total }: PagoMovilFormPr
   const removeFile = () => {
     onChange({ ...data, receipt: null });
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+        <span className="ml-3 text-gray-600">Cargando información de pago...</span>
+      </div>
+    );
+  }
+
+  if (error || !details) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-red-800">
+          No se pudo cargar la información de pago. Por favor, intenta nuevamente.
+        </p>
+        <button
+          type="button"
+          onClick={reload}
+          className="mt-2 text-blue-600 hover:text-blue-800"
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -36,22 +64,22 @@ export default function PagoMovilForm({ data, onChange, total }: PagoMovilFormPr
           <div className="flex justify-between items-center">
             <span className="text-gray-600">Banco:</span>
             <div className="flex items-center gap-1">
-              <span className="font-medium">{PAYMENT_CONFIG.pagomovil.bank}</span>
-              <CopyButton text={PAYMENT_CONFIG.pagomovil.bank} />
+              <span className="font-medium">{details.bank}</span>
+              <CopyButton text={details.bank || ''} />
             </div>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-gray-600">Teléfono:</span>
             <div className="flex items-center gap-1">
-              <span className="font-medium">{PAYMENT_CONFIG.pagomovil.phone}</span>
-              <CopyButton text={PAYMENT_CONFIG.pagomovil.phone} />
+              <span className="font-medium">{details.phone}</span>
+              <CopyButton text={details.phone || ''} />
             </div>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-gray-600">Cédula:</span>
             <div className="flex items-center gap-1">
-              <span className="font-medium">{PAYMENT_CONFIG.pagomovil.cedula}</span>
-              <CopyButton text={PAYMENT_CONFIG.pagomovil.cedula} />
+              <span className="font-medium">{details.cedula}</span>
+              <CopyButton text={details.cedula || ''} />
             </div>
           </div>
           <div className="flex justify-between border-t pt-2 mt-2">
@@ -64,9 +92,9 @@ export default function PagoMovilForm({ data, onChange, total }: PagoMovilFormPr
         <button
           type="button"
           onClick={() => {
-            const phone = PAYMENT_CONFIG.pagomovil.phone.replace(/-/g, '');
-            const cedula = PAYMENT_CONFIG.pagomovil.cedula.replace(/-/g, '');
-            const allData = `${PAYMENT_CONFIG.pagomovil.bank} ${PAYMENT_CONFIG.pagomovil.bankCode}\n${phone}\n${cedula}\nBs. ${total.toFixed(2)}`;
+            const phone = (details.phone || '').replace(/-/g, '');
+            const cedula = (details.cedula || '').replace(/-/g, '');
+            const allData = `${details.bank} ${details.bankCode}\n${phone}\n${cedula}\nBs. ${total.toFixed(2)}`;
             navigator.clipboard.writeText(allData);
           }}
           className="w-full mt-3 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
