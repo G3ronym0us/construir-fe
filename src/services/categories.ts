@@ -73,4 +73,25 @@ export const categoriesService = {
   async delete(uuid: string): Promise<{ message: string }> {
     return apiClient.delete<{ message: string }>(`/categories/${uuid}`);
   },
+
+  async uploadImage(uuid: string, image: File): Promise<Category> {
+    const formData = new FormData();
+    formData.append('image', image);
+    return apiClient.post<Category>(`/categories/${uuid}/image`, formData);
+  },
+
+  async deleteImage(uuid: string, confirm?: boolean): Promise<{
+    message: string;
+    requiresConfirmation?: boolean;
+    category?: Category;
+  }> {
+    const url = confirm
+      ? `/categories/${uuid}/image?confirm=true`
+      : `/categories/${uuid}/image`;
+    return apiClient.delete<{
+      message: string;
+      requiresConfirmation?: boolean;
+      category?: Category;
+    }>(url);
+  },
 };

@@ -19,15 +19,6 @@ export function CategoriesTable({ categories, onDelete, onToggleFeatured }: Cate
     isOpen: false,
     uuid: null,
   });
-  const [featuredModal, setFeaturedModal] = useState<{
-    isOpen: boolean;
-    uuid: string | null;
-    currentValue: boolean;
-  }>({
-    isOpen: false,
-    uuid: null,
-    currentValue: false,
-  });
 
   const handleDeleteClick = (uuid: string) => {
     setDeleteModal({ isOpen: true, uuid });
@@ -41,14 +32,7 @@ export function CategoriesTable({ categories, onDelete, onToggleFeatured }: Cate
   };
 
   const handleToggleFeaturedClick = (uuid: string, currentValue: boolean) => {
-    setFeaturedModal({ isOpen: true, uuid, currentValue });
-  };
-
-  const handleToggleFeaturedConfirm = async () => {
-    if (featuredModal.uuid !== null) {
-      await onToggleFeatured(featuredModal.uuid, featuredModal.currentValue);
-      setFeaturedModal({ isOpen: false, uuid: null, currentValue: false });
-    }
+    onToggleFeatured(uuid, currentValue);
   };
 
   if (categories.length === 0) {
@@ -253,21 +237,6 @@ export function CategoriesTable({ categories, onDelete, onToggleFeatured }: Cate
         cancelText="Cancelar"
         onConfirm={handleDeleteConfirm}
         onCancel={() => setDeleteModal({ isOpen: false, uuid: null })}
-      />
-
-      {/* Featured Confirmation Modal */}
-      <ConfirmModal
-        isOpen={featuredModal.isOpen}
-        title={featuredModal.currentValue ? t('unmarkFeatured') : t('markFeatured')}
-        message={
-          featuredModal.currentValue
-            ? t('unmarkFeaturedConfirm')
-            : t('markFeaturedConfirm')
-        }
-        confirmText={featuredModal.currentValue ? t('unmarkFeatured') : t('markFeatured')}
-        cancelText="Cancelar"
-        onConfirm={handleToggleFeaturedConfirm}
-        onCancel={() => setFeaturedModal({ isOpen: false, uuid: null, currentValue: false })}
       />
     </div>
   );

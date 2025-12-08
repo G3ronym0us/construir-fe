@@ -8,9 +8,11 @@ import { categoriesService } from '@/services/categories';
 import type { Category } from '@/types';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Upload, Trash2 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { Toggle } from '@/components/ui/Toggle';
+import { ConfirmModal } from '@/components/ConfirmModal';
+import { FeaturedImageModal } from '@/components/admin/FeaturedImageModal';
 
 interface CategoryFormData {
   name: string;
@@ -34,14 +36,29 @@ export default function EditCategoryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [parentCategories, setParentCategories] = useState<Category[]>([]);
   const [initialParentUuid, setInitialParentUuid] = useState<string>('');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isDeletingImage, setIsDeletingImage] = useState(false);
+  const [deleteImageModal, setDeleteImageModal] = useState<{
+    isOpen: boolean;
+    requiresConfirmation: boolean;
+    message?: string;
+  }>({
+    isOpen: false,
+    requiresConfirmation: false,
+  });
+  const [featuredImageModal, setFeaturedImageModal] = useState({
+    isOpen: false,
+  });
 
   const {
     register,
     handleSubmit,
     reset,
     control,
+    setError,
     formState: { errors, isSubmitting },
     watch,
+    setValue
   } = useForm<CategoryFormData>({
     defaultValues: {
       name: '',
@@ -54,6 +71,7 @@ export default function EditCategoryPage() {
   });
 
   const parentUuidValue = watch('parentUuid');
+  const isFeaturedValue = watch('isFeatured');
 
   useEffect(() => {
     if (uuid) {
@@ -106,8 +124,133 @@ export default function EditCategoryPage() {
     }
   };
 
+  const handleUploadImage = async () => {
+    if (!imageFile) {
+      toast.error('Por favor selecciona una imagen');
+      return;
+    }
+
+    try {
+      setIsUploadingImage(true);
+      const updatedCategory = await categoriesService.uploadImage(uuid, imageFile);
+      setCategory(updatedCategory);
+      setImageFile(null);
+      toast.success(t('imageUploadSuccess'));
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error(t('imageUploadError'));
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleDeleteImageClick = async () => {
+    try {
+      setIsDeletingImage(true);
+      // Primera llamada sin confirmación
+      const response = await categoriesService.deleteImage(uuid, false);
+
+      if (response.requiresConfirmation) {
+        // Mostrar modal de confirmación
+        setDeleteImageModal({
+          isOpen: true,
+          requiresConfirmation: true,
+          message: response.message,
+        });
+      } else {
+        // Eliminación exitosa sin confirmación (categoría no destacada)
+        if (response.category) {
+          setCategory(response.category);
+        }
+        toast.success(t('imageDeleteSuccess'));
+      }
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      toast.error(t('imageDeleteError'));
+    } finally {
+      setIsDeletingImage(false);
+    }
+  };
+
+  const handleDeleteImageConfirm = async () => {
+    try {
+      setIsDeletingImage(true);
+      // Segunda llamada con confirmación
+      const response = await categoriesService.deleteImage(uuid, true);
+
+      if (response.category) {
+        setCategory(response.category);
+        // Actualizar el formulario para reflejar que ya no es destacada
+        reset({
+          ...response.category,
+          parentUuid: response.category.parent?.uuid || '',
+        });
+      }
+
+      setDeleteImageModal({ isOpen: false, requiresConfirmation: false });
+      toast.success(t('imageDeleteSuccess'));
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      toast.error(t('imageDeleteError'));
+    } finally {
+      setIsDeletingImage(false);
+    }
+  };
+
+  const handleFeaturedToggle = (checked: boolean, fieldOnChange: (value: boolean) => void) => {
+    // Si se está desmarcando, siempre permitir
+    if (!checked) {
+      fieldOnChange(false);
+      return;
+    }
+
+    // Si se está marcando Y ya tiene imagen, permitir
+    if (category?.image || imageFile) {
+      fieldOnChange(true);
+      return;
+    }
+
+    // Si se está marcando SIN imagen, abrir modal
+    setFeaturedImageModal({ isOpen: true });
+  };
+
+  const handleFeaturedImageUpload = async (file: File) => {
+    try {
+      setIsUploadingImage(true);
+
+      // Usar update() que envía AMBOS: imagen + isFeatured al backend
+      const updatedCategory = await categoriesService.update(
+        uuid,
+        { isFeatured: true },
+        file
+      );
+
+      setCategory(updatedCategory);
+      setValue('isFeatured', true);
+      setFeaturedImageModal({ isOpen: false });
+
+      toast.success(t('imageUploadedAndFeatured'));
+    } catch (error) {
+      console.error('Error uploading image for featured category:', error);
+      toast.error(t('imageUploadError'));
+      throw error; // Re-throw para que el modal maneje el estado
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
   const onSubmit = async (data: CategoryFormData) => {
     try {
+      // Validación: no se puede marcar como destacada si no tiene imagen y no se está subiendo una
+      if (data.isFeatured && !category?.image && !imageFile) {
+        setError('isFeatured', {
+          type: 'manual',
+          message: t('imageRequiredForFeatured')
+        });
+        toast.error(t('imageRequiredForFeatured'));
+        return;
+      }
+
       // Update category data
       await categoriesService.update(uuid, {
         name: data.name,
@@ -271,9 +414,18 @@ export default function EditCategoryPage() {
           <div>
             <label htmlFor="image" className="block text-sm font-medium text-gray-700">
               {t('imageLabel')}
+              {isFeaturedValue && !category.image && <span className="text-red-500 ml-1">*</span>}
             </label>
+            {isFeaturedValue && !category.image && (
+              <p className="mt-1 text-sm text-amber-600 flex items-center gap-1">
+                <span className="text-xs">⚠</span>
+                {t('imageRequiredWarning')}
+              </p>
+            )}
+
+            {/* Current Image Display */}
             {category.image && (
-              <div className="mt-2 mb-4 inline-block">
+              <div className="mt-2 mb-4">
                 <div className="relative w-32 h-32 rounded-lg overflow-hidden border-2 border-gray-200">
                   <Image
                     src={category.image}
@@ -282,9 +434,20 @@ export default function EditCategoryPage() {
                     className="object-cover"
                   />
                 </div>
-                <p className="mt-1 text-xs text-gray-500">Imagen actual</p>
+                <p className="mt-1 text-xs text-gray-500">{t('currentImage')}</p>
+                <button
+                  type="button"
+                  onClick={handleDeleteImageClick}
+                  disabled={isDeletingImage}
+                  className="mt-2 flex items-center gap-2 px-3 py-1.5 text-sm bg-red-50 text-red-700 rounded-lg hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  {isDeletingImage ? 'Eliminando...' : t('deleteImage')}
+                </button>
               </div>
             )}
+
+            {/* File Input */}
             <input
               type="file"
               id="image"
@@ -293,11 +456,24 @@ export default function EditCategoryPage() {
               accept="image/jpeg, image/png, image/webp"
               className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-colors"
             />
+
+            {/* New Image Preview and Upload */}
             {imageFile && (
-              <p className="mt-2 text-sm text-gray-600 flex items-center gap-2">
-                <span className="text-green-600">✓</span>
-                Nueva imagen seleccionada: {imageFile.name}
-              </p>
+              <div className="mt-3 space-y-2">
+                <p className="text-sm text-gray-600 flex items-center gap-2">
+                  <span className="text-green-600">✓</span>
+                  {t('newImageSelected', { filename: imageFile.name })}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleUploadImage}
+                  disabled={isUploadingImage}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Upload className="w-4 h-4" />
+                  {isUploadingImage ? 'Subiendo...' : (category.image ? t('replaceImage') : t('uploadImage'))}
+                </button>
+              </div>
             )}
           </div>
 
@@ -329,7 +505,7 @@ export default function EditCategoryPage() {
                   label={t('isFeaturedLabel')}
                   description="La categoría aparecerá en la sección de categorías destacadas"
                   checked={field.value}
-                  onChange={field.onChange}
+                  onChange={(checked) => handleFeaturedToggle(checked, field.onChange)}
                   color="yellow"
                 />
               )}
@@ -354,6 +530,25 @@ export default function EditCategoryPage() {
           </button>
         </div>
       </form>
+
+      {/* Delete Image Confirmation Modal */}
+      <ConfirmModal
+        isOpen={deleteImageModal.isOpen}
+        title={t('deleteImage')}
+        message={deleteImageModal.message || t('deleteImageConfirm')}
+        confirmText={t('deleteImage')}
+        cancelText="Cancelar"
+        onConfirm={handleDeleteImageConfirm}
+        onCancel={() => setDeleteImageModal({ isOpen: false, requiresConfirmation: false })}
+      />
+
+      {/* Featured Image Upload Modal */}
+      <FeaturedImageModal
+        isOpen={featuredImageModal.isOpen}
+        onUpload={handleFeaturedImageUpload}
+        onCancel={() => setFeaturedImageModal({ isOpen: false })}
+        isUploading={isUploadingImage}
+      />
     </div>
   );
 }

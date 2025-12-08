@@ -33,6 +33,7 @@ export default function NewCategoryPage() {
     watch,
     setValue,
     control,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<CategoryFormData>({
     defaultValues: {
@@ -47,6 +48,7 @@ export default function NewCategoryPage() {
 
   const nameValue = watch('name');
   const slugValue = watch('slug');
+  const isFeaturedValue = watch('isFeatured');
 
   useEffect(() => {
     loadParentCategories();
@@ -80,6 +82,16 @@ export default function NewCategoryPage() {
 
   const onSubmit = async (data: CategoryFormData) => {
     try {
+      // Validación: categorías destacadas requieren imagen
+      if (data.isFeatured && !imageFile) {
+        setError('isFeatured', {
+          type: 'manual',
+          message: t('imageRequiredForFeatured')
+        });
+        toast.error(t('imageRequiredForFeatured'));
+        return;
+      }
+
       const createData: CreateCategoryDto = {
         name: data.name,
         slug: data.slug,
@@ -212,7 +224,14 @@ export default function NewCategoryPage() {
           <div>
             <label htmlFor="image" className="block text-sm font-medium text-gray-700">
               {t('imageLabel')}
+              {isFeaturedValue && <span className="text-red-500 ml-1">*</span>}
             </label>
+            {isFeaturedValue && (
+              <p className="mt-1 text-sm text-amber-600 flex items-center gap-1">
+                <span className="text-xs">⚠</span>
+                {t('imageRequiredWarning')}
+              </p>
+            )}
             <input
               type="file"
               id="image"
@@ -224,7 +243,7 @@ export default function NewCategoryPage() {
             {imageFile && (
               <p className="mt-2 text-sm text-gray-600 flex items-center gap-2">
                 <span className="text-green-600">✓</span>
-                Archivo seleccionado: {imageFile.name}
+                {t('fileSelected', { filename: imageFile.name })}
               </p>
             )}
           </div>

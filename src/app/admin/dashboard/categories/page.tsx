@@ -8,6 +8,7 @@ import type { Category, CategoryStats } from '@/types';
 import { PlusCircle, ListTree, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { CategoriesTable } from '@/components/admin/CategoriesTable';
+import { FeaturedImageModal } from '@/components/admin/FeaturedImageModal';
 
 export default function CategoriesPage() {
   const t = useTranslations('categories');
@@ -16,6 +17,14 @@ export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [stats, setStats] = useState<CategoryStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [featuredImageModal, setFeaturedImageModal] = useState<{
+    isOpen: boolean;
+    categoryUuid: string | null;
+  }>({
+    isOpen: false,
+    categoryUuid: null,
+  });
+  const [isUploadingFeaturedImage, setIsUploadingFeaturedImage] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -70,13 +79,65 @@ export default function CategoriesPage() {
   };
 
   const handleToggleFeatured = async (uuid: string, currentValue: boolean) => {
+    // Si se está desmarcando, permitir siempre
+    if (currentValue) {
+      try {
+        await categoriesService.update(uuid, { isFeatured: false });
+        toast.success(t('updateSuccess'));
+        await loadData();
+      } catch (error) {
+        console.error('Error updating category:', error);
+        toast.error(t('updateError'));
+      }
+      return;
+    }
+
+    // Si se está marcando, validar que tenga imagen
+    const category = categories.find(cat => cat.uuid === uuid);
+
+    if (category?.image) {
+      // Tiene imagen, permitir marcar directamente
+      try {
+        await categoriesService.update(uuid, { isFeatured: true });
+        toast.success(t('updateSuccess'));
+        await loadData();
+      } catch (error) {
+        console.error('Error updating category:', error);
+        toast.error(t('updateError'));
+      }
+    } else {
+      // NO tiene imagen, abrir modal para que suba una
+      setFeaturedImageModal({
+        isOpen: true,
+        categoryUuid: uuid,
+      });
+    }
+  };
+
+  const handleFeaturedImageUploadFromList = async (file: File) => {
+    if (!featuredImageModal.categoryUuid) return;
+
     try {
-      await categoriesService.update(uuid, { isFeatured: !currentValue });
-      toast.success(t('updateSuccess'));
+      setIsUploadingFeaturedImage(true);
+
+      // Usar update() que envía AMBOS: imagen + isFeatured al backend
+      await categoriesService.update(
+        featuredImageModal.categoryUuid,
+        { isFeatured: true },
+        file
+      );
+
+      setFeaturedImageModal({ isOpen: false, categoryUuid: null });
+      toast.success(t('imageUploadedAndFeatured'));
+
+      // Recargar lista para reflejar cambios
       await loadData();
     } catch (error) {
-      console.error('Error updating category:', error);
-      toast.error(t('updateError'));
+      console.error('Error uploading image for featured category:', error);
+      toast.error(t('imageUploadError'));
+      throw error;
+    } finally {
+      setIsUploadingFeaturedImage(false);
     }
   };
 
@@ -134,6 +195,14 @@ export default function CategoriesPage() {
           onToggleFeatured={handleToggleFeatured}
         />
       )}
+
+      {/* Featured Image Upload Modal */}
+      <FeaturedImageModal
+        isOpen={featuredImageModal.isOpen}
+        onUpload={handleFeaturedImageUploadFromList}
+        onCancel={() => setFeaturedImageModal({ isOpen: false, categoryUuid: null })}
+        isUploading={isUploadingFeaturedImage}
+      />
     </div>
   );
 }
