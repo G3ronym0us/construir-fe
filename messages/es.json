@@ -608,5 +608,17 @@
     "neverUsed": "Nunca usado",
     "minLength": "Se requieren mínimo {min} caracteres",
     "required": "Este campo es requerido"
+  },
+  "roles": {
+    "admin": "Administrador",
+    "order_admin": "Gestor de Pedidos",
+    "user": "Usuario"
+  },
+  "permissions": {
+    "accessDenied": "Acceso Denegado",
+    "accessDeniedMessage": "No tienes permisos para acceder a esta sección. Has sido redirigido a una página autorizada.",
+    "insufficientPermissions": "No tienes permisos para realizar esta acción",
+    "roleRequired": "Esta acción requiere el rol {role}",
+    "restrictedAccess": "Acceso Restringido"
   }
 }

@@ -38,10 +38,30 @@ class ApiClient {
     });
 
     if (!response.ok) {
+      // Special handling for 403 Forbidden errors
+      if (response.status === 403) {
+        const error: ApiError = await response.json().catch(() => ({
+          statusCode: 403,
+          message: 'No tienes permisos para realizar esta acción',
+          error: 'Forbidden'
+        }));
+
+        // Create a custom error with 403 flag for identification
+        const forbiddenError = new Error(
+          Array.isArray(error.message) ? error.message.join(', ') : error.message
+        ) as Error & { statusCode?: number };
+        forbiddenError.statusCode = 403;
+        throw forbiddenError;
+      }
+
       try {
         const error: ApiError = await response.json();
         throw new Error(Array.isArray(error.message) ? error.message.join(', ') : error.message);
-      } catch {
+      } catch (err) {
+        // If already thrown (403 case), re-throw
+        if (err instanceof Error && (err as Error & { statusCode?: number }).statusCode === 403) {
+          throw err;
+        }
         throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
       }
     }

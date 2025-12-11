@@ -6,6 +6,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import type { User } from '@/types';
+import { UserRole } from '@/types';
+import { canAccessRoute, getDefaultAdminPath } from '@/lib/permissions';
 import {
   LayoutDashboard,
   Package,
@@ -13,11 +15,11 @@ import {
   ShoppingCart,
   FolderTree,
   Tag,
-  Users,
   Menu,
   X,
   LogOut,
   Key,
+  ShieldAlert,
 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -25,6 +27,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [accessDenied, setAccessDenied] = useState(false);
   const t = useTranslations('nav');
 
   useEffect(() => {
@@ -37,13 +40,33 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
 
     if (userData) {
-      setUser(JSON.parse(userData));
+      try {
+        const parsedUser: User = JSON.parse(userData);
+        setUser(parsedUser);
+
+        // Check if user has permission to access current route
+        if (!canAccessRoute(parsedUser.role, pathname)) {
+          setAccessDenied(true);
+
+          // Redirect to appropriate page based on role
+          const defaultPath = getDefaultAdminPath(parsedUser.role);
+          if (pathname !== defaultPath) {
+            router.push(defaultPath);
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        router.push('/admin/login');
+      }
     }
-  }, [router]);
+  }, [router, pathname]);
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
     setSidebarOpen(false);
+    setAccessDenied(false); // Reset access denied when changing routes
   }, [pathname]);
 
   const handleLogout = () => {
@@ -57,16 +80,80 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return null;
   }
 
-  const navLinks = [
-    { href: '/admin/dashboard', label: t('dashboard'), icon: LayoutDashboard, exact: true },
-    { href: '/admin/dashboard/productos', label: t('products'), icon: Package },
-    { href: '/admin/dashboard/banners', label: t('banners'), icon: ImageIcon },
-    { href: '/admin/dashboard/ordenes', label: t('orders'), icon: ShoppingCart },
-    { href: '/admin/dashboard/clientes', label: 'Clientes', icon: Users },
-    { href: '/admin/dashboard/categories', label: t('categories'), icon: FolderTree },
-    { href: '/admin/dashboard/cupones', label: t('coupons'), icon: Tag },
-    { href: '/admin/dashboard/api-keys', label: t('apiKeys'), icon: Key },
+  // Define navigation links with roles that can access them
+  const allNavLinks = [
+    {
+      href: '/admin/dashboard',
+      label: t('dashboard'),
+      icon: LayoutDashboard,
+      exact: true,
+      roles: [UserRole.ADMIN, UserRole.ORDER_ADMIN] // Both can see dashboard
+    },
+    {
+      href: '/admin/dashboard/productos',
+      label: t('products'),
+      icon: Package,
+      roles: [UserRole.ADMIN]
+    },
+    {
+      href: '/admin/dashboard/banners',
+      label: t('banners'),
+      icon: ImageIcon,
+      roles: [UserRole.ADMIN]
+    },
+    {
+      href: '/admin/dashboard/ordenes',
+      label: t('orders'),
+      icon: ShoppingCart,
+      roles: [UserRole.ADMIN, UserRole.ORDER_ADMIN]
+    },
+    // Clientes removed - ORDER_ADMIN has NO access to customers
+    {
+      href: '/admin/dashboard/categories',
+      label: t('categories'),
+      icon: FolderTree,
+      roles: [UserRole.ADMIN]
+    },
+    {
+      href: '/admin/dashboard/cupones',
+      label: t('coupons'),
+      icon: Tag,
+      roles: [UserRole.ADMIN]
+    },
+    {
+      href: '/admin/dashboard/api-keys',
+      label: t('apiKeys'),
+      icon: Key,
+      roles: [UserRole.ADMIN]
+    },
   ];
+
+  // Filter navigation based on user role
+  const navLinks = allNavLinks.filter(link =>
+    link.roles.includes(user.role)
+  );
+
+  // Role badge component
+  const getRoleBadge = () => {
+    switch (user.role) {
+      case UserRole.ADMIN:
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
+            <ShieldAlert className="w-3 h-3" />
+            Admin
+          </span>
+        );
+      case UserRole.ORDER_ADMIN:
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded">
+            <ShieldAlert className="w-3 h-3" />
+            Gestor de Pedidos
+          </span>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -95,12 +182,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
-            <span className="hidden sm:block text-sm text-gray-700">
-              {user.firstName} {user.lastName}
-            </span>
-            <span className="sm:hidden text-xs text-gray-600">
-              {user.firstName}
-            </span>
+            {/* Role badge - hidden on small screens */}
+            <div className="hidden lg:block">
+              {getRoleBadge()}
+            </div>
+
+            <div className="flex flex-col items-end">
+              <span className="text-sm text-gray-700">
+                {user.firstName} {user.lastName}
+              </span>
+              {/* Show role badge on mobile below name */}
+              <div className="lg:hidden">
+                {getRoleBadge()}
+              </div>
+            </div>
+
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -171,6 +267,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Main Content */}
         <main className="flex-1 p-4 sm:p-6 md:p-8 min-h-[calc(100vh-57px)] sm:min-h-[calc(100vh-65px)] w-full max-w-full overflow-x-hidden">
+          {/* Access denied message */}
+          {accessDenied && (
+            <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <ShieldAlert className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h3 className="text-sm font-medium text-yellow-800">Acceso Restringido</h3>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    No tienes permisos para acceder a esta sección. Has sido redirigido a una página autorizada.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {children}
         </main>
       </div>

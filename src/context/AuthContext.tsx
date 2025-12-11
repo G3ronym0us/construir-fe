@@ -1,13 +1,18 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { authService } from "@/services/auth";
-import type { User, LoginDto, RegisterDto } from "@/types";
+import type { User, LoginDto, RegisterDto, UserRole } from "@/types";
+import type { Permission } from "@/lib/permissions";
+import { hasPermission as checkPermission, isAdmin as checkIsAdmin } from "@/lib/permissions";
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
+  userRole: UserRole | null;
+  hasPermission: (permission: Permission) => boolean;
+  isAdmin: boolean;
   login: (data: LoginDto) => Promise<void>;
   register: (data: RegisterDto) => Promise<void>;
   logout: () => void;
@@ -20,6 +25,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Computed values based on user role
+  const userRole = user?.role ?? null;
+  const isAdmin = checkIsAdmin(userRole);
+
+  const hasPermission = useCallback(
+    (permission: Permission) => {
+      return checkPermission(userRole, permission);
+    },
+    [userRole]
+  );
+
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
@@ -28,9 +44,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .then((userData) => {
           setUser(userData);
           setToken(storedToken);
+          // Also save user data to localStorage for admin panel
+          localStorage.setItem("user", JSON.stringify(userData));
         })
         .catch(() => {
           localStorage.removeItem("token");
+          localStorage.removeItem("user");
         })
         .finally(() => {
           setLoading(false);
@@ -45,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(response.user);
     setToken(response.access_token);
     localStorage.setItem("token", response.access_token);
+    localStorage.setItem("user", JSON.stringify(response.user));
   };
 
   const register = async (data: RegisterDto) => {
@@ -55,16 +75,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(loginResponse.user);
     setToken(loginResponse.access_token);
     localStorage.setItem("token", loginResponse.access_token);
+    localStorage.setItem("user", JSON.stringify(loginResponse.user));
   };
 
   const logout = () => {
     setUser(null);
     setToken(null);
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        loading,
+        userRole,
+        hasPermission,
+        isAdmin,
+        login,
+        register,
+        logout
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { authService } from '@/services/auth';
+import { getDefaultAdminPath } from '@/lib/permissions';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -27,8 +28,12 @@ export default function AdminLoginPage() {
       // Set cookie for middleware
       document.cookie = `token=${response.access_token}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 days
 
-      // Redirect to admin dashboard
-      router.push('/admin/dashboard');
+      // Smart redirect based on user role
+      // ADMIN → /admin/dashboard
+      // ORDER_ADMIN → /admin/dashboard/ordenes
+      // USER → /
+      const redirectPath = getDefaultAdminPath(response.user.role);
+      router.push(redirectPath);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Credenciales inválidas');
     } finally {

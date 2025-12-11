@@ -1,9 +1,18 @@
 import { PaymentMethod as PaymentMethodEnum } from "@/lib/enums";
+
+// User roles
+export enum UserRole {
+  ADMIN = 'admin',
+  ORDER_ADMIN = 'order_admin',
+  USER = 'user'
+}
+
 export interface User {
   uuid: string;
   firstName: string;
   lastName: string;
   email: string;
+  role: UserRole;
   createdAt: string;
   updatedAt: string;
 }

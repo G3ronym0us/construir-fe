@@ -608,5 +608,17 @@
     "neverUsed": "Never used",
     "minLength": "Minimum {min} characters required",
     "required": "This field is required"
+  },
+  "roles": {
+    "admin": "Administrator",
+    "order_admin": "Order Manager",
+    "user": "User"
+  },
+  "permissions": {
+    "accessDenied": "Access Denied",
+    "accessDeniedMessage": "You don't have permission to access this section. You have been redirected to an authorized page.",
+    "insufficientPermissions": "You don't have permissions to perform this action",
+    "roleRequired": "This action requires {role} role",
+    "restrictedAccess": "Restricted Access"
   }
 }
