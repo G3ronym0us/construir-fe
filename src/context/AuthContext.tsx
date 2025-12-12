@@ -68,6 +68,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = async (data: RegisterDto) => {
+    // First register the user
+    await authService.register(data);
+    // Then login with the same credentials
     const loginResponse = await authService.login({
       email: data.email,
       password: data.password,

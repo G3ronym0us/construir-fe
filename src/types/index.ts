@@ -4,7 +4,7 @@ import { PaymentMethod as PaymentMethodEnum } from "@/lib/enums";
 export enum UserRole {
   ADMIN = 'admin',
   ORDER_ADMIN = 'order_admin',
-  USER = 'user'
+  CUSTOMER = 'customer'
 }
 
 export interface User {
@@ -13,6 +13,8 @@ export interface User {
   lastName: string;
   email: string;
   role: UserRole;
+  isActive: boolean;
+  deletedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -726,4 +728,52 @@ export interface CreateApiKeyResponse {
   };
   consumerSecret: string; // ⚠️ Solo aquí se muestra en texto plano
   warning: string;
+}
+
+// User Management DTOs
+export interface CreateUserDto {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  role: UserRole;
+  isActive?: boolean;
+}
+
+export interface UpdateUserDto {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  isActive?: boolean;
+}
+
+export interface ChangeUserRoleDto {
+  role: UserRole;
+}
+
+export interface ResetUserPasswordDto {
+  newPassword: string;
+}
+
+export interface UserStats {
+  total: number;
+  active: number;
+  inactive: number;
+  deleted: number;
+  byRole: {
+    admin: number;
+    order_admin: number;
+    customer: number;
+  };
+}
+
+export interface UserListFilters {
+  page?: number;
+  limit?: number;
+  search?: string;
+  role?: UserRole | 'all';
+  isActive?: boolean | 'all';
+  includeDeleted?: boolean;
+  sortBy?: 'createdAt' | 'firstName' | 'email' | 'role';
+  sortOrder?: 'ASC' | 'DESC';
 }

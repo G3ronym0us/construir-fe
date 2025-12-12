@@ -20,6 +20,7 @@ import {
   LogOut,
   Key,
   ShieldAlert,
+  Users,
 } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -124,6 +125,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       href: '/admin/dashboard/api-keys',
       label: t('apiKeys'),
       icon: Key,
+      roles: [UserRole.ADMIN]
+    },
+    {
+      href: '/admin/dashboard/usuarios',
+      label: t('users'),
+      icon: Users,
       roles: [UserRole.ADMIN]
     },
   ];

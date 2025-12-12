@@ -69,6 +69,9 @@ function getDefaultPath(role: string): string {
   if (role === 'order_admin') {
     return '/admin/dashboard/ordenes';
   }
+  if (role === 'customer') {
+    return '/';
+  }
   return '/';
 }
 

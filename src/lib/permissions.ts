@@ -16,7 +16,9 @@ export type Permission =
   | 'view_coupons'
   | 'manage_coupons'
   | 'view_api_keys'
-  | 'manage_api_keys';
+  | 'manage_api_keys'
+  | 'view_users'
+  | 'manage_users';
 
 // Role-to-permissions mapping
 const rolePermissions: Record<UserRole, Set<Permission>> = {
@@ -29,14 +31,15 @@ const rolePermissions: Record<UserRole, Set<Permission>> = {
     'view_customers', 'manage_customers',
     'view_coupons', 'manage_coupons',
     'view_api_keys', 'manage_api_keys',
+    'view_users', 'manage_users',
   ]),
   [UserRole.ORDER_ADMIN]: new Set([
     'view_dashboard',  // Limited dashboard showing only order stats
     'view_orders',
     'manage_orders',
   ]),
-  [UserRole.USER]: new Set([
-    // Regular users have no admin permissions
+  [UserRole.CUSTOMER]: new Set([
+    // Regular customers have no admin permissions
   ]),
 };
 
@@ -82,7 +85,7 @@ export function getDefaultAdminPath(role: UserRole | undefined | null): string {
       return '/admin/dashboard';
     case UserRole.ORDER_ADMIN:
       return '/admin/dashboard/ordenes';
-    case UserRole.USER:
+    case UserRole.CUSTOMER:
     default:
       return '/';
   }
@@ -103,6 +106,7 @@ export function canAccessRoute(role: UserRole | undefined | null, pathname: stri
     '/admin/dashboard/clientes': 'view_customers',
     '/admin/dashboard/cupones': 'view_coupons',
     '/admin/dashboard/api-keys': 'view_api_keys',
+    '/admin/dashboard/usuarios': 'view_users',
   };
 
   // Check if pathname starts with any restricted route
