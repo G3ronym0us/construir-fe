@@ -65,6 +65,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(response.access_token);
     localStorage.setItem("token", response.access_token);
     localStorage.setItem("user", JSON.stringify(response.user));
+
+    // Set cookie with proper attributes for production
+    if (typeof window !== 'undefined') {
+      const isProduction = window.location.protocol === 'https:';
+      const cookieAttributes = [
+        `token=${response.access_token}`,
+        'path=/',
+        `max-age=${60 * 60 * 24 * 7}`, // 7 days
+        'SameSite=Lax',
+        isProduction ? 'Secure' : ''
+      ].filter(Boolean).join('; ');
+
+      document.cookie = cookieAttributes;
+    }
   };
 
   const register = async (data: RegisterDto) => {
@@ -79,6 +93,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(loginResponse.access_token);
     localStorage.setItem("token", loginResponse.access_token);
     localStorage.setItem("user", JSON.stringify(loginResponse.user));
+
+    // Set cookie with proper attributes for production
+    if (typeof window !== 'undefined') {
+      const isProduction = window.location.protocol === 'https:';
+      const cookieAttributes = [
+        `token=${loginResponse.access_token}`,
+        'path=/',
+        `max-age=${60 * 60 * 24 * 7}`, // 7 days
+        'SameSite=Lax',
+        isProduction ? 'Secure' : ''
+      ].filter(Boolean).join('; ');
+
+      document.cookie = cookieAttributes;
+    }
   };
 
   const logout = () => {
@@ -86,6 +114,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+
+    // Clear cookie with proper attributes
+    if (typeof window !== 'undefined') {
+      const isProduction = window.location.protocol === 'https:';
+      const cookieAttributes = [
+        'token=',
+        'path=/',
+        'max-age=0',
+        'SameSite=Lax',
+        isProduction ? 'Secure' : ''
+      ].filter(Boolean).join('; ');
+
+      document.cookie = cookieAttributes;
+    }
   };
 
   return (

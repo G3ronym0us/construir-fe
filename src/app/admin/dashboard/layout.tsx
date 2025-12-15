@@ -73,7 +73,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    document.cookie = 'token=; path=/; max-age=0';
+
+    // Clear cookie with proper attributes
+    const isProduction = typeof window !== 'undefined' && window.location.protocol === 'https:';
+    const cookieAttributes = [
+      'token=',
+      'path=/',
+      'max-age=0',
+      'SameSite=Lax',
+      isProduction ? 'Secure' : ''
+    ].filter(Boolean).join('; ');
+
+    document.cookie = cookieAttributes;
     router.push('/admin/login');
   };
 

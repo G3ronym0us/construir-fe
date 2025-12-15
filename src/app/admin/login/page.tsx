@@ -25,8 +25,17 @@ export default function AdminLoginPage() {
       localStorage.setItem('token', response.access_token);
       localStorage.setItem('user', JSON.stringify(response.user));
 
-      // Set cookie for middleware
-      document.cookie = `token=${response.access_token}; path=/; max-age=${60 * 60 * 24 * 7}`; // 7 days
+      // Set cookie for middleware with proper attributes for production
+      const isProduction = window.location.protocol === 'https:';
+      const cookieAttributes = [
+        `token=${response.access_token}`,
+        'path=/',
+        `max-age=${60 * 60 * 24 * 7}`, // 7 days
+        'SameSite=Lax',
+        isProduction ? 'Secure' : ''
+      ].filter(Boolean).join('; ');
+
+      document.cookie = cookieAttributes;
 
       // Smart redirect based on user role
       // ADMIN → /admin/dashboard
