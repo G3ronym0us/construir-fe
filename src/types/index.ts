@@ -777,3 +777,57 @@ export interface UserListFilters {
   sortBy?: 'createdAt' | 'firstName' | 'email' | 'role';
   sortOrder?: 'ASC' | 'DESC';
 }
+
+// API Logs types
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+export interface ApiLog {
+  id: number;
+  uuid: string;
+  method: HttpMethod;
+  path: string;
+  query: Record<string, string> | null;
+  requestBody: unknown | null;
+  requestHeaders: Record<string, string> | null;
+  statusCode: number;
+  responseBody: unknown | null;
+  responseTime: number;
+  consumerKey: string | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+  isError: boolean;
+  errorMessage: string | null;
+  errorStack: string | null;
+  createdAt: string;
+  apiKey: {
+    uuid: string;
+    description: string;
+  } | null;
+}
+
+export interface ApiLogStats {
+  totalRequests: number;
+  totalErrors: number;
+  errorRate: number;
+  avgResponseTime: number;
+  topPaths: Array<{
+    path: string;
+    count: string;
+  }>;
+}
+
+export interface ApiLogFilters {
+  page?: number;
+  limit?: number;
+  isError?: boolean;
+  consumerKey?: string;
+  statusCode?: number;
+  path?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface ApiLogCleanupResponse {
+  message: string;
+  deleted: number;
+}

@@ -33,6 +33,7 @@
     "coupons": "Coupons",
     "menu": "Menu",
     "apiKeys": "API Keys",
+    "apiLogs": "API Logs",
     "users": "Users"
   },
   "cart": {
@@ -609,6 +610,72 @@
     "neverUsed": "Never used",
     "minLength": "Minimum {min} characters required",
     "required": "This field is required"
+  },
+  "apiLogs": {
+    "title": "API Logs",
+    "stats": {
+      "totalRequests": "Total Requests",
+      "totalErrors": "Total Errors",
+      "errorRate": "Error Rate",
+      "avgResponseTime": "Avg Response Time"
+    },
+    "filters": "Filters",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "statusCode": "Status Code",
+    "allStatusCodes": "All Status Codes",
+    "status2xx": "Success (2xx)",
+    "status4xx": "Client Error (4xx)",
+    "status5xx": "Server Error (5xx)",
+    "errorsOnly": "Errors Only",
+    "pathSearch": "Search Path",
+    "pathPlaceholder": "e.g., /api/products",
+    "consumerKey": "Consumer Key",
+    "consumerKeyPlaceholder": "e.g., ck_xxx",
+    "clearFilters": "Clear Filters",
+    "refresh": "Refresh",
+    "table": {
+      "timestamp": "Timestamp",
+      "method": "Method",
+      "path": "Path",
+      "statusCode": "Status",
+      "responseTime": "Time",
+      "consumerKey": "API Key",
+      "actions": "Actions"
+    },
+    "viewDetails": "View Details",
+    "noLogs": "No API logs found",
+    "showing": "Showing {from} - {to} of {total} logs",
+    "previous": "Previous",
+    "next": "Next",
+    "detail": {
+      "title": "Log Details",
+      "requestInfo": "Request Information",
+      "responseInfo": "Response Information",
+      "headers": "Headers",
+      "body": "Body",
+      "errorMessage": "Error Message",
+      "errorStack": "Error Stack",
+      "ipAddress": "IP Address",
+      "userAgent": "User Agent",
+      "noData": "No data",
+      "query": "Query Parameters",
+      "apiKeyDescription": "API Key Description"
+    },
+    "cleanup": {
+      "title": "Cleanup Old Logs",
+      "description": "Delete API logs older than:",
+      "days": "days",
+      "minDays": "Minimum 7 days",
+      "button": "Cleanup Logs",
+      "cleaning": "Cleaning...",
+      "confirmTitle": "Confirm Cleanup",
+      "confirmMessage": "Are you sure you want to delete all API logs older than {days} days? This action cannot be undone.",
+      "success": "{count} logs deleted successfully",
+      "error": "Error cleaning up logs"
+    },
+    "loading": "Loading logs...",
+    "loadError": "Error loading logs"
   },
   "roles": {
     "admin": "Administrator",

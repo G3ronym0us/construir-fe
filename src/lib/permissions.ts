@@ -18,7 +18,9 @@ export type Permission =
   | 'view_api_keys'
   | 'manage_api_keys'
   | 'view_users'
-  | 'manage_users';
+  | 'manage_users'
+  | 'view_api_logs'
+  | 'manage_api_logs';
 
 // Role-to-permissions mapping
 const rolePermissions: Record<UserRole, Set<Permission>> = {
@@ -32,6 +34,7 @@ const rolePermissions: Record<UserRole, Set<Permission>> = {
     'view_coupons', 'manage_coupons',
     'view_api_keys', 'manage_api_keys',
     'view_users', 'manage_users',
+    'view_api_logs', 'manage_api_logs',
   ]),
   [UserRole.ORDER_ADMIN]: new Set([
     'view_dashboard',  // Limited dashboard showing only order stats
@@ -107,6 +110,7 @@ export function canAccessRoute(role: UserRole | undefined | null, pathname: stri
     '/admin/dashboard/cupones': 'view_coupons',
     '/admin/dashboard/api-keys': 'view_api_keys',
     '/admin/dashboard/usuarios': 'view_users',
+    '/admin/dashboard/api-logs': 'view_api_logs',
   };
 
   // Check if pathname starts with any restricted route

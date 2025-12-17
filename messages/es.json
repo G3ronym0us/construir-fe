@@ -33,6 +33,7 @@
     "coupons": "Cupones",
     "menu": "Menú",
     "apiKeys": "Claves API",
+    "apiLogs": "Logs de API",
     "users": "Usuarios"
   },
   "cart": {
@@ -609,6 +610,72 @@
     "neverUsed": "Nunca usado",
     "minLength": "Se requieren mínimo {min} caracteres",
     "required": "Este campo es requerido"
+  },
+  "apiLogs": {
+    "title": "Logs de API",
+    "stats": {
+      "totalRequests": "Total de Solicitudes",
+      "totalErrors": "Total de Errores",
+      "errorRate": "Tasa de Error",
+      "avgResponseTime": "Tiempo Promedio"
+    },
+    "filters": "Filtros",
+    "startDate": "Fecha Inicio",
+    "endDate": "Fecha Fin",
+    "statusCode": "Código de Estado",
+    "allStatusCodes": "Todos los Códigos",
+    "status2xx": "Exitosos (2xx)",
+    "status4xx": "Error Cliente (4xx)",
+    "status5xx": "Error Servidor (5xx)",
+    "errorsOnly": "Solo Errores",
+    "pathSearch": "Buscar Ruta",
+    "pathPlaceholder": "Ej: /api/products",
+    "consumerKey": "Clave de Consumidor",
+    "consumerKeyPlaceholder": "Ej: ck_xxx",
+    "clearFilters": "Limpiar Filtros",
+    "refresh": "Actualizar",
+    "table": {
+      "timestamp": "Fecha/Hora",
+      "method": "Método",
+      "path": "Ruta",
+      "statusCode": "Código",
+      "responseTime": "Tiempo",
+      "consumerKey": "Clave API",
+      "actions": "Acciones"
+    },
+    "viewDetails": "Ver Detalles",
+    "noLogs": "No se encontraron logs de API",
+    "showing": "Mostrando {from} - {to} de {total} logs",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "detail": {
+      "title": "Detalle del Log",
+      "requestInfo": "Información de la Solicitud",
+      "responseInfo": "Información de la Respuesta",
+      "headers": "Cabeceras",
+      "body": "Cuerpo",
+      "errorMessage": "Mensaje de Error",
+      "errorStack": "Stack de Error",
+      "ipAddress": "Dirección IP",
+      "userAgent": "User Agent",
+      "noData": "Sin datos",
+      "query": "Parámetros de consulta",
+      "apiKeyDescription": "Descripción de API Key"
+    },
+    "cleanup": {
+      "title": "Limpiar Logs Antiguos",
+      "description": "Eliminar logs de API más antiguos que:",
+      "days": "días",
+      "minDays": "Mínimo 7 días",
+      "button": "Limpiar Logs",
+      "cleaning": "Limpiando...",
+      "confirmTitle": "Confirmar Limpieza",
+      "confirmMessage": "¿Estás seguro de que quieres eliminar todos los logs de API más antiguos que {days} días? Esta acción no se puede deshacer.",
+      "success": "Se eliminaron {count} logs correctamente",
+      "error": "Error al limpiar los logs"
+    },
+    "loading": "Cargando logs...",
+    "loadError": "Error al cargar los logs"
   },
   "roles": {
     "admin": "Administrador",
