@@ -4,6 +4,7 @@ import type {
   ApiLogStats,
   ApiLogFilters,
   ApiLogCleanupResponse,
+  ApiLogReplayResponse,
   PaginatedResponse,
 } from "@/types";
 
@@ -41,6 +42,13 @@ export const apiLogsService = {
    */
   async getLogByUuid(uuid: string): Promise<ApiLog> {
     return apiClient.get<ApiLog>(`/admin/api-logs/${uuid}`);
+  },
+
+  /**
+   * Replay a logged request
+   */
+  async replayLog(uuid: string): Promise<ApiLogReplayResponse> {
+    return apiClient.post<ApiLogReplayResponse>(`/admin/api-logs/${uuid}/replay`);
   },
 
   /**

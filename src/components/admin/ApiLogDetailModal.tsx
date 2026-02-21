@@ -1,9 +1,10 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { X, Clock, Globe, Terminal, AlertTriangle, ChevronDown, ChevronRight } from 'lucide-react';
-import type { ApiLog } from '@/types';
-import { useState } from 'react';
+import { X, Clock, Globe, Terminal, AlertTriangle, ChevronDown, ChevronRight, RefreshCw } from 'lucide-react';
+import type { ApiLog, ApiLogReplayResponse } from '@/types';
+import { useState, useEffect } from 'react';
+import { apiLogsService } from '@/services/apiLogs';
 
 interface ApiLogDetailModalProps {
   isOpen: boolean;
@@ -85,6 +86,29 @@ function JsonSection({
 
 export function ApiLogDetailModal({ isOpen, log, onClose }: ApiLogDetailModalProps) {
   const t = useTranslations('apiLogs');
+  const [replaying, setReplaying] = useState(false);
+  const [replayResult, setReplayResult] = useState<ApiLogReplayResponse | null>(null);
+  const [replayError, setReplayError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setReplayResult(null);
+    setReplayError(null);
+  }, [log]);
+
+  const handleReplay = async () => {
+    if (!log) return;
+    setReplaying(true);
+    setReplayResult(null);
+    setReplayError(null);
+    try {
+      const result = await apiLogsService.replayLog(log.uuid);
+      setReplayResult(result);
+    } catch (err) {
+      setReplayError(err instanceof Error ? err.message : 'Error al reejecutar');
+    } finally {
+      setReplaying(false);
+    }
+  };
 
   if (!isOpen || !log) return null;
 
@@ -266,15 +290,50 @@ export function ApiLogDetailModal({ isOpen, log, onClose }: ApiLogDetailModalPro
                 data={log.responseBody}
               />
             </div>
+
+            {replayResult && (
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="px-4 py-3 bg-gray-50 flex items-center gap-3">
+                  <RefreshCw className="w-4 h-4 text-gray-500" />
+                  <span className="font-medium text-gray-900">Resultado del replay</span>
+                  <span className={`ml-auto inline-flex px-2.5 py-0.5 text-xs font-bold rounded-full ${getStatusCodeColor(replayResult.statusCode)}`}>
+                    {replayResult.statusCode}
+                  </span>
+                  <span className="text-xs text-gray-500 font-mono">{replayResult.responseTime} ms</span>
+                </div>
+                {replayResult.body !== null && replayResult.body !== undefined && (
+                  <div className="p-4 bg-gray-900 overflow-x-auto">
+                    <pre className="text-sm text-green-400 font-mono whitespace-pre-wrap">
+                      {typeof replayResult.body === 'object'
+                        ? JSON.stringify(replayResult.body, null, 2)
+                        : String(replayResult.body)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            )}
+            {replayError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+                {replayError}
+              </div>
+            )}
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
+          <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between gap-3">
+            <button
+              onClick={handleReplay}
+              disabled={replaying}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+            >
+              <RefreshCw className={`w-4 h-4 ${replaying ? 'animate-spin' : ''}`} aria-hidden="true" />
+              {replaying ? 'Reejecutando…' : 'Reejecutar'}
+            </button>
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:outline-none"
             >
-              {t('next') === 'Siguiente' ? 'Cerrar' : 'Close'}
+              Cerrar
             </button>
           </div>
         </div>

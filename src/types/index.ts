@@ -831,3 +831,9 @@ export interface ApiLogCleanupResponse {
   message: string;
   deleted: number;
 }
+
+export interface ApiLogReplayResponse {
+  statusCode: number;
+  body: unknown;
+  responseTime: number;
+}
