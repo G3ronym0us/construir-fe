@@ -33,11 +33,11 @@ export default function Step3Location({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-2 flex items-center gap-2">
-          <MapPin className="w-5 h-5 text-blue-600" />
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
+          <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           {t('shippingAddress')}
         </h2>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           {t('locationDescription', { defaultValue: 'Ingresa la dirección donde deseas recibir tu pedido' })}
         </p>
       </div>
@@ -52,14 +52,14 @@ export default function Step3Location({
       {locationMethod === 'manual' && (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               {t('address')} *
             </label>
             <input
               type="text"
               {...register('address', { required: locationMethod === 'manual' })}
               placeholder={t('addressPlaceholder', { defaultValue: 'Calle, número, colonia' })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             {errors.address && (
               <span className="text-red-500 text-xs mt-1">
@@ -70,59 +70,59 @@ export default function Step3Location({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {t('city')} *
               </label>
               <input
                 type="text"
                 {...register('city', { required: locationMethod === 'manual' })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {t('state')} *
               </label>
               <input
                 type="text"
                 {...register('state', { required: locationMethod === 'manual' })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {t('zipCode')} *
               </label>
               <input
                 type="text"
                 {...register('zipCode', { required: locationMethod === 'manual' })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {t('country')} *
               </label>
               <input
                 type="text"
                 {...register('country')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               {t('additionalInfo')} ({t('optional')})
             </label>
             <textarea
               {...register('additionalInfo')}
               rows={3}
               placeholder={t('additionalInfoPlaceholder')}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -131,7 +131,7 @@ export default function Step3Location({
       {/* Método Automático */}
       {locationMethod === 'auto' && (
         <div className="space-y-4">
-          <div className="bg-blue-50 p-4 rounded-lg">
+          <div className="bg-blue-50 dark:bg-blue-950/40 p-4 rounded-lg">
             <button
               type="button"
               onClick={onGetLocation}
@@ -141,7 +141,7 @@ export default function Step3Location({
               {t('getMyLocation')}
             </button>
             {latitude && longitude && (
-              <div className="mt-3 text-sm text-green-700 bg-green-50 p-3 rounded-lg">
+              <div className="mt-3 text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30 p-3 rounded-lg">
                 ✓ {t('locationReceived')}: {latitude.toFixed(6)}, {longitude.toFixed(6)}
               </div>
             )}
@@ -150,14 +150,14 @@ export default function Step3Location({
           {/* Campo opcional de detalles */}
           {latitude && longitude && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {t('locationDetails', { defaultValue: 'Detalles adicionales de la dirección' })} ({t('optional')})
               </label>
               <textarea
                 {...register('additionalInfo')}
                 rows={3}
                 placeholder={t('locationDetailsPlaceholder', { defaultValue: 'Ej: Casa color blanca, portón negro, cerca del supermercado...' })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           )}
@@ -176,14 +176,14 @@ export default function Step3Location({
           {/* Campo opcional de detalles */}
           {latitude && longitude && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {t('locationDetails', { defaultValue: 'Detalles adicionales de la dirección' })} ({t('optional')})
               </label>
               <textarea
                 {...register('additionalInfo')}
                 rows={3}
                 placeholder={t('locationDetailsPlaceholder', { defaultValue: 'Ej: Casa color blanca, portón negro, cerca del supermercado...' })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           )}

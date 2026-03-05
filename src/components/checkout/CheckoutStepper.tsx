@@ -33,8 +33,8 @@ export default function CheckoutStepper({ steps, currentStep }: CheckoutStepperP
                       index < currentStep
                         ? 'bg-green-500 text-white'
                         : index === currentStep
-                        ? 'bg-blue-600 text-white ring-4 ring-blue-100'
-                        : 'bg-white border-2 border-gray-300 text-gray-400'
+                        ? 'bg-blue-600 text-white ring-4 ring-blue-100 dark:ring-blue-900/50'
+                        : 'bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500'
                     }
                   `}
                 >
@@ -50,7 +50,7 @@ export default function CheckoutStepper({ steps, currentStep }: CheckoutStepperP
               <div className="mt-3 text-center">
                 <p
                   className={`text-sm font-medium ${
-                    index <= currentStep ? 'text-gray-900' : 'text-gray-500'
+                    index <= currentStep ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-500'
                   }`}
                 >
                   {step.title}
@@ -58,7 +58,7 @@ export default function CheckoutStepper({ steps, currentStep }: CheckoutStepperP
                 {step.description && (
                   <p
                     className={`text-xs mt-1 ${
-                      index <= currentStep ? 'text-gray-600' : 'text-gray-400'
+                      index <= currentStep ? 'text-gray-600 dark:text-gray-400' : 'text-gray-400 dark:text-gray-500'
                     }`}
                   >
                     {step.description}
@@ -86,14 +86,14 @@ export default function CheckoutStepper({ steps, currentStep }: CheckoutStepperP
         {/* Progress Bar */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               {t('stepProgress', { current: currentStep + 1, total: steps.length, defaultValue: `Step ${currentStep + 1} of ${steps.length}` })}
             </span>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-gray-500 dark:text-gray-400">
               {Math.round(((currentStep + 1) / steps.length) * 100)}%
             </span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
             <div
               className="bg-blue-600 h-2 rounded-full transition-all duration-300"
               style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
@@ -103,11 +103,11 @@ export default function CheckoutStepper({ steps, currentStep }: CheckoutStepperP
 
         {/* Current Step Info */}
         <div className="text-center py-2">
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             {steps[currentStep]?.title}
           </h3>
           {steps[currentStep]?.description && (
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               {steps[currentStep].description}
             </p>
           )}
@@ -122,7 +122,7 @@ export default function CheckoutStepper({ steps, currentStep }: CheckoutStepperP
                 h-2 rounded-full transition-all duration-300
                 ${index === currentStep ? 'w-8 bg-blue-600' : 'w-2'}
                 ${index < currentStep ? 'bg-green-500' : ''}
-                ${index > currentStep ? 'bg-gray-300' : ''}
+                ${index > currentStep ? 'bg-gray-300 dark:bg-gray-600' : ''}
               `}
             />
           ))}

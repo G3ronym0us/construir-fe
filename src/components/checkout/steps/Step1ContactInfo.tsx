@@ -32,35 +32,35 @@ export default function Step1ContactInfo({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-2 flex items-center gap-2">
-          <Mail className="w-5 h-5 text-blue-600" />
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
+          <Mail className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           {t('contactInfo')}
         </h2>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           {t('contactInfoDescription', { defaultValue: 'Ingresa tu información de contacto para procesar tu pedido' })}
         </p>
       </div>
 
       {/* Campos de Identificación (solo para guests) */}
       {!isAuthenticated && (
-        <div className="border border-blue-200 bg-blue-50 rounded-lg p-4 space-y-4">
-          <div className="flex items-center gap-2 text-blue-900 font-medium">
+        <div className="border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 rounded-lg p-4 space-y-4">
+          <div className="flex items-center gap-2 text-blue-900 dark:text-blue-300 font-medium">
             <Search className="w-4 h-4" />
             <span>{t('identification', { defaultValue: 'Identificación' })}</span>
           </div>
-          <p className="text-sm text-blue-700">
+          <p className="text-sm text-blue-700 dark:text-blue-400">
             {t('identificationDescription', { defaultValue: 'Ingresa tu identificación para autocompletar tus datos si ya has comprado antes' })}
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {t('identificationType', { defaultValue: 'Tipo' })}
               </label>
               <select
                 value={identificationType || IdentificationType.V}
                 onChange={(e) => onIdentificationChange(e.target.value as IdentificationType, identificationNumber || '')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value={IdentificationType.V}>V - Venezolano</option>
                 <option value={IdentificationType.E}>E - Extranjero</option>
@@ -71,7 +71,7 @@ export default function Step1ContactInfo({
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {t('identificationNumber', { defaultValue: 'Número de Identificación' })}
               </label>
               <div className="relative">
@@ -81,7 +81,7 @@ export default function Step1ContactInfo({
                   onChange={(e) => onIdentificationChange(identificationType || IdentificationType.V, e.target.value)}
                   onBlur={onIdentificationBlur}
                   placeholder={t('identificationPlaceholder', { defaultValue: 'Ej: 12345678' })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
                 {isSearching && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -96,13 +96,13 @@ export default function Step1ContactInfo({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             {t('firstName')} *
           </label>
           <input
             type="text"
             {...register('firstName', { required: true })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           {errors.firstName && (
             <span className="text-red-500 text-xs mt-1">
@@ -112,13 +112,13 @@ export default function Step1ContactInfo({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             {t('lastName')} *
           </label>
           <input
             type="text"
             {...register('lastName', { required: true })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           {errors.lastName && (
             <span className="text-red-500 text-xs mt-1">
@@ -128,7 +128,7 @@ export default function Step1ContactInfo({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             {t('email')} *
           </label>
           <input
@@ -137,7 +137,7 @@ export default function Step1ContactInfo({
               required: true,
               pattern: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i
             })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           {errors.email && (
             <span className="text-red-500 text-xs mt-1">
@@ -147,13 +147,13 @@ export default function Step1ContactInfo({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             {t('phone')} *
           </label>
           <input
             type="tel"
             {...register('phone', { required: true })}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           {errors.phone && (
             <span className="text-red-500 text-xs mt-1">

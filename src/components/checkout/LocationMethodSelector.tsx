@@ -36,7 +36,7 @@ export default function LocationMethodSelector({ value, onChange }: LocationMeth
 
   return (
     <div className="space-y-3">
-      <label className="block text-sm font-semibold text-gray-900">
+      <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100">
         {t('locationMethodLabel')}
       </label>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -52,22 +52,22 @@ export default function LocationMethodSelector({ value, onChange }: LocationMeth
               className={`
                 p-4 border-2 rounded-lg text-left transition-all
                 ${isSelected
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-300 hover:border-gray-400 bg-white'
+                  ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/30'
+                  : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 bg-white dark:bg-gray-800'
                 }
               `}
             >
               <div className={`
                 inline-flex items-center justify-center w-10 h-10 rounded-lg mb-3
-                ${isSelected ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'}
+                ${isSelected ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'}
               `}>
                 <Icon className="w-5 h-5" />
               </div>
 
-              <h4 className="font-semibold text-gray-900 text-sm mb-1">
+              <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-sm mb-1">
                 {method.title}
               </h4>
-              <p className="text-xs text-gray-600">
+              <p className="text-xs text-gray-600 dark:text-gray-400">
                 {method.description}
               </p>
             </button>

@@ -699,28 +699,28 @@ export default function CheckoutPage() {
 
   if (loadingProducts) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">{t("title")}</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">{t("title")}</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Formulario */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 order-last lg:order-first">
             {/* Stepper */}
-            <div className="bg-white rounded-lg shadow-sm mb-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-6">
               <CheckoutStepper steps={steps} currentStep={currentStep} />
             </div>
 
             <form
               onSubmit={handleSubmit(onSubmit)}
-              className="bg-white rounded-lg p-4 md:p-6 space-y-6"
+              className="bg-white dark:bg-gray-800 rounded-lg p-4 md:p-6 space-y-6"
             >
               {/* Paso 1: Información de Contacto */}
               {currentStep === 0 && (
@@ -779,12 +779,12 @@ export default function CheckoutPage() {
               )}
 
               {/* Botones de Navegación */}
-              <div className="flex justify-between pt-6 border-t">
+              <div className="flex justify-between pt-6 border-t dark:border-gray-700">
                 <button
                   type="button"
                   onClick={handlePrevious}
                   disabled={currentStep === 0}
-                  className="px-6 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="min-w-[100px] px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {t("previous", { defaultValue: "Anterior" })}
                 </button>
@@ -793,7 +793,7 @@ export default function CheckoutPage() {
                   <button
                     type="button"
                     onClick={handleNext}
-                    className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                    className="min-w-[100px] px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     {t("next", { defaultValue: "Siguiente" })}
                   </button>
@@ -801,7 +801,7 @@ export default function CheckoutPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="px-6 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="min-w-[100px] px-6 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {loading ? (
                       <>
@@ -818,9 +818,9 @@ export default function CheckoutPage() {
           </div>
 
           {/* Resumen */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg p-6 sticky top-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+          <div className="lg:col-span-1 order-first lg:order-last">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 sticky top-8">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
                 {t("orderSummary")}
               </h2>
 
@@ -841,17 +841,17 @@ export default function CheckoutPage() {
 
                   return (
                     <div key={item.product.uuid} className="flex gap-3">
-                      <div className="w-16 h-16 bg-gray-100 rounded flex-shrink-0 flex items-center justify-center">
-                        <Package className="w-8 h-8 text-gray-400" />
+                      <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded flex-shrink-0 flex items-center justify-center">
+                        <Package className="w-8 h-8 text-gray-400 dark:text-gray-500" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                           {item.product.name}
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           Cantidad: {item.quantity}
                         </p>
-                        <p className="text-sm font-semibold text-blue-600">
+                        <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
                           {showVES && itemPriceVES
                             ? formatVES(itemPriceVES)
                             : formatUSD(itemPriceUSD)}
@@ -863,14 +863,14 @@ export default function CheckoutPage() {
               </div>
 
               {/* Totales */}
-              <div className="border-t pt-4 space-y-2">
+              <div className="border-t dark:border-gray-700 pt-4 space-y-2">
                 {/* Mostrar tipo de cambio si es pago en VES */}
                 {paymentMethod &&
                   ["pagomovil", "transferencia"].includes(paymentMethod) &&
                   exchangeRate &&
                   typeof exchangeRate === "number" && (
-                    <div className="flex justify-between text-xs bg-blue-50 p-2 rounded">
-                      <span className="text-gray-600">Tipo de cambio:</span>
+                    <div className="flex justify-between text-xs bg-blue-50 dark:bg-blue-950/40 p-2 rounded">
+                      <span className="text-gray-600 dark:text-gray-400">Tipo de cambio:</span>
                       <span className="font-medium">
                         1 USD = {exchangeRate.toFixed(2)} Bs
                       </span>
@@ -878,7 +878,7 @@ export default function CheckoutPage() {
                   )}
 
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">{t("subtotal")}:</span>
+                  <span className="text-gray-600 dark:text-gray-400">{t("subtotal")}:</span>
                   <span className="font-medium">
                     {paymentMethod &&
                     ["pagomovil", "transferencia"].includes(paymentMethod) &&
@@ -889,13 +889,13 @@ export default function CheckoutPage() {
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">{t("shipping")}:</span>
+                  <span className="text-gray-600 dark:text-gray-400">{t("shipping")}:</span>
                   <span className="font-medium">
                     {shipping === 0 ? t("free") : formatUSD(shipping)}
                   </span>
                 </div>
                 {discountAmount > 0 && (
-                  <div className="flex justify-between text-sm text-green-600">
+                  <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
                     <span className="font-medium">
                       {t("discount")} ({discountCode}):
                     </span>
@@ -909,9 +909,9 @@ export default function CheckoutPage() {
                     </span>
                   </div>
                 )}
-                <div className="border-t pt-2 flex justify-between text-lg font-bold">
-                  <span>{t("total")}:</span>
-                  <span className="text-blue-600">
+                <div className="border-t dark:border-gray-700 pt-2 flex justify-between text-lg font-bold">
+                  <span className="dark:text-gray-100">{t("total")}:</span>
+                  <span className="text-blue-600 dark:text-blue-400">
                     {paymentMethod &&
                     ["pagomovil", "transferencia"].includes(paymentMethod) &&
                     totalVES !== null &&
@@ -940,44 +940,44 @@ export default function CheckoutPage() {
             onClick={handleCancelGuestData}
           >
             <div
-              className="bg-white rounded-lg max-w-md w-full p-6 shadow-2xl animate-in zoom-in-95 duration-300"
+              className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6 shadow-2xl animate-in zoom-in-95 duration-300"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-xl font-bold text-gray-900 mb-4">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
                 {t("guestDataFound")}
               </h3>
-              <p className="text-gray-700 mb-4">
+              <p className="text-gray-700 dark:text-gray-300 mb-4">
                 {t("guestDataFoundMessage", {
                   count: foundGuestData.ordersCount,
                 })}
               </p>
-              <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-2">
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6 space-y-2">
                 <p className="text-sm">
-                  <span className="font-medium text-gray-700">
+                  <span className="font-medium text-gray-700 dark:text-gray-300">
                     {t("name")}:
                   </span>{" "}
-                  <span className="text-gray-900">
+                  <span className="text-gray-900 dark:text-gray-100">
                     {foundGuestData.firstName} {foundGuestData.lastName}
                   </span>
                 </p>
                 <p className="text-sm">
-                  <span className="font-medium text-gray-700">
+                  <span className="font-medium text-gray-700 dark:text-gray-300">
                     {t("email")}:
                   </span>{" "}
-                  <span className="text-gray-900">{foundGuestData.email}</span>
+                  <span className="text-gray-900 dark:text-gray-100">{foundGuestData.email}</span>
                 </p>
                 <p className="text-sm">
-                  <span className="font-medium text-gray-700">
+                  <span className="font-medium text-gray-700 dark:text-gray-300">
                     {t("phone")}:
                   </span>{" "}
-                  <span className="text-gray-900">{foundGuestData.phone}</span>
+                  <span className="text-gray-900 dark:text-gray-100">{foundGuestData.phone}</span>
                 </p>
                 {foundGuestData.address && (
                   <p className="text-sm">
-                    <span className="font-medium text-gray-700">
+                    <span className="font-medium text-gray-700 dark:text-gray-300">
                       {t("address")}:
                     </span>{" "}
-                    <span className="text-gray-900">
+                    <span className="text-gray-900 dark:text-gray-100">
                       {foundGuestData.address}
                     </span>
                   </p>
@@ -987,7 +987,7 @@ export default function CheckoutPage() {
                 <button
                   type="button"
                   onClick={handleCancelGuestData}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-all duration-200"
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200"
                 >
                   {t("cancel")}
                 </button>

@@ -31,15 +31,15 @@ export default function PagoMovilForm({ data, onChange, total }: PagoMovilFormPr
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-        <span className="ml-3 text-gray-600">Cargando información de pago...</span>
+        <span className="ml-3 text-gray-600 dark:text-gray-400">Cargando información de pago...</span>
       </div>
     );
   }
 
   if (error || !details) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-800">
+      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+        <p className="text-red-800 dark:text-red-400">
           No se pudo cargar la información de pago. Por favor, intenta nuevamente.
         </p>
         <button
@@ -56,35 +56,35 @@ export default function PagoMovilForm({ data, onChange, total }: PagoMovilFormPr
   return (
     <div className="space-y-4">
       {/* Datos de la empresa */}
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-        <h3 className="font-semibold text-green-900 mb-3">
+      <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg p-4">
+        <h3 className="font-semibold text-green-900 dark:text-green-300 mb-3">
           Datos para realizar el Pago Móvil:
         </h3>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between items-center">
-            <span className="text-gray-600">Banco:</span>
+            <span className="text-gray-600 dark:text-gray-400">Banco:</span>
             <div className="flex items-center gap-1">
               <span className="font-medium">{details.bank}</span>
               <CopyButton text={details.bank || ''} />
             </div>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-gray-600">Teléfono:</span>
+            <span className="text-gray-600 dark:text-gray-400">Teléfono:</span>
             <div className="flex items-center gap-1">
               <span className="font-medium">{details.phone}</span>
               <CopyButton text={details.phone || ''} />
             </div>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-gray-600">Cédula:</span>
+            <span className="text-gray-600 dark:text-gray-400">Cédula:</span>
             <div className="flex items-center gap-1">
               <span className="font-medium">{details.cedula}</span>
               <CopyButton text={details.cedula || ''} />
             </div>
           </div>
-          <div className="flex justify-between border-t pt-2 mt-2">
-            <span className="text-gray-600">Monto a pagar:</span>
-            <span className="font-bold text-lg text-green-600">
+          <div className="flex justify-between border-t dark:border-green-800 pt-2 mt-2">
+            <span className="text-gray-600 dark:text-gray-400">Monto a pagar:</span>
+            <span className="font-bold text-lg text-green-600 dark:text-green-400">
               Bs. {total.toFixed(2)}
             </span>
           </div>
@@ -106,7 +106,7 @@ export default function PagoMovilForm({ data, onChange, total }: PagoMovilFormPr
       {/* Formulario */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Número de Teléfono *
           </label>
           <input
@@ -115,12 +115,12 @@ export default function PagoMovilForm({ data, onChange, total }: PagoMovilFormPr
             onChange={(e) => onChange({ ...data, phoneNumber: e.target.value })}
             required
             placeholder="0414-1234567"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Cédula *
           </label>
           <input
@@ -129,7 +129,7 @@ export default function PagoMovilForm({ data, onChange, total }: PagoMovilFormPr
             onChange={(e) => onChange({ ...data, cedula: e.target.value })}
             required
             placeholder="V-12345678"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
           />
         </div>
       </div>
@@ -143,7 +143,7 @@ export default function PagoMovilForm({ data, onChange, total }: PagoMovilFormPr
       />
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Código de Referencia *
         </label>
         <input
@@ -152,22 +152,22 @@ export default function PagoMovilForm({ data, onChange, total }: PagoMovilFormPr
           onChange={(e) => onChange({ ...data, referenceCode: e.target.value })}
           required
           placeholder="Código de confirmación del pago"
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           Comprobante de Pago *
         </label>
         {!data.receipt ? (
-          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-50">
+          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
             <div className="flex flex-col items-center justify-center pt-5 pb-6">
               <Upload className="w-8 h-8 text-gray-400 mb-2" />
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 <span className="font-semibold">Click para subir</span> o arrastra
               </p>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                 PNG, JPG o PDF (máx. 5MB)
               </p>
             </div>
@@ -180,10 +180,10 @@ export default function PagoMovilForm({ data, onChange, total }: PagoMovilFormPr
             />
           </label>
         ) : (
-          <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg">
             <div className="flex items-center gap-2">
-              <Upload className="w-5 h-5 text-green-600" />
-              <span className="text-sm text-gray-700">{data.receipt.name}</span>
+              <Upload className="w-5 h-5 text-green-600 dark:text-green-400" />
+              <span className="text-sm text-gray-700 dark:text-gray-300">{data.receipt.name}</span>
             </div>
             <button
               type="button"

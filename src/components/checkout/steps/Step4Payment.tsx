@@ -59,7 +59,7 @@ export default function Step4Payment({
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-3 text-gray-600">Cargando métodos de pago...</span>
+        <span className="ml-3 text-gray-600 dark:text-gray-400">Cargando métodos de pago...</span>
       </div>
     );
   }
@@ -81,21 +81,21 @@ export default function Step4Payment({
         </div>
 
         {/* Título */}
-        <h3 className="text-lg font-bold text-gray-900 mb-2">
+        <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
           Pagos en línea próximamente
         </h3>
 
         {/* Descripción */}
-        <p className="text-sm text-gray-500 max-w-xs leading-relaxed mb-6">
+        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs leading-relaxed mb-6">
           Estamos configurando los métodos de pago para ofrecerte la mejor experiencia.
           Por ahora, contáctanos directamente para completar tu pedido.
         </p>
 
         {/* Divider con etiqueta */}
         <div className="w-full max-w-xs flex items-center gap-3 mb-6">
-          <div className="flex-1 h-px bg-gray-200" />
-          <span className="text-xs text-gray-400 font-medium">MIENTRAS TANTO</span>
-          <div className="flex-1 h-px bg-gray-200" />
+          <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+          <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">MIENTRAS TANTO</span>
+          <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
         </div>
 
         {/* Opciones de contacto */}
@@ -115,7 +115,7 @@ export default function Step4Payment({
 
           <a
             href="tel:+584120000000"
-            className="flex items-center gap-3 w-full px-4 py-3 bg-white hover:bg-gray-50 active:bg-gray-100 text-gray-700 font-medium rounded-xl border border-gray-200 transition-colors"
+            className="flex items-center gap-3 w-full px-4 py-3 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 text-gray-700 dark:text-gray-300 font-medium rounded-xl border border-gray-200 dark:border-gray-700 transition-colors"
           >
             <svg className="w-5 h-5 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.948V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
@@ -125,7 +125,7 @@ export default function Step4Payment({
         </div>
 
         {/* Nota final */}
-        <p className="text-xs text-gray-400 mt-6 max-w-xs">
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-6 max-w-xs">
           Tu carrito se mantendrá guardado mientras tanto.
         </p>
       </div>
@@ -135,11 +135,11 @@ export default function Step4Payment({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-2 flex items-center gap-2">
-          <CreditCard className="w-5 h-5 text-blue-600" />
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
+          <CreditCard className="w-5 h-5 text-blue-600 dark:text-blue-400" />
           {t('paymentMethod')}
         </h2>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           {t('paymentDescription', { defaultValue: 'Selecciona tu método de pago y completa la información' })}
         </p>
       </div>
@@ -153,13 +153,13 @@ export default function Step4Payment({
             onClick={() => onPaymentMethodChange(method.type as PaymentMethod)}
             className={`p-4 border-2 rounded-lg text-left transition-all ${
               paymentMethod === method.type
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-300 hover:border-gray-400'
+                ? 'border-blue-500 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/30'
+                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:bg-gray-800'
             }`}
           >
             <div className="text-2xl mb-2">{method.icon}</div>
-            <div className="font-semibold text-gray-900">{method.name}</div>
-            <div className="text-xs text-gray-500 mt-1">{method.description}</div>
+            <div className="font-semibold text-gray-900 dark:text-gray-100">{method.name}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{method.description}</div>
           </button>
         ))}
       </div>
@@ -191,21 +191,21 @@ export default function Step4Payment({
 
       {/* Crear Cuenta (solo para invitados) */}
       {!isAuthenticated && (
-        <div className="border-t pt-6">
+        <div className="border-t dark:border-gray-700 pt-6">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
               {...register('createAccount')}
-              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              className="w-4 h-4 text-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500"
             />
-            <span className="text-sm font-medium text-gray-700">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               {t('createAccount')}
             </span>
           </label>
 
           {createAccount && (
             <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {t('password')} *
               </label>
               <input
@@ -215,7 +215,7 @@ export default function Step4Payment({
                   minLength: 6
                 })}
                 placeholder={t('passwordPlaceholder')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               {errors.password && (
                 <span className="text-red-500 text-xs mt-1">
