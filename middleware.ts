@@ -82,6 +82,18 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith('/admin')) {
     const token = request.cookies.get('token')?.value;
 
+    // Redirect /admin root to appropriate page
+    if (pathname === '/admin') {
+      if (token) {
+        const role = await verifyToken(token);
+        if (role) {
+          const defaultPath = getDefaultPath(role);
+          return NextResponse.redirect(new URL(defaultPath, request.url));
+        }
+      }
+      return NextResponse.redirect(new URL('/admin/login', request.url));
+    }
+
     // Allow access to login page
     if (pathname === '/admin/login') {
       // If already logged in with valid token, redirect to appropriate dashboard
@@ -120,5 +132,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: '/admin/:path*',
+  matcher: ['/admin', '/admin/:path*'],
 };
