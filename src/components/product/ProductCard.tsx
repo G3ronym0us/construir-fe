@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { Product } from "@/types";
 import { parsePrice } from "@/lib/currency";
 import { useProductCardVariant } from "./hooks/useProductCardVariant";
@@ -33,15 +33,16 @@ export default function ProductCard({
   const priceUSD = parsePrice(product.price);
   const priceVES = product.priceVes ? parsePrice(product.priceVes) : null;
 
+  const router = useRouter();
   const { classes, isLowStock, isOutOfStock } = useProductCardVariant({
     variant,
     inventory: product.inventory,
   });
 
   return (
-    <Link
-      href={`/productos/${product.uuid}`}
-      className="block group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
+    <div
+      className="block group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+      onClick={() => router.push(`/productos/${product.uuid}`)}
     >
       {/* Image Section */}
       <ProductCardImage
@@ -68,6 +69,6 @@ export default function ProductCard({
         priceVES={priceVES}
         isOutOfStock={isOutOfStock}
       />
-    </Link>
+    </div>
   );
 }

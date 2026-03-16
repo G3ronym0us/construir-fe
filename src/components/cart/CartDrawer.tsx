@@ -151,26 +151,26 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
       />
 
       {/* Drawer */}
-      <div className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-gray-900 shadow-2xl z-50 flex flex-col border-l border-gray-700/50">
+      <div className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white dark:bg-gray-900 shadow-2xl z-50 flex flex-col border-l border-gray-200 dark:border-gray-700/50">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700/60 bg-gray-900/95">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700/60 bg-white/95 dark:bg-gray-900/95">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-600/20 rounded-lg">
-              <ShoppingCart className="w-5 h-5 text-blue-400" />
+              <ShoppingCart className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-white leading-none">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white leading-none">
                 {t("title")}
               </h2>
-              <p className="text-xs text-gray-400 mt-0.5">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                 {totalItems} {totalItems === 1 ? "artículo" : "artículos"}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-white hover:bg-gray-700/60 rounded-lg transition-colors"
+            className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700/60 rounded-lg transition-colors"
             aria-label="Cerrar carrito"
           >
             <X className="w-5 h-5" />
@@ -181,16 +181,16 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
         <div className="flex-1 overflow-y-auto px-4 py-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
           {cartLoading || loadingProducts ? (
             <div className="flex flex-col items-center justify-center h-full gap-3">
-              <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
-              <p className="text-sm text-gray-400">Cargando carrito…</p>
+              <Loader2 className="w-8 h-8 animate-spin text-blue-600 dark:text-blue-400" />
+              <p className="text-sm text-gray-500 dark:text-gray-400">Cargando carrito…</p>
             </div>
           ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center gap-4 py-12">
-              <div className="p-6 bg-gray-800/60 rounded-2xl">
-                <ShoppingBag className="w-14 h-14 text-gray-600" />
+              <div className="p-6 bg-gray-100 dark:bg-gray-800/60 rounded-2xl">
+                <ShoppingBag className="w-14 h-14 text-gray-400 dark:text-gray-600" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-gray-200 mb-1">
+                <h3 className="text-base font-semibold text-gray-700 dark:text-gray-200 mb-1">
                   {t("empty")}
                 </h3>
                 <p className="text-sm text-gray-500 max-w-[200px]">
@@ -205,7 +205,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
               </button>
             </div>
           ) : (
-            <div className="divide-y divide-gray-700/50">
+            <div className="divide-y divide-gray-200 dark:divide-gray-700/50">
               {items.map((item, index) => (
                 <CartItem
                   key={index}
@@ -230,21 +230,21 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
         {/* Footer */}
         {items.length > 0 && (
-          <div className="border-t border-gray-700/60 bg-gray-800/60 px-5 py-4 space-y-4">
+          <div className="border-t border-gray-200 dark:border-gray-700/60 bg-gray-50 dark:bg-gray-800/60 px-5 py-4 space-y-4">
             {/* Subtotal */}
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-400">{t("subtotal")}</span>
+              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{t("subtotal")}</span>
               <div className="text-right">
                 {subtotalVES && subtotalVES > 0 && (
-                  <div className="text-lg font-bold text-white">
+                  <div className="text-lg font-bold text-gray-900 dark:text-white">
                     {formatVES(subtotalVES)}
                   </div>
                 )}
                 <div
                   className={`font-bold ${
                     subtotalVES && subtotalVES > 0
-                      ? "text-sm text-gray-400"
-                      : "text-lg text-white"
+                      ? "text-sm text-gray-500 dark:text-gray-400"
+                      : "text-lg text-gray-900 dark:text-white"
                   }`}
                 >
                   {formatUSD(subtotal)}
@@ -262,7 +262,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
             <button
               onClick={onClose}
-              className="w-full py-2.5 text-sm text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-xl transition-colors"
+              className="w-full py-2.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700/50 rounded-xl transition-colors"
             >
               {t("continueShopping")}
             </button>

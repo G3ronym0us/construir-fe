@@ -791,6 +791,7 @@ export default function CheckoutPage() {
 
                 {currentStep < steps.length - 1 ? (
                   <button
+                    key="next-btn"
                     type="button"
                     onClick={handleNext}
                     className="min-w-[100px] px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
@@ -799,6 +800,7 @@ export default function CheckoutPage() {
                   </button>
                 ) : (
                   <button
+                    key="submit-btn"
                     type="submit"
                     disabled={loading}
                     className="min-w-[100px] px-6 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"

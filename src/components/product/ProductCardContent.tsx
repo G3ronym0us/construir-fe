@@ -109,6 +109,7 @@ export default function ProductCardContent({
           productUuid={product.uuid}
           quantity={1}
           className="w-full"
+          showStepper={true}
         />
       )}
 
