@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import type { Product } from "@/types";
 import { parsePrice } from "@/lib/currency";
 import { useProductCardVariant } from "./hooks/useProductCardVariant";
@@ -35,17 +34,15 @@ export default function ProductCard({
     ? parsePrice(product.priceWithIvaVes)
     : null;
 
-  const router = useRouter();
   const { classes, isLowStock, isOutOfStock } = useProductCardVariant({
     variant,
     inventory: product.inventory,
   });
 
   return (
-    <div
-      className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-sand-300 bg-white transition-shadow hover:shadow-[0_10px_28px_-16px_rgba(20,24,29,0.35)]"
-      onClick={() => router.push(`/productos/${product.uuid}`)}
-    >
+    // `relative` ancla el enlace estirado del nombre, que hace clicable la
+    // tarjeta entera sin envolver los controles del carrito en un <a>.
+    <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-sand-300 bg-white transition-shadow hover:shadow-[0_10px_28px_-16px_rgba(20,24,29,0.35)]">
       {/* Image Section */}
       <ProductCardImage
         imageUrl={imageUrl}

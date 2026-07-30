@@ -6,7 +6,8 @@ import { formatVES, formatUSD } from '@/lib/currency';
 
 /**
  * Barra fija de carrito para las pantallas de catálogo: recuento, total dual y
- * salto al carrito. Se apoya sobre la barra de navegación inferior en móvil.
+ * salto al carrito. Se ancla al borde inferior — el catálogo no lleva
+ * navegación inferior en móvil.
  */
 export default function CartSummaryBar() {
   const { totalItems, subtotal, subtotalVES } = useCartTotals();
@@ -14,7 +15,7 @@ export default function CartSummaryBar() {
   if (totalItems === 0) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-[calc(3.75rem+env(safe-area-inset-bottom))] z-30 border-t border-sand-300 bg-white px-4 py-3 md:hidden">
+    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-sand-300 bg-white px-4 pb-[calc(1.375rem+env(safe-area-inset-bottom))] pt-3 md:hidden">
       <div className="flex items-center gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[11px] font-semibold text-sand-600">

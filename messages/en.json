@@ -148,13 +148,9 @@
     "subscribing": "Subscribing...",
     "subscribeSuccess": "Thanks for subscribing!",
     "subscribeError": "Error subscribing. Please try again.",
-    "address": "Ciudad Bolívar, Bolívar State, Venezuela",
     "phone": "Phone",
     "email": "Email",
     "hours": "Business Hours",
-    "hoursWeekdays": "Monday to Friday: 8:00 AM - 5:00 PM",
-    "hoursSaturday": "Saturday: 8:00 AM - 12:00 PM",
-    "hoursSunday": "Sunday: Closed",
     "allRightsReserved": "All rights reserved",
     "madeWith": "Made with",
     "by": "by"
@@ -403,7 +399,7 @@
   },
   "checkout": {
     "title": "Checkout",
-    "previous": "Previous",
+    "previous": "Back",
     "next": "Next",
     "discountCodeLabel": "Discount Code",
     "discountCodePlaceholder": "Enter your code",
@@ -470,7 +466,7 @@
     "getMyLocation": "Get my location",
     "locationReceived": "Location received",
     "locationSet": "Location set",
-    "createAccount": "Create an account for future purchases",
+    "createAccount": "Create an account to track my orders",
     "password": "Password",
     "passwordPlaceholder": "Minimum 6 characters",
     "subtotal": "Subtotal",
@@ -482,9 +478,9 @@
     "required": "required",
     "optional": "optional",
     "identification": "Identification",
-    "identificationDescription": "Enter your identification to autocomplete your data if you have purchased before",
-    "identificationType": "Type",
-    "identificationNumber": "Identification Number",
+    "identificationDescription": "If you have ordered from us before, we will fill in the rest of your details automatically.",
+    "identificationType": "Type · V / E / J",
+    "identificationNumber": "Number",
     "identificationPlaceholder": "e.g., 12345678",
     "autoFilledSuccess": "Data autocompleted. You have made {count} purchase(s) before. You can modify the data if it has changed.",
     "guestDataFound": "Data Found!",
@@ -505,9 +501,19 @@
       "passwordMin": "Minimum 6 characters",
       "completeContact": "Please complete all contact fields",
       "completeAddress": "Please complete the address",
-      "selectLocation": "Please select your location"
+      "selectLocation": "Please select your location",
+      "completeIdentification": "Enter your ID or tax number to continue"
     },
-    "applyDiscount": "Apply"
+    "applyDiscount": "Apply",
+    "stepContactIdentification": "Your details",
+    "stepContactConfirm": "Confirm your details",
+    "identificationHeadline": "Let’s start with your ID or tax number",
+    "searchingByIdentification": "Looking up your details…",
+    "identificationPrivacyNote": "We use your ID only to identify your order and issue the receipt.",
+    "autofilledTitle": "Details autofilled",
+    "change": "Change",
+    "emailHelp": "We send the receipt and order updates here",
+    "allFieldsRequired": "All fields are required."
   },
   "discounts": {
     "title": "Coupon Management",
@@ -570,7 +576,8 @@
   },
   "payment": {
     "senderBank": "Sender Bank *",
-    "selectBank": "Select the bank from which you made the payment"
+    "selectBank": "Select the bank from which you made the payment",
+    "senderFromContact": "Taken from your contact details. Change them if someone else made the payment."
   },
   "paymentMethods": {
     "title": "Payment Methods",

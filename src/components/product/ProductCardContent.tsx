@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import CartStepper from '../cart/CartStepper';
 import { formatVES, formatUSD } from '@/lib/currency';
@@ -49,11 +50,20 @@ export default function ProductCardContent({
         </div>
       )}
 
-      {/* Nombre del producto: dos líneas de alto fijo para alinear la rejilla */}
+      {/* Nombre del producto: dos líneas de alto fijo para alinear la rejilla.
+          El enlace se estira sobre toda la tarjeta con `after:inset-0`, así que
+          es un <a> de verdad -- navega antes de que hidrate, se abre en pestaña
+          nueva y se alcanza con el teclado -- y el nombre le sirve de etiqueta
+          accesible sin necesidad de aria-label. */}
       <h3
         className={`${classes.nameSize} ${classes.minHeight} line-clamp-2 leading-[1.3] text-ink transition-colors group-hover:text-brand-600`}
       >
-        {product.customName ?? product.name}
+        <Link
+          href={`/productos/${product.uuid}`}
+          className="after:absolute after:inset-0 after:content-['']"
+        >
+          {product.customName ?? product.name}
+        </Link>
       </h3>
 
       {showSku && !isCompact && (
@@ -100,7 +110,7 @@ export default function ProductCardContent({
         <CartStepper
           productUuid={product.uuid}
           inventory={product.inventory}
-          className="mt-1 w-full"
+          className="relative z-10 mt-1 w-full"
           compact={true}
           addLabel={tCart('add')}
         />
@@ -109,7 +119,7 @@ export default function ProductCardContent({
       {showAddToCart && isOutOfStock && (
         <button
           disabled
-          className="mt-1 w-full cursor-not-allowed rounded-xl border-[1.5px] border-sand-300 px-4 py-2.5 text-[12.5px] font-bold text-sand-600"
+          className="relative z-10 mt-1 w-full cursor-not-allowed rounded-xl border-[1.5px] border-sand-300 px-4 py-2.5 text-[12.5px] font-bold text-sand-600"
         >
           {tCart('notAvailable')}
         </button>

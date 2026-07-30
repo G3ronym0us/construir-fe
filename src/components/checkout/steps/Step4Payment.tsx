@@ -3,12 +3,11 @@
 import { useEffect } from 'react';
 import { Clock, CreditCard } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { UseFormRegister, FieldErrors } from 'react-hook-form';
 import ZelleForm from '@/components/payment/ZelleForm';
 import PagoMovilForm from '@/components/payment/PagoMovilForm';
 import TransferenciaForm from '@/components/payment/TransferenciaForm';
 import { usePaymentMethods } from '@/hooks/usePaymentMethods';
-import type { CheckoutData, ZellePayment, PagoMovilPayment, TransferenciaPayment } from '@/types';
+import type { ZellePayment, PagoMovilPayment, TransferenciaPayment } from '@/types';
 import { PaymentMethod } from '@/lib/enums';
 
 interface CartItemSummary {
@@ -19,8 +18,6 @@ interface CartItemSummary {
 }
 
 interface Step4PaymentProps {
-  register: UseFormRegister<CheckoutData>;
-  errors: FieldErrors<CheckoutData>;
   paymentMethod: PaymentMethod;
   onPaymentMethodChange: (method: PaymentMethod) => void;
   zellePayment: ZellePayment;
@@ -31,8 +28,6 @@ interface Step4PaymentProps {
   onTransferenciaChange: (data: TransferenciaPayment) => void;
   totalUSD: number;
   totalVES: number | null;
-  isAuthenticated: boolean;
-  createAccount: boolean;
   cartItems: CartItemSummary[];
   customerName: string;
   customerPhone: string;
@@ -40,8 +35,6 @@ interface Step4PaymentProps {
 }
 
 export default function Step4Payment({
-  register,
-  errors,
   paymentMethod,
   onPaymentMethodChange,
   zellePayment,
@@ -52,8 +45,6 @@ export default function Step4Payment({
   onTransferenciaChange,
   totalUSD,
   totalVES,
-  isAuthenticated,
-  createAccount,
   cartItems,
   customerName,
   customerPhone,
@@ -234,43 +225,6 @@ export default function Step4Payment({
         </p>
       </div>
 
-      {/* Crear Cuenta (solo para invitados) */}
-      {!isAuthenticated && (
-        <div className="border-t border-sand-200 pt-5">
-          <label className="flex min-h-11 cursor-pointer items-center gap-2.5">
-            <input
-              type="checkbox"
-              {...register('createAccount')}
-              className="h-5 w-5 rounded-md border-sand-400 text-brand-600 focus:ring-brand-500"
-            />
-            <span className="text-[12.5px] font-semibold text-sand-700">
-              {t('createAccount')}
-            </span>
-          </label>
-
-          {createAccount && (
-            <div className="mt-4">
-              <label className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
-                {t('password')} *
-              </label>
-              <input
-                type="password"
-                {...register('password', {
-                  required: createAccount,
-                  minLength: 6
-                })}
-                placeholder={t('passwordPlaceholder')}
-                className="min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
-              />
-              {errors.password && (
-                <span className="text-danger-500 text-xs mt-1">
-                  {t('errors.passwordMin', { defaultValue: 'Mínimo 6 caracteres' })}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }

@@ -14,10 +14,12 @@ import {
   Heart,
   Send
 } from 'lucide-react';
+import { useStoreInfo } from '@/hooks/useStoreInfo';
 
 export default function Footer() {
   const t = useTranslations('footer');
   const tNav = useTranslations('nav');
+  const { storeInfo } = useStoreInfo();
   const [email, setEmail] = useState('');
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [subscribeStatus, setSubscribeStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -141,38 +143,57 @@ export default function Footer() {
             <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">
               {t('contactInfo')}
             </h4>
+            {/* Los valores vienen del backend (STORE_*); las etiquetas siguen traducidas */}
             <ul className="space-y-3">
-              <li className="flex gap-3 text-sm">
-                <MapPin className="w-5 h-5 flex-shrink-0 text-brand-300" />
-                <span>{t('address')}</span>
-              </li>
-              <li className="flex gap-3 text-sm">
-                <Phone className="w-5 h-5 flex-shrink-0 text-brand-300" />
-                <div>
-                  <p className="font-medium text-white">{t('phone')}</p>
-                  <a href="tel:+582856320178" className="hover:text-white transition-colors">
-                    +58 285 632 0178
-                  </a>
-                </div>
-              </li>
-              <li className="flex gap-3 text-sm">
-                <Mail className="w-5 h-5 flex-shrink-0 text-brand-300" />
-                <div>
-                  <p className="font-medium text-white">{t('email')}</p>
-                  <a href="mailto:info@constru-ir.com" className="hover:text-white transition-colors">
-                    info@constru-ir.com
-                  </a>
-                </div>
-              </li>
-              <li className="flex gap-3 text-sm">
-                <Clock className="w-5 h-5 flex-shrink-0 text-brand-300" />
-                <div>
-                  <p className="font-medium text-white mb-1">{t('hours')}</p>
-                  <p className="text-xs">{t('hoursWeekdays')}</p>
-                  <p className="text-xs">{t('hoursSaturday')}</p>
-                  <p className="text-xs">{t('hoursSunday')}</p>
-                </div>
-              </li>
+              {storeInfo && (storeInfo.address || storeInfo.city) && (
+                <li className="flex gap-3 text-sm">
+                  <MapPin className="w-5 h-5 flex-shrink-0 text-brand-300" />
+                  <span>
+                    {[storeInfo.address, storeInfo.city].filter(Boolean).join(', ')}
+                  </span>
+                </li>
+              )}
+              {storeInfo?.phone && (
+                <li className="flex gap-3 text-sm">
+                  <Phone className="w-5 h-5 flex-shrink-0 text-brand-300" />
+                  <div>
+                    <p className="font-medium text-white">{t('phone')}</p>
+                    <a
+                      href={`tel:${storeInfo.phone.replace(/\s/g, '')}`}
+                      className="hover:text-white transition-colors"
+                    >
+                      {storeInfo.phone}
+                    </a>
+                  </div>
+                </li>
+              )}
+              {storeInfo?.email && (
+                <li className="flex gap-3 text-sm">
+                  <Mail className="w-5 h-5 flex-shrink-0 text-brand-300" />
+                  <div>
+                    <p className="font-medium text-white">{t('email')}</p>
+                    <a
+                      href={`mailto:${storeInfo.email}`}
+                      className="hover:text-white transition-colors"
+                    >
+                      {storeInfo.email}
+                    </a>
+                  </div>
+                </li>
+              )}
+              {storeInfo?.hours && (
+                <li className="flex gap-3 text-sm">
+                  <Clock className="w-5 h-5 flex-shrink-0 text-brand-300" />
+                  <div>
+                    <p className="font-medium text-white mb-1">{t('hours')}</p>
+                    {storeInfo.hours.split('·').map((line) => (
+                      <p key={line} className="text-xs">
+                        {line.trim()}
+                      </p>
+                    ))}
+                  </div>
+                </li>
+              )}
             </ul>
           </div>
 

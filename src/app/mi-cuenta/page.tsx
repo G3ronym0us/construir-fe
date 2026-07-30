@@ -18,67 +18,85 @@ import {
   UserPlus,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useStoreInfo } from "@/hooks/useStoreInfo";
 
+/** Contacto de la tienda. Los datos vienen del backend (variables STORE_*). */
 function ContactSection() {
+  const { storeInfo } = useStoreInfo();
+
+  if (!storeInfo) return null;
+
+  const fullAddress = [storeInfo.address, storeInfo.city]
+    .filter(Boolean)
+    .join(", ");
+
   return (
     <section>
       <h2 className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.12em] text-sand-600">
         Contacto
       </h2>
       <div className="bg-white rounded-2xl border border-sand-300 divide-y divide-sand-200 overflow-hidden">
-        <a
-          href="tel:+582856320178"
-          className="flex items-center gap-4 p-5 hover:bg-sand-50 transition-colors"
-        >
-          <div className="w-10 h-10 rounded-xl bg-success-50 flex items-center justify-center">
-            <Phone className="w-5 h-5 text-success-600" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-medium text-sand-600">Teléfono</p>
-            <p className="font-medium text-ink">+58 285 632 0178</p>
-          </div>
-          <ChevronRight className="w-5 h-5 text-sand-500 shrink-0" />
-        </a>
+        {storeInfo.phone && (
+          <a
+            href={`tel:${storeInfo.phone.replace(/\s/g, "")}`}
+            className="flex items-center gap-4 p-5 hover:bg-sand-50 transition-colors"
+          >
+            <div className="w-10 h-10 rounded-xl bg-success-50 flex items-center justify-center">
+              <Phone className="w-5 h-5 text-success-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-medium text-sand-600">Teléfono</p>
+              <p className="font-medium text-ink">{storeInfo.phone}</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-sand-500 shrink-0" />
+          </a>
+        )}
 
-        <a
-          href="mailto:info@constru-ir.com"
-          className="flex items-center gap-4 p-5 hover:bg-sand-50 transition-colors"
-        >
-          <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center">
-            <Mail className="w-5 h-5 text-brand-600" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-medium text-sand-600">Correo</p>
-            <p className="font-medium text-ink truncate">
-              info@constru-ir.com
-            </p>
-          </div>
-          <ChevronRight className="w-5 h-5 text-sand-500 shrink-0" />
-        </a>
+        {storeInfo.email && (
+          <a
+            href={`mailto:${storeInfo.email}`}
+            className="flex items-center gap-4 p-5 hover:bg-sand-50 transition-colors"
+          >
+            <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center">
+              <Mail className="w-5 h-5 text-brand-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-medium text-sand-600">Correo</p>
+              <p className="font-medium text-ink truncate">{storeInfo.email}</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-sand-500 shrink-0" />
+          </a>
+        )}
 
-        <div className="flex items-start gap-4 p-5">
-          <div className="w-10 h-10 rounded-xl bg-accent-50 flex items-center justify-center shrink-0">
-            <MapPin className="w-5 h-5 text-accent-500" />
+        {fullAddress && (
+          <div className="flex items-start gap-4 p-5">
+            <div className="w-10 h-10 rounded-xl bg-accent-50 flex items-center justify-center shrink-0">
+              <MapPin className="w-5 h-5 text-accent-500" />
+            </div>
+            <div>
+              <p className="text-[11px] font-medium text-sand-600">Dirección</p>
+              <p className="font-medium text-ink text-sm leading-snug">
+                {fullAddress}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-[11px] font-medium text-sand-600">Dirección</p>
-            <p className="font-medium text-ink text-sm leading-snug">
-              Av. Principal, Local #01, Maturín, Venezuela
-            </p>
-          </div>
-        </div>
+        )}
 
-        <div className="flex items-start gap-4 p-5">
-          <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center shrink-0">
-            <Clock className="w-5 h-5 text-brand-600" />
+        {storeInfo.hours && (
+          <div className="flex items-start gap-4 p-5">
+            <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center shrink-0">
+              <Clock className="w-5 h-5 text-brand-600" />
+            </div>
+            <div>
+              <p className="text-[11px] font-medium text-sand-600">Horario</p>
+              {storeInfo.hours.split("·").map((line) => (
+                <p key={line} className="text-sm text-ink">
+                  {line.trim()}
+                </p>
+              ))}
+            </div>
           </div>
-          <div>
-            <p className="text-[11px] font-medium text-sand-600">Horario</p>
-            <p className="text-sm text-ink">Lun – Vie: 8:00 AM – 6:00 PM</p>
-            <p className="text-sm text-ink">Sáb: 8:00 AM – 2:00 PM</p>
-            <p className="text-sm text-sand-600">Dom: Cerrado</p>
-          </div>
-        </div>
+        )}
       </div>
     </section>
   );

@@ -16,7 +16,9 @@ import { exchangeRateService } from "@/services/exchangeRate";
 import { formatVES, formatUSD } from "@/lib/currency";
 
 import CheckoutStepper from "@/components/checkout/CheckoutStepper";
-import Step1ContactInfo from "@/components/checkout/steps/Step1ContactInfo";
+import Step1ContactInfo, {
+  type ContactSubStep,
+} from "@/components/checkout/steps/Step1ContactInfo";
 import Step2DeliveryMethod from "@/components/checkout/steps/Step2DeliveryMethod";
 import Step3Location from "@/components/checkout/steps/Step3Location";
 import Step4Payment from "@/components/checkout/steps/Step4Payment";
@@ -52,6 +54,9 @@ export default function CheckoutPage() {
     "manual" | "auto" | "map"
   >("manual");
   const [currentStep, setCurrentStep] = useState(0);
+  // El paso de contacto se reparte en dos pantallas: cédula primero, datos después
+  const [contactSubStep, setContactSubStep] =
+    useState<ContactSubStep>("identification");
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
 
   // Discount state
@@ -71,10 +76,11 @@ export default function CheckoutPage() {
     useState<IdentificationType>(IdentificationType.V);
   const [identificationNumber, setIdentificationNumber] = useState("");
   const [isSearchingGuest, setIsSearchingGuest] = useState(false);
-  const [showGuestDataModal, setShowGuestDataModal] = useState(false);
-  const [foundGuestData, setFoundGuestData] = useState<GuestCustomer | null>(
-    null,
-  );
+  // Identificación con la que se autocompletó, para el aviso del paso de datos
+  const [autofilledGuest, setAutofilledGuest] = useState<{
+    label: string;
+    ordersCount: number;
+  } | null>(null);
 
   const toast = useToast();
 
@@ -137,6 +143,16 @@ export default function CheckoutPage() {
     });
 
   const isAuthenticated = !!user;
+
+  // Quien ya inició sesión no pasa por la pantalla de cédula
+  const effectiveSubStep: ContactSubStep = isAuthenticated
+    ? "details"
+    : contactSubStep;
+  const isOnIdentification =
+    currentStep === 0 && effectiveSubStep === "identification";
+  // En la primera pantalla el retroceso sale del checkout, no navega entre pasos
+  const canGoBack =
+    currentStep > 0 || (!isAuthenticated && contactSubStep === "details");
 
   const CHECKOUT_STORAGE_KEY = 'checkout_draft';
 
@@ -218,9 +234,90 @@ export default function CheckoutPage() {
 
   const steps = getSteps();
 
+  // Últimos valores heredados por cada forma de pago, para distinguirlos de los
+  // que escribió el usuario a mano.
+  const seededPagomovil = useRef({ phoneNumber: "", cedula: "" });
+  const seededTransferencia = useRef({ accountName: "" });
+
+  /**
+   * Pago móvil y transferencia piden datos del emisor que el comprador ya dio en
+   * el paso de contacto (cédula, teléfono, titular), así que los heredan al
+   * llegar al pago — editables, como cualquier otro campo. Zelle queda fuera: ahí
+   * el pago se coordina cuando el encargado contacta al cliente.
+   *
+   * Se siembra al entrar al paso y no en cada pulsación: si no, el valor se
+   * congelaría en la primera letra que se teclea en el contacto.
+   *
+   * Solo se pisa un campo vacío o uno que siga teniendo el valor heredado; en
+   * cuanto el usuario lo edita —porque pagó desde otro titular— manda lo suyo.
+   */
+  const contactPhone = watch("phone");
+  const contactFirstName = watch("firstName");
+  const contactLastName = watch("lastName");
+  useEffect(() => {
+    if (currentStep !== steps.length - 1) return;
+
+    const cedula = identificationNumber
+      ? `${identificationType}-${identificationNumber}`
+      : "";
+    const accountName = `${contactFirstName || ""} ${contactLastName || ""}`.trim();
+
+    setPagomovilPayment((prev) => {
+      const seeded = seededPagomovil.current;
+      const takePhone =
+        !!contactPhone &&
+        (!prev.phoneNumber || prev.phoneNumber === seeded.phoneNumber);
+      const takeCedula =
+        !!cedula && (!prev.cedula || prev.cedula === seeded.cedula);
+      if (!takePhone && !takeCedula) return prev;
+
+      if (takePhone) seeded.phoneNumber = contactPhone;
+      if (takeCedula) seeded.cedula = cedula;
+
+      return {
+        ...prev,
+        ...(takePhone ? { phoneNumber: contactPhone } : {}),
+        ...(takeCedula ? { cedula } : {}),
+      };
+    });
+
+    setTransferenciaPayment((prev) => {
+      const seeded = seededTransferencia.current;
+      const takeName =
+        !!accountName &&
+        (!prev.accountName || prev.accountName === seeded.accountName);
+      if (!takeName) return prev;
+
+      seeded.accountName = accountName;
+      return { ...prev, accountName };
+    });
+  }, [
+    currentStep,
+    steps.length,
+    contactPhone,
+    contactFirstName,
+    contactLastName,
+    identificationType,
+    identificationNumber,
+  ]);
+
   // Funciones de navegación
   const handleNext = () => {
     // Validar el paso actual antes de avanzar
+    if (isOnIdentification) {
+      // La cédula solo abre la pantalla de datos; el autocompletado es un extra
+      if (identificationNumber.trim().length < 7) {
+        toast.error(
+          t("errors.completeIdentification", {
+            defaultValue: "Ingresa tu cédula o RIF para continuar",
+          }),
+        );
+        return;
+      }
+      setContactSubStep("details");
+      return;
+    }
+
     if (currentStep === 0) {
       // Validar contacto
       const firstName = watch("firstName");
@@ -280,6 +377,14 @@ export default function CheckoutPage() {
   };
 
   const handlePrevious = () => {
+    if (currentStep === 0) {
+      // Dentro del paso de contacto, volver es regresar a la pantalla de cédula
+      if (!isAuthenticated && contactSubStep === "details") {
+        setContactSubStep("identification");
+      }
+      return;
+    }
+
     if (currentStep === steps.length - 1 && deliveryMethod === "pickup") {
       // Si estamos en pago y es pickup, volver al paso de método de entrega
       setCurrentStep(1);
@@ -355,6 +460,31 @@ export default function CheckoutPage() {
     .filter(Boolean);
 
   const items = isAuthenticated ? cart?.items || [] : enrichedLocalItems;
+
+  /**
+   * No tiene sentido estar en el checkout sin carrito: el formulario aparece sin
+   * nada que comprar. El carrito vacío tiene su propia pantalla, que sí lo
+   * explica.
+   *
+   * Va con margen a propósito, no redirige en cuanto ve `items` vacío: en el
+   * primer render `cart` es null y el carrito local todavía no se ha hidratado,
+   * así que un chequeo inmediato echaría del checkout a todo el mundo. Si los
+   * artículos llegan dentro de la ventana, el efecto se repite y cancela el
+   * temporizador.
+   *
+   * `orderPlaced` cubre el pedido recién creado: el carrito se vacía en la
+   * pantalla de confirmación y esta guarda no debe robar esa navegación.
+   */
+  const orderPlaced = useRef(false);
+  useEffect(() => {
+    if (loadingProducts || orderPlaced.current || items.length > 0) return;
+
+    const timer = setTimeout(() => {
+      if (!orderPlaced.current) router.replace("/carrito");
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [loadingProducts, items.length, router]);
   const subtotal = isAuthenticated
     ? cart?.subtotal || 0
     : enrichedLocalItems.reduce((acc, item) => {
@@ -476,17 +606,41 @@ export default function CheckoutPage() {
   ) => {
     setIdentificationType(type);
     setIdentificationNumber(number);
+    // Cambiar la cédula invalida el aviso de autocompletado anterior
+    setAutofilledGuest(null);
   };
 
-  // Identificaciones ya consultadas, para no gastar el límite de tasa del
-  // backend ni volver a proponer un autocompletado que el usuario descartó.
+  // Identificaciones ya consultadas, para no gastar el límite de tasa del backend.
   const attemptedLookups = useRef<Set<string>>(new Set());
 
+  /** Vuelca sobre el formulario los datos del invitado encontrado. */
+  const applyGuestData = (guest: GuestCustomer) => {
+    setValue("firstName", guest.firstName);
+    setValue("lastName", guest.lastName);
+    setValue("email", guest.email);
+    setValue("phone", guest.phone);
+
+    if (guest.address) setValue("address", guest.address);
+    if (guest.city) setValue("city", guest.city);
+    if (guest.state) setValue("state", guest.state);
+    if (guest.zipCode) setValue("zipCode", guest.zipCode);
+    if (guest.country) setValue("country", guest.country);
+    if (guest.additionalInfo) setValue("additionalInfo", guest.additionalInfo);
+    if (guest.latitude) setValue("latitude", guest.latitude);
+    if (guest.longitude) setValue("longitude", guest.longitude);
+
+    setAutofilledGuest({
+      label: `${guest.identificationType}-${guest.identificationNumber}`,
+      ordersCount: guest.ordersCount,
+    });
+  };
+
   /**
-   * Busca los datos del invitado para autocompletar el formulario.
+   * Busca los datos del invitado y autocompleta el formulario si hay registro.
    *
    * Se dispara al salir del campo de identificación, no en cada pulsación: el
-   * endpoint público admite 5 consultas por minuto.
+   * endpoint público admite 5 consultas por minuto. El aviso "Datos
+   * autocompletados · Cambiar" del paso siguiente deja revertirlo.
    */
   const handleIdentificationSearch = async () => {
     if (isAuthenticated) return;
@@ -502,47 +656,12 @@ export default function CheckoutPage() {
         identificationType,
         identificationNumber,
       );
-      if (guestData) {
-        // Guardar datos encontrados y mostrar modal
-        setFoundGuestData(guestData);
-        setShowGuestDataModal(true);
-      }
+      if (guestData) applyGuestData(guestData);
     } catch (error) {
       console.error("Error searching guest customer:", error);
     } finally {
       setIsSearchingGuest(false);
     }
-  };
-
-  // Confirmar y autocompletar con los datos encontrados
-  const handleConfirmGuestData = () => {
-    if (foundGuestData) {
-      setValue("firstName", foundGuestData.firstName);
-      setValue("lastName", foundGuestData.lastName);
-      setValue("email", foundGuestData.email);
-      setValue("phone", foundGuestData.phone);
-
-      if (foundGuestData.address) setValue("address", foundGuestData.address);
-      if (foundGuestData.city) setValue("city", foundGuestData.city);
-      if (foundGuestData.state) setValue("state", foundGuestData.state);
-      if (foundGuestData.zipCode) setValue("zipCode", foundGuestData.zipCode);
-      if (foundGuestData.country) setValue("country", foundGuestData.country);
-      if (foundGuestData.additionalInfo)
-        setValue("additionalInfo", foundGuestData.additionalInfo);
-      if (foundGuestData.latitude)
-        setValue("latitude", foundGuestData.latitude);
-      if (foundGuestData.longitude)
-        setValue("longitude", foundGuestData.longitude);
-
-      setShowGuestDataModal(false);
-      setFoundGuestData(null);
-    }
-  };
-
-  // Cancelar autocompletado
-  const handleCancelGuestData = () => {
-    setShowGuestDataModal(false);
-    setFoundGuestData(null);
   };
 
   const validatePaymentData = (): boolean => {
@@ -599,6 +718,11 @@ export default function CheckoutPage() {
   };
 
   const onSubmit = async (formData: CheckoutData) => {
+    // El pedido solo se confirma desde el último paso. Blinda contra envíos que
+    // no vienen del botón de confirmar: Enter en cualquier campo, o el clic que
+    // avanza de paso si el navegador lo resuelve sobre el botón ya reemplazado.
+    if (currentStep !== steps.length - 1) return;
+
     // Validaciones básicas según el método de entrega
     if (formData.deliveryMethod === "delivery") {
       if (
@@ -739,9 +863,13 @@ export default function CheckoutPage() {
         await ordersService.uploadReceipt(order.uuid, receiptFile);
       }
 
-      // Limpiar datos guardados y redirigir a confirmación
+      // Limpiar datos guardados y redirigir a confirmación.
+      // replace y no push: el pedido ya se creó, así que el checkout no debe
+      // quedar en el historial. Con push, el botón atrás del teléfono devolvía
+      // al formulario con el carrito ya vacío.
+      orderPlaced.current = true;
       sessionStorage.removeItem(CHECKOUT_STORAGE_KEY);
-      router.push(`/checkout/confirmacion?method=${formData.paymentMethod}`);
+      router.replace(`/checkout/confirmacion?method=${formData.paymentMethod}`);
     } catch (error) {
       console.error("Error processing checkout:", error);
 
@@ -768,8 +896,10 @@ export default function CheckoutPage() {
     );
   }
 
-  const showVES =
-    !!paymentMethod && ["pagomovil", "transferencia"].includes(paymentMethod);
+  // El precio es dual en toda la app: Bs. protagonista y USD de referencia,
+  // independientemente del método de pago que se acabe eligiendo.
+  const hasVESTotal =
+    totalVES !== null && totalVES !== undefined && totalVES > 0;
   const itemsCount = items.reduce(
     (acc, item) => (item ? acc + item.quantity : acc),
     0,
@@ -804,8 +934,27 @@ export default function CheckoutPage() {
           {/* Formulario */}
           <div className="lg:col-span-2">
             {/* Stepper */}
-            <div className="sticky top-16 z-20 mb-4 bg-white md:static md:mb-6 md:rounded-2xl md:border md:border-sand-300">
-              <CheckoutStepper steps={steps} currentStep={currentStep} />
+            <div className="sticky top-0 z-20 mb-4 bg-white md:static md:mb-6 md:rounded-2xl md:border md:border-sand-300">
+              <CheckoutStepper
+                steps={steps}
+                currentStep={currentStep}
+                onBack={canGoBack ? handlePrevious : () => router.push("/carrito")}
+                mobileTitle={
+                  currentStep === 0
+                    ? isOnIdentification
+                      ? t("stepContactIdentification", {
+                          defaultValue: "Tus datos",
+                        })
+                      : t("stepContactConfirm", {
+                          defaultValue: "Confirma tus datos",
+                        })
+                    : undefined
+                }
+                // La cédula es media pantalla del primer paso, no un paso entero
+                progress={
+                  isOnIdentification ? (100 / steps.length) * 0.6 : undefined
+                }
+              />
             </div>
 
             <form
@@ -819,11 +968,18 @@ export default function CheckoutPage() {
                   register={register}
                   errors={errors}
                   isAuthenticated={isAuthenticated}
+                  subStep={effectiveSubStep}
                   identificationType={identificationType}
                   identificationNumber={identificationNumber}
                   onIdentificationChange={handleIdentificationChange}
                   onIdentificationBlur={handleIdentificationSearch}
                   isSearching={isSearchingGuest}
+                  autofilledIdentification={autofilledGuest?.label ?? null}
+                  autofilledOrdersCount={autofilledGuest?.ordersCount}
+                  onChangeIdentification={() =>
+                    setContactSubStep("identification")
+                  }
+                  createAccount={createAccount || false}
                 />
               )}
 
@@ -852,8 +1008,6 @@ export default function CheckoutPage() {
               {/* Paso 4: Pago */}
               {currentStep === steps.length - 1 && (
                 <Step4Payment
-                  register={register}
-                  errors={errors}
                   paymentMethod={paymentMethod}
                   onPaymentMethodChange={handlePaymentMethodChange}
                   zellePayment={zellePayment}
@@ -864,8 +1018,6 @@ export default function CheckoutPage() {
                   onTransferenciaChange={setTransferenciaPayment}
                   totalUSD={total}
                   totalVES={totalVES}
-                  isAuthenticated={isAuthenticated}
-                  createAccount={createAccount || false}
                   cartItems={items.flatMap((item) => {
                     if (!item) return [];
                     const price =
@@ -898,7 +1050,7 @@ export default function CheckoutPage() {
                 <button
                   type="button"
                   onClick={handlePrevious}
-                  disabled={currentStep === 0}
+                  disabled={!canGoBack}
                   className="min-h-11 min-w-[110px] rounded-xl border-[1.5px] border-sand-300 px-6 text-sm font-bold text-ink transition-colors hover:bg-sand-100 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {t("previous", { defaultValue: "Anterior" })}
@@ -950,7 +1102,11 @@ export default function CheckoutPage() {
             touchAction: "manipulation",
           }}
         >
-          <div className="flex items-center justify-between gap-3 mb-2">
+          <div
+            className={`items-center justify-between gap-3 mb-2 ${
+              isOnIdentification ? "hidden" : "flex"
+            }`}
+          >
             <button
               type="button"
               onClick={() => setIsSummaryOpen(true)}
@@ -970,11 +1126,9 @@ export default function CheckoutPage() {
                 className="text-[17px] font-extrabold text-ink"
                 aria-live="polite"
               >
-                {showVES && totalVES !== null && totalVES !== undefined
-                  ? formatVES(totalVES)
-                  : formatUSD(total)}
+                {hasVESTotal ? formatVES(totalVES!) : formatUSD(total)}
               </div>
-              {showVES && totalVES !== null && totalVES !== undefined && (
+              {hasVESTotal && (
                 <div className="text-[11px] font-medium text-sand-600">
                   {formatUSD(total)}
                 </div>
@@ -982,17 +1136,18 @@ export default function CheckoutPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            {currentStep > 0 && (
+            {canGoBack && (
               <button
                 type="button"
                 onClick={handlePrevious}
                 className="min-h-11 w-24 flex-none rounded-xl border-[1.5px] border-sand-300 py-3 text-sm font-bold text-ink transition-colors hover:bg-sand-100"
               >
-                {t("previous", { defaultValue: "Anterior" })}
+                {t("previous", { defaultValue: "Atrás" })}
               </button>
             )}
             {currentStep < steps.length - 1 ? (
               <button
+                key="next-btn"
                 type="button"
                 onClick={handleNext}
                 className="min-h-11 flex-1 rounded-xl bg-brand-600 py-3 text-[14.5px] font-bold text-white transition-colors hover:bg-brand-700"
@@ -1001,6 +1156,7 @@ export default function CheckoutPage() {
               </button>
             ) : activePaymentMethods.length > 0 ? (
               <button
+                key="submit-btn"
                 type="submit"
                 form="checkout-form"
                 disabled={loading}
@@ -1025,79 +1181,6 @@ export default function CheckoutPage() {
           {...summaryProps}
         />
 
-        {/* Modal de confirmación de datos encontrados */}
-        {showGuestDataModal && foundGuestData && (
-          <div
-            className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[60] p-4 animate-in fade-in duration-200"
-            onClick={handleCancelGuestData}
-          >
-            <div
-              className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-300"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="mb-4 font-display text-xl font-bold text-ink">
-                {t("guestDataFound")}
-              </h3>
-              <p className="text-sand-700 mb-4">
-                {t("guestDataFoundMessage", {
-                  count: foundGuestData.ordersCount,
-                })}
-              </p>
-              <div className="bg-sand-50 rounded-lg p-4 mb-6 space-y-2">
-                <p className="text-sm">
-                  <span className="font-medium text-sand-700">
-                    {t("name")}:
-                  </span>{" "}
-                  <span className="text-ink">
-                    {foundGuestData.firstName} {foundGuestData.lastName}
-                  </span>
-                </p>
-                <p className="text-sm">
-                  <span className="font-medium text-sand-700">
-                    {t("email")}:
-                  </span>{" "}
-                  <span className="text-ink">
-                    {foundGuestData.email}
-                  </span>
-                </p>
-                <p className="text-sm">
-                  <span className="font-medium text-sand-700">
-                    {t("phone")}:
-                  </span>{" "}
-                  <span className="text-ink">
-                    {foundGuestData.phone}
-                  </span>
-                </p>
-                {foundGuestData.address && (
-                  <p className="text-sm">
-                    <span className="font-medium text-sand-700">
-                      {t("address")}:
-                    </span>{" "}
-                    <span className="text-ink">
-                      {foundGuestData.address}
-                    </span>
-                  </p>
-                )}
-              </div>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={handleCancelGuestData}
-                  className="min-h-11 flex-1 rounded-xl border-[1.5px] border-sand-300 px-4 text-sm font-bold text-ink transition-colors hover:bg-sand-100"
-                >
-                  {t("cancel")}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmGuestData}
-                  className="min-h-11 flex-1 rounded-xl bg-brand-600 px-4 text-sm font-bold text-white transition-colors hover:bg-brand-700"
-                >
-                  {t("autofillData")}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -2,19 +2,47 @@
 
 import { MapPin, Phone, Clock, ExternalLink } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-
-// Información de la tienda (puede moverse a un archivo de configuración)
-const STORE_INFO = {
-  name: "Construir",
-  address: "Tu dirección de tienda aquí",
-  city: "Ciudad",
-  phone: "0212-XXX-XXXX",
-  hours: "Lunes a Viernes: 8am - 6pm, Sábados: 9am - 2pm",
-  mapUrl: "https://maps.google.com/..."
-};
+import { useStoreInfo } from '@/hooks/useStoreInfo';
 
 export default function StoreInfo() {
   const t = useTranslations('checkout');
+  const { storeInfo, loading, error, reload } = useStoreInfo();
+
+  if (loading) {
+    return (
+      <div className="rounded-2xl border-2 border-brand-200 bg-brand-50 p-6">
+        <div className="animate-pulse space-y-3">
+          <div className="h-5 w-2/5 rounded bg-brand-200/70" />
+          <div className="h-4 w-3/4 rounded bg-brand-200/50" />
+          <div className="h-4 w-1/2 rounded bg-brand-200/50" />
+          <div className="h-4 w-2/3 rounded bg-brand-200/50" />
+        </div>
+      </div>
+    );
+  }
+
+  // Nunca desaparecer en silencio: sin estos datos el comprador no sabe dónde
+  // retirar su pedido, así que se avisa y se ofrece reintentar.
+  if (error || !storeInfo) {
+    return (
+      <div className="rounded-2xl border-2 border-brand-200 bg-brand-50 p-6">
+        <h3 className="mb-2 flex items-center gap-2 text-lg font-semibold text-ink">
+          <MapPin className="h-5 w-5 text-brand-600" />
+          {t('pickupLocationTitle')}
+        </h3>
+        <p className="text-sm text-sand-700">
+          No pudimos cargar los datos de la tienda.
+        </p>
+        <button
+          type="button"
+          onClick={reload}
+          className="mt-2 min-h-11 text-sm font-bold text-brand-600 hover:text-brand-700"
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-brand-50 border-2 border-brand-200 rounded-2xl p-6">
@@ -28,39 +56,49 @@ export default function StoreInfo() {
         <div className="flex items-start gap-3">
           <MapPin className="w-5 h-5 text-sand-700 mt-0.5 flex-shrink-0" />
           <div>
-            <p className="font-medium text-ink">{STORE_INFO.name}</p>
-            <p className="text-sm text-sand-700">{STORE_INFO.address}</p>
-            <p className="text-sm text-sand-700">{STORE_INFO.city}</p>
+            <p className="font-medium text-ink">{storeInfo.name}</p>
+            {storeInfo.address && (
+              <p className="text-sm text-sand-700">{storeInfo.address}</p>
+            )}
+            {storeInfo.city && (
+              <p className="text-sm text-sand-700">{storeInfo.city}</p>
+            )}
           </div>
         </div>
 
         {/* Teléfono */}
-        <div className="flex items-center gap-3">
-          <Phone className="w-5 h-5 text-sand-700 flex-shrink-0" />
-          <a
-            href={`tel:${STORE_INFO.phone}`}
-            className="text-sm text-brand-600 hover:text-brand-700 font-medium"
-          >
-            {STORE_INFO.phone}
-          </a>
-        </div>
+        {storeInfo.phone && (
+          <div className="flex items-center gap-3">
+            <Phone className="w-5 h-5 text-sand-700 flex-shrink-0" />
+            <a
+              href={`tel:${storeInfo.phone.replace(/\s/g, '')}`}
+              className="text-sm text-brand-600 hover:text-brand-700 font-medium"
+            >
+              {storeInfo.phone}
+            </a>
+          </div>
+        )}
 
         {/* Horario */}
-        <div className="flex items-start gap-3">
-          <Clock className="w-5 h-5 text-sand-700 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-sand-700">{STORE_INFO.hours}</p>
-        </div>
+        {storeInfo.hours && (
+          <div className="flex items-start gap-3">
+            <Clock className="w-5 h-5 text-sand-700 mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-sand-700">{storeInfo.hours}</p>
+          </div>
+        )}
 
-        {/* Link al mapa */}
-        <a
-          href={STORE_INFO.mapUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 text-sm text-brand-600 hover:text-brand-700 font-medium mt-2"
-        >
-          {t('viewOnMap')}
-          <ExternalLink className="w-4 h-4" />
-        </a>
+        {/* Link al mapa — solo si hay STORE_MAP_URL configurada */}
+        {storeInfo.mapUrl && (
+          <a
+            href={storeInfo.mapUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-sm text-brand-600 hover:text-brand-700 font-medium mt-2"
+          >
+            {t('viewOnMap')}
+            <ExternalLink className="w-4 h-4" />
+          </a>
+        )}
       </div>
 
       {/* Instrucciones */}

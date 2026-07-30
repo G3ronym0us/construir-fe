@@ -109,13 +109,13 @@ export default function ProductDetailPage() {
                 type="button"
                 onClick={() => router.back()}
                 aria-label="Volver"
-                className="absolute left-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-xl bg-white/92 text-ink backdrop-blur-sm md:hidden"
+                className="absolute left-4 top-[calc(0.875rem+env(safe-area-inset-top))] z-10 flex h-11 w-11 items-center justify-center rounded-xl bg-white/92 text-ink backdrop-blur-sm md:hidden"
               >
                 <ArrowLeft className="h-[17px] w-[17px]" />
               </button>
 
               {product.featured && (
-                <span className="absolute right-4 top-4 z-10 rounded-lg bg-accent-500 px-2.5 py-1.5 text-[11px] font-extrabold text-ink">
+                <span className="absolute right-4 top-[calc(0.875rem+env(safe-area-inset-top))] z-10 rounded-lg bg-accent-500 px-2.5 py-1.5 text-[11px] font-extrabold text-ink md:top-4">
                   {t("featured")}
                 </span>
               )}
@@ -270,35 +270,13 @@ export default function ProductDetailPage() {
                   </p>
                 </Accordion>
               )}
-              <Accordion title={t("specifications")}>
-                <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2">
-                  <dt className="font-semibold text-ink">{tCart("sku")}</dt>
-                  <dd>{product.sku}</dd>
-                  {product.barcode && (
-                    <>
-                      <dt className="font-semibold text-ink">Código de barras</dt>
-                      <dd>{product.barcode}</dd>
-                    </>
-                  )}
-                  <dt className="font-semibold text-ink">{t("inventory")}</dt>
-                  <dd>{product.inventory}</dd>
-                  <dt className="font-semibold text-ink">IVA</dt>
-                  <dd>{product.iva}%</dd>
-                </dl>
-              </Accordion>
-              <Accordion title="Envío y retiro">
-                <p>
-                  Delivery en la Gran Caracas en 24–48 h. También puedes retirar en tienda
-                  sin costo una vez confirmemos tu pago.
-                </p>
-              </Accordion>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Barra fija en móvil, sobre la navegación inferior */}
-      <div className="fixed inset-x-0 bottom-[calc(3.75rem+env(safe-area-inset-bottom))] z-30 border-t border-sand-300 bg-white px-4 py-3 md:hidden">
+      {/* Barra fija al borde inferior: en esta pantalla no hay navegación inferior */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-sand-300 bg-white px-4 pb-[calc(1.375rem+env(safe-area-inset-bottom))] pt-3 md:hidden">
         {isOutOfStock ? (
           <button
             disabled

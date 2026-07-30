@@ -62,7 +62,7 @@ export default function PagoMovilForm({ data, onChange, total }: PagoMovilFormPr
         ].join('\n')}
       />
 
-      {/* Formulario */}
+      {/* Datos del emisor: vienen del paso de contacto, pero se pueden cambiar */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
@@ -92,6 +92,13 @@ export default function PagoMovilForm({ data, onChange, total }: PagoMovilFormPr
           />
         </div>
       </div>
+
+      <p className="-mt-1 text-[11px] font-medium text-sand-600">
+        {t('senderFromContact', {
+          defaultValue:
+            'Tomados de tus datos de contacto. Cámbialos si pagaste desde otro titular.',
+        })}
+      </p>
 
       <BankSelector
         value={data.bankCode}

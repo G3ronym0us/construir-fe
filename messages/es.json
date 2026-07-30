@@ -148,13 +148,9 @@
     "subscribing": "Suscribiendo...",
     "subscribeSuccess": "¡Gracias por suscribirte!",
     "subscribeError": "Error al suscribirse. Intenta nuevamente.",
-    "address": "Ciudad Bolívar, Estado Bolívar, Venezuela",
     "phone": "Teléfono",
     "email": "Email",
     "hours": "Horario de Atención",
-    "hoursWeekdays": "Lunes a Viernes: 8:00 AM - 5:00 PM",
-    "hoursSaturday": "Sábados: 8:00 AM - 12:00 PM",
-    "hoursSunday": "Domingos: Cerrado",
     "allRightsReserved": "Todos los derechos reservados",
     "madeWith": "Hecho con",
     "by": "por"
@@ -403,7 +399,7 @@
   },
   "checkout": {
     "title": "Finalizar Compra",
-    "previous": "Anterior",
+    "previous": "Atrás",
     "next": "Siguiente",
     "discountCodeLabel": "Código de Descuento",
     "discountCodePlaceholder": "Ingresa tu código",
@@ -470,7 +466,7 @@
     "getMyLocation": "Obtener mi ubicación",
     "locationReceived": "Ubicación recibida",
     "locationSet": "Ubicación establecida",
-    "createAccount": "Crear una cuenta para futuras compras",
+    "createAccount": "Crear cuenta para seguir mis pedidos",
     "password": "Contraseña",
     "passwordPlaceholder": "Mínimo 6 caracteres",
     "subtotal": "Subtotal",
@@ -482,9 +478,9 @@
     "required": "requerido",
     "optional": "opcional",
     "identification": "Identificación",
-    "identificationDescription": "Ingresa tu identificación para autocompletar tus datos si ya has comprado antes",
-    "identificationType": "Tipo",
-    "identificationNumber": "Número de Identificación",
+    "identificationDescription": "Si ya compraste con nosotros, completamos el resto de tus datos automáticamente.",
+    "identificationType": "Tipo · V / E / J",
+    "identificationNumber": "Número",
     "identificationPlaceholder": "Ej: 12345678",
     "autoFilledSuccess": "Datos autocompletados. Has realizado {count} compra(s) anteriormente. Puedes modificar los datos si han cambiado.",
     "guestDataFound": "¡Datos encontrados!",
@@ -505,9 +501,19 @@
       "passwordMin": "Mínimo 6 caracteres",
       "completeContact": "Por favor completa todos los campos de contacto",
       "completeAddress": "Por favor completa la dirección",
-      "selectLocation": "Por favor selecciona tu ubicación"
+      "selectLocation": "Por favor selecciona tu ubicación",
+      "completeIdentification": "Ingresa tu cédula o RIF para continuar"
     },
-    "applyDiscount": "Aplicar"
+    "applyDiscount": "Aplicar",
+    "stepContactIdentification": "Tus datos",
+    "stepContactConfirm": "Confirma tus datos",
+    "identificationHeadline": "Empecemos por tu cédula o RIF",
+    "searchingByIdentification": "Buscando tus datos por cédula…",
+    "identificationPrivacyNote": "Usamos tu cédula solo para identificar tu pedido y emitir el recibo.",
+    "autofilledTitle": "Datos autocompletados",
+    "change": "Cambiar",
+    "emailHelp": "Te enviamos el recibo y el estado del pedido aquí",
+    "allFieldsRequired": "Todos los campos son obligatorios."
   },
   "discounts": {
     "title": "Gestión de Cupones",
@@ -570,7 +576,8 @@
   },
   "payment": {
     "senderBank": "Banco Emisor *",
-    "selectBank": "Seleccione el banco desde donde realizó el pago"
+    "selectBank": "Seleccione el banco desde donde realizó el pago",
+    "senderFromContact": "Tomados de tus datos de contacto. Cámbialos si pagaste desde otro titular."
   },
   "paymentMethods": {
     "title": "Métodos de Pago",

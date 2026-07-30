@@ -47,7 +47,6 @@ export default function OrderSummary({
   discountAmountVes,
   total,
   totalVES,
-  paymentMethod,
   exchangeRate,
   onApplyDiscount,
   discountError,
@@ -55,8 +54,9 @@ export default function OrderSummary({
   variant = "sidebar",
 }: OrderSummaryProps) {
   const t = useTranslations("checkout");
-  const showVES =
-    !!paymentMethod && ["pagomovil", "transferencia"].includes(paymentMethod);
+  // El precio es dual en toda la app: Bs. protagonista y USD de referencia, sin
+  // depender del método de pago elegido.
+  const showVES = totalVES !== null && totalVES !== undefined && totalVES > 0;
 
   const container =
     variant === "sidebar"

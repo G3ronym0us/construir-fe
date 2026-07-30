@@ -977,3 +977,16 @@ export interface AuditLogsResponse {
   logs: AuditLog[];
   total: number;
 }
+
+/** Datos de contacto de la tienda física. Origen: GET /api/v1/store-info. */
+export interface StoreInfo {
+  name: string;
+  address: string;
+  city: string;
+  phone: string;
+  /** Cadena vacía si no se configuró STORE_EMAIL */
+  email: string;
+  hours: string;
+  /** Cadena vacía si no se configuró STORE_MAP_URL */
+  mapUrl: string;
+}

@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useSearchParams } from "next/navigation";
-import { PackageSearch } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ArrowLeft, PackageSearch } from "lucide-react";
 import { productsService } from "@/services/products";
 import type { Product } from "@/types";
 import { CategoryMenu } from "@/components/CategoryMenu";
 import CategoryChips from "@/components/CategoryChips";
+import SearchBar from "@/components/SearchBar";
 import ProductCard from "@/components/product/ProductCard";
 import ProductCardSkeleton from "@/components/product/ProductCardSkeleton";
 import CartSummaryBar from "@/components/cart/CartSummaryBar";
@@ -19,6 +20,7 @@ const SORT_OPTIONS = [
 ];
 
 export default function ProductsPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const categoryParam = searchParams.get('categoria');
   const searchParam = searchParams.get('search');
@@ -119,10 +121,23 @@ export default function ProductsPage() {
   }, [hasMore, loadingMore, loading]);
 
   return (
-    <div className="min-h-screen bg-sand-50 pb-24 md:pb-0">
-      {/* Filtros pegados bajo el header */}
-      <div className="sticky top-16 z-20 border-b border-sand-200 bg-white md:hidden">
-        <div className="px-4 py-3">
+    <div className="min-h-screen bg-sand-50 pb-28 md:pb-0">
+      {/* Cabecera propia: en móvil esta pantalla no muestra el navbar global */}
+      <div className="sticky top-0 z-20 border-b border-sand-200 bg-white md:hidden">
+        <div className="flex items-center gap-2.5 px-4 pb-3 pt-[calc(0.5rem+env(safe-area-inset-top))]">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            aria-label="Volver"
+            className="-ml-2.5 flex h-11 w-11 flex-none items-center justify-center rounded-lg text-ink hover:bg-sand-100"
+          >
+            <ArrowLeft className="h-[19px] w-[19px]" />
+          </button>
+          <div className="min-w-0 flex-1">
+            <SearchBar />
+          </div>
+        </div>
+        <div className="px-4 pb-3">
           <CategoryChips className="-mx-4 px-4" />
         </div>
       </div>

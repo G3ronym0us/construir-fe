@@ -64,7 +64,7 @@ export default function TransferenciaForm({ data, onChange, total }: Transferenc
         ].join('\n')}
       />
 
-      {/* Formulario */}
+      {/* Titular emisor: viene del paso de contacto, pero se puede cambiar */}
       <div>
         <label className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
           Nombre de la Cuenta (Emisor) *
@@ -77,6 +77,12 @@ export default function TransferenciaForm({ data, onChange, total }: Transferenc
           placeholder="Nombre de la cuenta desde la que realizó el pago"
           className="min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
         />
+        <p className="mt-1.5 text-[11px] font-medium text-sand-600">
+          {t('senderFromContact', {
+            defaultValue:
+              'Tomados de tus datos de contacto. Cámbialos si pagaste desde otro titular.',
+          })}
+        </p>
       </div>
 
       <BankSelector
