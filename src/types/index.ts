@@ -560,10 +560,38 @@ export interface PaymentInfo {
   beneficiary?: string;
 }
 
+/**
+ * Comprador sin cuenta. El backend lo trae como relación eager de la orden, así
+ * que en el detalle viene embebido y no hace falta pedirlo aparte.
+ */
+export interface GuestCustomer {
+  id: number;
+  uuid: string;
+  identificationType: IdentificationType;
+  identificationNumber: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Order {
   uuid: string;
   orderNumber: string;
-  userId: number;
+  userId: number | null;
+  /** Relación eager: presente cuando la compró un usuario registrado. */
+  user?: User | null;
+  guestEmail?: string | null;
+  guestCustomerId?: number | null;
+  /** Relación eager: presente cuando la compró un invitado. */
+  guestCustomer?: GuestCustomer | null;
   status: OrderStatus;
   items: OrderItem[];
   deliveryMethod: DeliveryMethod;
@@ -588,6 +616,8 @@ export interface Order {
   shippedAt?: string;
   deliveredAt?: string;
   cancelledAt?: string;
+  /** Fecha en que el ERP dio la orden por completada. */
+  dateCompleted?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -608,11 +638,15 @@ export interface CreateOrderDto {
   }>;
 }
 
+/**
+ * Espejo exacto del DTO del backend. Ojo: allí el ValidationPipe corre con
+ * `forbidNonWhitelisted`, así que cualquier campo de más devuelve 400 y tumba el
+ * guardado entero. No agregar `trackingNumber` hasta que exista la columna.
+ */
 export interface UpdateOrderStatusDto {
   orderStatus?: OrderStatus;
   paymentStatus?: PaymentStatus;
   adminNotes?: string;
-  trackingNumber?: string;
 }
 
 export interface OrderSummary {
@@ -736,6 +770,7 @@ export interface CustomerListResponseDto {
 
 export interface CustomerDetailResponseDto {
   customer: {
+    uuid: string;
     type: CustomerType;
     name: string;
     email: string;

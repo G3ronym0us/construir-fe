@@ -35,10 +35,12 @@ export const customersService = {
   },
 
   /**
-   * Get detailed information for a specific customer
+   * Get detailed information for a specific customer.
+   * El `uuid` puede ser el de un usuario registrado o el de un invitado; el
+   * backend resuelve contra ambas tablas.
    */
-  async getCustomerDetail(id: string): Promise<CustomerDetailResponseDto> {
-    return apiClient.get<CustomerDetailResponseDto>(`/customers/${id}`);
+  async getCustomerDetail(uuid: string): Promise<CustomerDetailResponseDto> {
+    return apiClient.get<CustomerDetailResponseDto>(`/customers/${uuid}`);
   },
 
   /**

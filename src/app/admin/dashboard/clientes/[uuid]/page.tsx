@@ -22,19 +22,19 @@ import Link from 'next/link';
 export default function CustomerDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const customerId = params.id as string;
+  const customerUuid = params.uuid as string;
 
   const [data, setData] = useState<CustomerDetailResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadCustomerDetail();
-  }, [customerId]);
+  }, [customerUuid]);
 
   const loadCustomerDetail = async () => {
     try {
       setLoading(true);
-      const customerData = await customersService.getCustomerDetail(customerId);
+      const customerData = await customersService.getCustomerDetail(customerUuid);
       setData(customerData);
     } catch (error) {
       console.error('Error loading customer detail:', error);

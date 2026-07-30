@@ -1,11 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Download, ExternalLink, ZoomIn, ZoomOut, Image as ImageIcon } from 'lucide-react';
+import { X, Download, ExternalLink, FileText, ZoomIn, ZoomOut, Image as ImageIcon } from 'lucide-react';
 
 interface PaymentReceiptViewerProps {
   receiptUrl: string;
   orderNumber: string;
+  /**
+   * `full` es la vista previa grande con sus botones (detalle público).
+   * `thumbnail` es la miniatura cuadrada del detalle de orden del admin, donde
+   * el comprobante va en una columna estrecha al lado de los datos del pago.
+   * Ambas abren el mismo modal a pantalla completa.
+   */
+  variant?: 'full' | 'thumbnail';
 }
 
 function getProxiedUrl(url: string): string {
@@ -15,7 +22,11 @@ function getProxiedUrl(url: string): string {
   return url;
 }
 
-export function PaymentReceiptViewer({ receiptUrl, orderNumber }: PaymentReceiptViewerProps) {
+export function PaymentReceiptViewer({
+  receiptUrl,
+  orderNumber,
+  variant = 'full',
+}: PaymentReceiptViewerProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [zoom, setZoom] = useState(100);
   const [imageError, setImageError] = useState(false);
@@ -44,6 +55,29 @@ export function PaymentReceiptViewer({ receiptUrl, orderNumber }: PaymentReceipt
   return (
     <div>
       {/* Preview */}
+      {variant === 'thumbnail' ? (
+        <button
+          type="button"
+          onClick={() => setIsModalOpen(true)}
+          title={`Comprobante de pago — orden ${orderNumber}`}
+          className="group relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border border-sand-300 bg-sand-100 transition-colors hover:border-brand-300"
+        >
+          {isPDF || imageError ? (
+            <FileText className="h-7 w-7 text-sand-500" strokeWidth={1.8} />
+          ) : (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={proxiedUrl}
+              alt="Comprobante de pago"
+              className="h-full w-full object-cover"
+              onError={() => setImageError(true)}
+            />
+          )}
+          <span className="absolute inset-x-0 bottom-0 bg-white/90 py-1.5 text-[11px] font-bold text-brand-600">
+            Ver comprobante
+          </span>
+        </button>
+      ) : (
       <div className="space-y-3">
         <div className="relative group border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
           {isPDF ? (
@@ -110,6 +144,7 @@ export function PaymentReceiptViewer({ receiptUrl, orderNumber }: PaymentReceipt
           </button>
         </div>
       </div>
+      )}
 
       {/* Full screen modal */}
       {isModalOpen && (

@@ -1,62 +1,73 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ordersService } from "@/services/orders";
-import {
-  getOrderStatusColor,
-  getPaymentStatusColor,
-} from "@/lib/order-helpers";
 import {
   ArrowLeft,
-  Package,
-  MapPin,
-  CreditCard,
-  FileText,
-  Save,
+  Check,
+  Link2,
+  Loader2,
+  MessageSquare,
+  Printer,
 } from "lucide-react";
-import type { Order, OrderStatus, PaymentStatus, ZellePayment } from "@/types";
-import Link from "next/link";
-import { PaymentReceiptViewer } from "@/components/admin/PaymentReceiptViewer";
-import { ZellePaymentDetails } from "@/components/admin/payment-details/ZellePaymentDetails";
-import { PagoMovilPaymentDetails } from "@/components/admin/payment-details/PagoMovilPaymentDetails";
-import { TransferenciaPaymentDetails } from "@/components/admin/payment-details/TransferenciaPaymentDetails";
-import { PaymentMethod } from "@/lib/enums";
-import { resolvePaymentMethod, resolveBankName, resolveBankCode } from "@/lib/payment-helpers";
+import { ordersService } from "@/services/orders";
+import type { Order, OrderStatus, PaymentStatus } from "@/types";
+import { CustomerCard } from "@/components/admin/order-detail/CustomerCard";
+import { DeliveryCard } from "@/components/admin/order-detail/DeliveryCard";
+import { HistoryCard } from "@/components/admin/order-detail/HistoryCard";
+import { ManagementCard } from "@/components/admin/order-detail/ManagementCard";
+import { OrderItemsCard } from "@/components/admin/order-detail/OrderItemsCard";
+import { PaymentCard } from "@/components/admin/order-detail/PaymentCard";
+import {
+  Pill,
+  type PillTone,
+} from "@/components/admin/order-detail/primitives";
+import {
+  getOrderCustomer,
+  toWhatsAppUrl,
+} from "@/components/admin/order-detail/order-customer";
+
+const orderTones: Partial<Record<OrderStatus, PillTone>> = {
+  "on-hold": "warning",
+  pending: "warning",
+  completed: "success",
+  cancelled: "danger",
+};
+
+const paymentTones: Record<PaymentStatus, PillTone> = {
+  pending: "warning",
+  verified: "success",
+  rejected: "danger",
+  refunded: "neutral",
+};
 
 export default function OrderDetailPage() {
   const t = useTranslations("orders");
-
   const params = useParams();
   const router = useRouter();
   const orderUuid = params.uuid as string;
 
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  // Editable states
+  // Campos editables del panel de gestión
   const [orderStatus, setOrderStatus] = useState<OrderStatus>("pending");
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>("pending");
   const [adminNotes, setAdminNotes] = useState("");
-  const [trackingNumber, setTrackingNumber] = useState("");
 
-  useEffect(() => {
-    loadOrder();
-  }, [orderUuid]);
-
-  const loadOrder = async () => {
+  const loadOrder = useCallback(async () => {
     try {
       setLoading(true);
-      const orderData = await ordersService.getOrderByUuid(orderUuid);
-      setOrder(orderData);
-
-      // Initialize editable fields
-      setOrderStatus(orderData.status);
-      setPaymentStatus(orderData.paymentInfo.status);
-      setAdminNotes(orderData.paymentInfo.adminNotes || "");
-      setTrackingNumber(orderData.trackingNumber || "");
+      const data = await ordersService.getOrderByUuid(orderUuid);
+      setOrder(data);
+      setOrderStatus(data.status);
+      setPaymentStatus(data.paymentInfo.status);
+      setAdminNotes(data.paymentInfo.adminNotes || "");
     } catch (error) {
       console.error("Error loading order:", error);
       alert(t("loadError"));
@@ -64,265 +75,199 @@ export default function OrderDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [orderUuid, router, t]);
 
   useEffect(() => {
-    if (!order) return;
-    console.log("paymentInfo", order.paymentInfo);
-    console.log("method resolved", resolvePaymentMethod(order.paymentInfo.method));
-  }, [order]);
+    void loadOrder();
+  }, [loadOrder]);
 
-  const handleUpdateStatus = async () => {
+  const handleSave = async () => {
     if (!order) return;
 
     try {
-      setUpdating(true);
-
+      setSaving(true);
       await ordersService.updateOrderStatus(order.uuid, {
         orderStatus,
         paymentStatus,
         adminNotes: adminNotes || undefined,
-        trackingNumber: trackingNumber || undefined,
       });
-
+      await loadOrder();
       alert(t("updateSuccess"));
-      await loadOrder(); // Reload data
     } catch (error) {
       console.error("Error updating order:", error);
       alert(t("updateError"));
     } finally {
-      setUpdating(false);
+      setSaving(false);
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("es-VE", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
+  const handleCancelOrder = async () => {
+    if (!order) return;
+    if (!confirm(t("cancelOrderConfirm", { orderNumber: order.orderNumber })))
+      return;
+
+    try {
+      setCancelling(true);
+      await ordersService.cancelOrder(order.uuid);
+      await loadOrder();
+    } catch (error) {
+      console.error("Error cancelling order:", error);
+      alert(t("cancelError"));
+    } finally {
+      setCancelling(false);
+    }
   };
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleString("es-VE", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  const handleCopyLink = () => {
+    void navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-brand-600" />
       </div>
     );
   }
 
-  if (!order) {
-    return null;
-  }
+  if (!order) return null;
+
+  const customer = getOrderCustomer(order);
+  const whatsAppUrl = toWhatsAppUrl(customer.phone);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
+    <div className="flex flex-col gap-6">
+      {/* Cabecera: identidad de la orden y acciones sobre ella */}
+      <header className="flex flex-col gap-4 xl:flex-row xl:items-start">
         <Link
           href="/admin/dashboard/ordenes"
-          className="p-2 hover:bg-gray-100 rounded-lg"
+          aria-label={t("backToOrders")}
+          className="hidden h-[38px] w-[38px] flex-none items-center justify-center rounded-lg border border-sand-300 bg-white text-sand-700 transition-colors hover:bg-sand-100 xl:flex"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="h-[18px] w-[18px]" />
         </Link>
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            {t("detailTitle", { orderNumber: order.orderNumber })}{" "}
-            <span
-              className={`inline-block px-3 py-1 text-sm font-semibold rounded-full ${getOrderStatusColor(
-                order.status
-              )}`}
-            >
+
+        <div className="min-w-0 flex-1">
+          <Link
+            href="/admin/dashboard/ordenes"
+            className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold text-sand-600 hover:text-brand-600 xl:hidden"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            {t("backToOrders")}
+          </Link>
+
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h1 className="font-display text-2xl font-bold text-ink">
+              {t("detailTitle", { orderNumber: order.orderNumber })}
+            </h1>
+            <Pill tone={orderTones[order.status] ?? "neutral"}>
               {t(`statuses.${order.status}`)}
+            </Pill>
+            <Pill tone={paymentTones[order.paymentInfo.status] ?? "neutral"}>
+              {t(`paymentStatuses.${order.paymentInfo.status}`)}
+            </Pill>
+            <Pill>
+              {order.deliveryMethod === "pickup"
+                ? t("methodPickup")
+                : t("methodDelivery")}
+            </Pill>
+          </div>
+
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] font-medium text-sand-600">
+            <span>
+              {t("createdAt", {
+                date: new Date(order.createdAt).toLocaleString("es-VE", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }),
+              })}
             </span>
-          </h1>
-          <p className="text-sm text-gray-500">
-            {t("createdAt", { date: formatDate(order.createdAt) })}
-          </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Order Items */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Package className="w-5 h-5" />
-              {t("orderItems")}
-            </h2>
-            <div className="space-y-4">
-              {order.items.map((item) => (
-                <div
-                  key={item.uuid}
-                  className="flex justify-between items-start border-b pb-4"
-                >
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      {item.productName}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {t("sku", { sku: item.productSku })}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {t("quantity", { quantity: item.quantity })}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium text-gray-900">
-                      {formatCurrency(item.subtotal)}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {t("each", {
-                        price: formatCurrency(parseFloat(item.price)),
-                      })}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Totals */}
-            <div className="mt-6 space-y-2 border-t pt-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">{t("subtotal")}</span>
-                <span>{formatCurrency(order.subtotal)}</span>
-              </div>
-              {order.tax > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">{t("tax")}</span>
-                  <span>{formatCurrency(order.tax)}</span>
-                </div>
-              )}
-              {order.shipping > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">{t("shipping")}</span>
-                  <span>{formatCurrency(order.shipping)}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-lg font-bold border-t pt-2">
-                <span>{t("total")}:</span>
-                <span className="text-blue-600">
-                  {formatCurrency(order.total)}
-                </span>
-              </div>
-            </div>
+            <span aria-hidden>·</span>
+            <span>
+              {t("itemsAndUnits", {
+                items: order.items.length,
+                units: order.totalItems,
+              })}
+            </span>
+            <span aria-hidden>·</span>
+            <span className="font-mono text-[11.5px]">{order.uuid}</span>
           </div>
+        </div>
 
-          {/* Shipping Address */}
-          {order.shippingAddress && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <MapPin className="w-5 h-5" />
-                {t("shippingAddress")}
-              </h2>
-              <div className="space-y-2 text-sm">
-                <p className="font-medium text-gray-900">
-                  {order.shippingAddress.firstName}{" "}
-                  {order.shippingAddress.lastName}
-                </p>
-                <p className="text-gray-600">{order.shippingAddress.email}</p>
-                <p className="text-gray-600">{order.shippingAddress.phone}</p>
-                <p className="text-gray-600">{order.shippingAddress.address}</p>
-                <p className="text-gray-600">
-                  {order.shippingAddress.city}, {order.shippingAddress.state}{" "}
-                  {order.shippingAddress.zipCode}
-                </p>
-                <p className="text-gray-600">{order.shippingAddress.country}</p>
-                {order.shippingAddress.additionalInfo && (
-                  <div className="mt-2 pt-2 border-t">
-                    <p className="text-xs text-gray-500">
-                      {t("additionalInfo")}
-                    </p>
-                    <p className="text-gray-600">
-                      {order.shippingAddress.additionalInfo}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-sand-300 bg-white px-3.5 py-2.5 text-[12.5px] font-semibold text-sand-700 transition-colors hover:bg-sand-100"
+          >
+            <Printer className="h-[15px] w-[15px]" />
+            {t("print")}
+          </button>
+          <button
+            type="button"
+            onClick={handleCopyLink}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-sand-300 bg-white px-3.5 py-2.5 text-[12.5px] font-semibold text-sand-700 transition-colors hover:bg-sand-100"
+          >
+            {copied ? (
+              <Check className="h-[15px] w-[15px] text-success-600" />
+            ) : (
+              <Link2 className="h-[15px] w-[15px]" />
+            )}
+            {copied ? t("copied") : t("copyLink")}
+          </button>
+          {whatsAppUrl && (
+            <a
+              href={whatsAppUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2.5 text-[12.5px] font-semibold text-white transition-colors hover:bg-brand-700"
+            >
+              <MessageSquare className="h-[15px] w-[15px]" />
+              {t("writeToCustomer")}
+            </a>
           )}
-
-          {/* Payment Information */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <CreditCard className="w-5 h-5" />
-              {t("paymentInfo")}
-            </h2>
-            <div className="space-y-4">
-              {/* Detalles del Pago según el método */}
-              <div>
-                {resolvePaymentMethod(order.paymentInfo.method) === PaymentMethod.ZELLE && (
-                  <>
-                    <ZellePaymentDetails
-                      details={{
-                        senderName: order.paymentInfo.senderName || "",
-                        senderBank: order.paymentInfo.senderBank || "",
-                        receipt: null,
-                      }}
-                    />
-                  </>
-                )}
-                {resolvePaymentMethod(order.paymentInfo.method) === PaymentMethod.PAGO_MOVIL && (
-                  <PagoMovilPaymentDetails
-                    details={{
-                      bank: resolveBankName(order.paymentInfo.bank),
-                      bankCode: resolveBankCode(order.paymentInfo.bank, order.paymentInfo.bankCode),
-                      phone: order.paymentInfo.phoneNumber || "",
-                      cedula: order.paymentInfo.cedula || "",
-                      referenceCode: order.paymentInfo.referenceCode || "",
-                    }}
-                  />
-                )}
-                {resolvePaymentMethod(order.paymentInfo.method) === PaymentMethod.TRANSFERENCIA && (
-                  <TransferenciaPaymentDetails
-                    details={{
-                      bank: resolveBankName(order.paymentInfo.transferBank),
-                      bankCode: order.paymentInfo.transferBank?.code || "",
-                      beneficiary: order.paymentInfo.accountName || "",
-                      rif: order.paymentInfo.rif || "",
-                      accountNumber: order.paymentInfo.accountNumber || "",
-                      referenceCode: order.paymentInfo.referenceNumber || "",
-                    }}
-                  />
-                )}
-              </div>
-
-              {/* Comprobante de Pago */}
-              {order.paymentInfo.receiptUrl && (
-                <div>
-                  <p className="text-sm text-gray-500 mb-2">
-                    {t("paymentReceipt")}
-                  </p>
-                  <PaymentReceiptViewer
-                    receiptUrl={order.paymentInfo.receiptUrl}
-                    orderNumber={order.orderNumber}
-                  />
-                </div>
-              )}
-
-              {/* Información de Verificación */}
-              {order.paymentInfo.verifiedAt && (
-                <div className="pt-3 border-t">
-                  <p className="text-sm text-gray-500">
-                    {t("verifiedOn", {
-                      date: formatDate(order.paymentInfo.verifiedAt),
-                    })}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
         </div>
+      </header>
+
+      <div className="flex flex-col items-start gap-5 xl:flex-row">
+        <div className="flex w-full min-w-0 flex-1 flex-col gap-4">
+          <OrderItemsCard order={order} />
+          <DeliveryCard order={order} />
+          <PaymentCard order={order} />
+          {order.notes && (
+            <section className="rounded-2xl border border-sand-300 bg-white p-5">
+              <h2 className="mb-2 font-display text-base font-bold text-ink">
+                {t("customerNotes")}
+              </h2>
+              <p className="text-[13px] font-medium leading-relaxed text-sand-700">
+                {order.notes}
+              </p>
+            </section>
+          )}
+        </div>
+
+        <aside className="flex w-full flex-none flex-col gap-4 xl:w-[352px]">
+          <CustomerCard order={order} />
+          <ManagementCard
+            orderStatus={orderStatus}
+            paymentStatus={paymentStatus}
+            adminNotes={adminNotes}
+            saving={saving}
+            cancelling={cancelling}
+            isCancelled={order.status === "cancelled"}
+            onOrderStatusChange={setOrderStatus}
+            onPaymentStatusChange={setPaymentStatus}
+            onAdminNotesChange={setAdminNotes}
+            onSave={handleSave}
+            onCancelOrder={handleCancelOrder}
+          />
+          <HistoryCard order={order} />
+        </aside>
       </div>
     </div>
   );
