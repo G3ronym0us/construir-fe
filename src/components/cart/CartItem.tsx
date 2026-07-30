@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Minus, Plus, Trash2, Package } from "lucide-react";
+import { Minus, Plus, X, Package } from "lucide-react";
 import type { CartItem as CartItemType, Product } from "@/types";
 import { formatVES, formatUSD, parsePrice } from "@/lib/currency";
 
@@ -60,13 +60,11 @@ export default function CartItem({
   };
 
   return (
-    <div
-      className={`flex gap-3 py-4 transition-opacity ${loading ? "opacity-50" : ""}`}
-    >
+    <div className={`flex gap-3 py-3.5 transition-opacity ${loading ? "opacity-50" : ""}`}>
       {/* Imagen */}
-      <div className="relative w-16 h-16 flex-shrink-0 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden flex items-center justify-center ring-1 ring-gray-200 dark:ring-gray-700/50">
+      <div className="relative flex h-16 w-16 flex-none items-center justify-center overflow-hidden rounded-xl border border-sand-300 bg-sand-100">
         {showPlaceholder ? (
-          <Package className="w-7 h-7 text-gray-400 dark:text-gray-600" />
+          <Package className="h-6 w-6 text-sand-500" strokeWidth={1.6} />
         ) : (
           <Image
             src={imageUrl}
@@ -79,81 +77,64 @@ export default function CartItem({
         )}
       </div>
 
-      {/* Información */}
-      <div className="flex-1 min-w-0 flex flex-col justify-between">
-        <div>
-          <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate leading-snug">
-            {product.customName ?? product.name}
-          </h3>
-          <p className="text-xs text-gray-500 mt-0.5">SKU: {product.sku}</p>
-          <div className="mt-1">
-            {priceVES && (
-              <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 leading-none">
-                {formatVES(priceVES)}
-              </p>
-            )}
-            <p
-              className={`leading-none ${priceVES ? "text-xs text-gray-500 mt-0.5" : "text-sm font-semibold text-blue-600 dark:text-blue-400"}`}
-            >
-              {formatUSD(priceUSD)}
-            </p>
-          </div>
-        </div>
+      {/* Nombre, precio unitario y cantidad */}
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <h3 className="line-clamp-2 text-[13.5px] font-semibold leading-[1.3] text-ink">
+          {product.customName ?? product.name}
+        </h3>
+        <p className="text-[11.5px] font-medium text-sand-600">
+          {priceVES ? `${formatVES(priceVES)} · ` : ""}
+          {formatUSD(priceUSD)} c/u
+        </p>
 
-        {quantity > product.inventory && (
-          <p className="text-xs text-red-500 dark:text-red-400 mt-1">
-            Solo {product.inventory} disponibles
-          </p>
-        )}
-      </div>
-
-      {/* Controles */}
-      <div className="flex flex-col items-end justify-between gap-2 flex-shrink-0">
-        {/* Quantity stepper */}
-        <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg ring-1 ring-gray-200 dark:ring-gray-700/60">
+        <div className="flex w-[112px] items-center justify-between rounded-xl border-[1.5px] border-sand-300 bg-white">
           <button
             onClick={() => handleUpdateQuantity(quantity - 1)}
             disabled={loading || quantity <= 1}
-            className="px-2 py-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700 rounded-l-lg disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="flex h-10 w-10 items-center justify-center rounded-l-[10px] text-brand-600 transition-colors hover:bg-sand-100 disabled:cursor-not-allowed disabled:opacity-30"
             aria-label="Disminuir cantidad"
           >
-            <Minus className="w-3.5 h-3.5" />
+            <Minus className="h-3.5 w-3.5" strokeWidth={2.6} />
           </button>
-          <span className="px-2.5 py-1.5 text-sm font-medium text-gray-900 dark:text-white min-w-[2rem] text-center tabular-nums">
+          <span className="min-w-[2ch] text-center text-[13.5px] font-extrabold tabular-nums text-ink">
             {quantity}
           </span>
           <button
             onClick={() => handleUpdateQuantity(quantity + 1)}
             disabled={loading || quantity >= product.inventory}
-            className="px-2 py-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700 rounded-r-lg disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="flex h-10 w-10 items-center justify-center rounded-r-[10px] text-brand-600 transition-colors hover:bg-sand-100 disabled:cursor-not-allowed disabled:opacity-30"
             aria-label="Aumentar cantidad"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="h-3.5 w-3.5" strokeWidth={2.6} />
           </button>
         </div>
 
-        {/* Subtotal + eliminar */}
-        <div className="flex items-center gap-2">
-          <div className="text-right">
-            {subtotalVES && (
-              <p className="text-sm font-semibold text-gray-900 dark:text-white leading-none">
-                {formatVES(subtotalVES)}
-              </p>
-            )}
-            <p
-              className={`leading-none ${subtotalVES ? "text-xs text-gray-500 mt-0.5" : "text-sm font-semibold text-gray-900 dark:text-white"}`}
-            >
+        {quantity > product.inventory && (
+          <p className="text-[11px] font-semibold text-accent-700">
+            Solo {product.inventory} disponibles
+          </p>
+        )}
+      </div>
+
+      {/* Quitar y total de la línea */}
+      <div className="flex flex-none flex-col items-end justify-between">
+        <button
+          onClick={handleRemove}
+          disabled={loading}
+          className="-mr-1.5 -mt-1.5 flex h-9 w-9 items-center justify-center rounded-lg text-danger-600 transition-colors hover:bg-danger-50 disabled:opacity-30"
+          aria-label="Eliminar del carrito"
+        >
+          <X className="h-4 w-4" strokeWidth={2.4} />
+        </button>
+        <div className="text-right">
+          <p className="text-sm font-extrabold leading-none text-ink">
+            {subtotalVES ? formatVES(subtotalVES) : formatUSD(subtotalUSD)}
+          </p>
+          {subtotalVES && (
+            <p className="mt-1 text-[11px] font-medium text-sand-600">
               {formatUSD(subtotalUSD)}
             </p>
-          </div>
-          <button
-            onClick={handleRemove}
-            disabled={loading}
-            className="p-1.5 text-gray-400 dark:text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg disabled:opacity-30 transition-colors"
-            aria-label="Eliminar del carrito"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          )}
         </div>
       </div>
     </div>

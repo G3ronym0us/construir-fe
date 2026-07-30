@@ -1,10 +1,11 @@
 "use client";
 
-import { Upload, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import BankSelector from "./BankSelector";
 import type { TransferenciaPayment } from "@/types";
-import CopyButton from "@/components/ui/CopyButton";
+import PaymentDetailsPanel from "./PaymentDetailsPanel";
+import ReceiptUpload from "./ReceiptUpload";
+import { formatVES } from "@/lib/currency";
 import { usePaymentMethodDetails } from "@/hooks/usePaymentMethods";
 import { PaymentMethod } from "@/lib/enums";
 
@@ -18,34 +19,25 @@ export default function TransferenciaForm({ data, onChange, total }: Transferenc
   const t = useTranslations('payment');
   const { details, loading, error, reload } = usePaymentMethodDetails(PaymentMethod.TRANSFERENCIA);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    onChange({ ...data, receipt: file });
-  };
-
-  const removeFile = () => {
-    onChange({ ...data, receipt: null });
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-        <span className="ml-3 text-gray-600 dark:text-gray-400">Cargando información de pago...</span>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
+        <span className="ml-3 text-sand-700">Cargando información de pago...</span>
       </div>
     );
   }
 
   if (error || !details) {
     return (
-      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-        <p className="text-red-800 dark:text-red-400">
+      <div className="bg-danger-50 border border-danger-100 rounded-lg p-4">
+        <p className="text-danger-700">
           No se pudo cargar la información de pago. Por favor, intenta nuevamente.
         </p>
         <button
           type="button"
           onClick={reload}
-          className="mt-2 text-blue-600 hover:text-blue-800"
+          className="mt-2 text-brand-600 hover:text-brand-800"
         >
           Reintentar
         </button>
@@ -55,64 +47,26 @@ export default function TransferenciaForm({ data, onChange, total }: Transferenc
 
   return (
     <div className="space-y-4">
-      {/* Datos de la empresa */}
-      <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
-        <h3 className="font-semibold text-purple-900 dark:text-purple-300 mb-3">
-          Datos para realizar la Transferencia:
-        </h3>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600 dark:text-gray-400">Banco:</span>
-            <div className="flex items-center gap-1">
-              <span className="font-medium">{details.bank}</span>
-              <CopyButton text={details.bank || ''} />
-            </div>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600 dark:text-gray-400">Número de Cuenta:</span>
-            <div className="flex items-center gap-1">
-              <span className="font-medium">{details.accountNumber}</span>
-              <CopyButton text={details.accountNumber || ''} />
-            </div>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600 dark:text-gray-400">RIF:</span>
-            <div className="flex items-center gap-1">
-              <span className="font-medium">{details.rif}</span>
-              <CopyButton text={details.rif || ''} />
-            </div>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600 dark:text-gray-400">Beneficiario:</span>
-            <div className="flex items-center gap-1">
-              <span className="font-medium">{details.beneficiary}</span>
-              <CopyButton text={details.beneficiary || ''} />
-            </div>
-          </div>
-          <div className="flex justify-between border-t dark:border-purple-800 pt-2 mt-2">
-            <span className="text-gray-600 dark:text-gray-400">Monto a pagar:</span>
-            <span className="font-bold text-lg text-purple-600 dark:text-purple-400">
-              Bs. {total.toFixed(2)}
-            </span>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => {
-            const accountNumber = (details.accountNumber || '').replace(/-/g, '');
-            const rif = (details.rif || '').replace(/-/g, '');
-            const allData = `${details.bank} ${details.bankCode}\n${accountNumber}\n${rif}\n${details.beneficiary}\nBs. ${total.toFixed(2)}`;
-            navigator.clipboard.writeText(allData);
-          }}
-          className="w-full mt-3 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
-        >
-          Copiar todos los datos
-        </button>
-      </div>
+      <PaymentDetailsPanel
+        rows={[
+          { label: 'Banco', value: `${details.bankCode ?? ''} · ${details.bank ?? ''}`.trim() },
+          { label: 'Cuenta', value: details.accountNumber || '' },
+          { label: 'RIF', value: details.rif || '' },
+          { label: 'Beneficiario', value: details.beneficiary || '' },
+        ]}
+        amount={formatVES(total)}
+        copyAllText={[
+          `${details.bank} ${details.bankCode}`,
+          (details.accountNumber || '').replace(/-/g, ''),
+          (details.rif || '').replace(/-/g, ''),
+          details.beneficiary || '',
+          formatVES(total),
+        ].join('\n')}
+      />
 
       {/* Formulario */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
           Nombre de la Cuenta (Emisor) *
         </label>
         <input
@@ -121,7 +75,7 @@ export default function TransferenciaForm({ data, onChange, total }: Transferenc
           onChange={(e) => onChange({ ...data, accountName: e.target.value })}
           required
           placeholder="Nombre de la cuenta desde la que realizó el pago"
-          className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          className="min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
         />
       </div>
 
@@ -134,7 +88,7 @@ export default function TransferenciaForm({ data, onChange, total }: Transferenc
       />
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
           Número de Referencia *
         </label>
         <input
@@ -143,49 +97,16 @@ export default function TransferenciaForm({ data, onChange, total }: Transferenc
           onChange={(e) => onChange({ ...data, referenceNumber: e.target.value })}
           required
           placeholder="Número de referencia de la transferencia"
-          className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          className="min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
         />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Comprobante de Pago *
-        </label>
-        {!data.receipt ? (
-          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
-            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-              <Upload className="w-8 h-8 text-gray-400 mb-2" />
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                <span className="font-semibold">Click para subir</span> o arrastra
-              </p>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                PNG, JPG o PDF (máx. 5MB)
-              </p>
-            </div>
-            <input
-              type="file"
-              className="hidden"
-              accept="image/*,.pdf"
-              onChange={handleFileChange}
-              required
-            />
-          </label>
-        ) : (
-          <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg">
-            <div className="flex items-center gap-2">
-              <Upload className="w-5 h-5 text-green-600 dark:text-green-400" />
-              <span className="text-sm text-gray-700 dark:text-gray-300">{data.receipt.name}</span>
-            </div>
-            <button
-              type="button"
-              onClick={removeFile}
-              className="text-red-600 hover:text-red-800"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        )}
-      </div>
+      <ReceiptUpload
+        file={data.receipt}
+        onSelect={(file) => onChange({ ...data, receipt: file })}
+        label="Comprobante de pago"
+        required
+      />
     </div>
   );
 }

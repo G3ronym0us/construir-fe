@@ -33,11 +33,11 @@ export default function Step3Location({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
-          <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        <h2 className="mb-2 flex items-center gap-2 font-display text-lg font-bold text-ink">
+          <MapPin className="w-5 h-5 text-brand-600" />
           {t('shippingAddress')}
         </h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-sm text-sand-700">
           {t('locationDescription', { defaultValue: 'Ingresa la dirección donde deseas recibir tu pedido' })}
         </p>
       </div>
@@ -52,17 +52,17 @@ export default function Step3Location({
       {locationMethod === 'manual' && (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
               {t('address')} *
             </label>
             <input
               type="text"
               {...register('address', { required: locationMethod === 'manual' })}
               placeholder={t('addressPlaceholder', { defaultValue: 'Calle, número, colonia' })}
-              className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
             />
             {errors.address && (
-              <span className="text-red-500 text-xs mt-1">
+              <span className="text-danger-500 text-xs mt-1">
                 {t('errors.fieldRequired', { defaultValue: 'Este campo es requerido' })}
               </span>
             )}
@@ -70,59 +70,59 @@ export default function Step3Location({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
                 {t('city')} *
               </label>
               <input
                 type="text"
                 {...register('city', { required: locationMethod === 'manual' })}
-                className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
                 {t('state')} *
               </label>
               <input
                 type="text"
                 {...register('state', { required: locationMethod === 'manual' })}
-                className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
                 {t('zipCode')} *
               </label>
               <input
                 type="text"
                 {...register('zipCode', { required: locationMethod === 'manual' })}
-                className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
                 {t('country')} *
               </label>
               <input
                 type="text"
                 {...register('country')}
-                className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
               {t('additionalInfo')} ({t('optional')})
             </label>
             <textarea
               {...register('additionalInfo')}
               rows={3}
               placeholder={t('additionalInfoPlaceholder')}
-              className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
             />
           </div>
         </div>
@@ -131,17 +131,17 @@ export default function Step3Location({
       {/* Método Automático */}
       {locationMethod === 'auto' && (
         <div className="space-y-4">
-          <div className="bg-blue-50 dark:bg-blue-950/40 p-4 rounded-lg">
+          <div className="bg-brand-50 p-4 rounded-lg">
             <button
               type="button"
               onClick={onGetLocation}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Navigation className="w-5 h-5" />
               {t('getMyLocation')}
             </button>
             {latitude && longitude && (
-              <div className="mt-3 text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30 p-3 rounded-lg">
+              <div className="mt-3 text-sm text-success-700 bg-success-50 p-3 rounded-lg">
                 ✓ {t('locationReceived')}: {latitude.toFixed(6)}, {longitude.toFixed(6)}
               </div>
             )}
@@ -150,14 +150,14 @@ export default function Step3Location({
           {/* Campo opcional de detalles */}
           {latitude && longitude && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
                 {t('locationDetails', { defaultValue: 'Detalles adicionales de la dirección' })} ({t('optional')})
               </label>
               <textarea
                 {...register('additionalInfo')}
                 rows={3}
                 placeholder={t('locationDetailsPlaceholder', { defaultValue: 'Ej: Casa color blanca, portón negro, cerca del supermercado...' })}
-                className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
               />
             </div>
           )}
@@ -176,14 +176,14 @@ export default function Step3Location({
           {/* Campo opcional de detalles */}
           {latitude && longitude && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
                 {t('locationDetails', { defaultValue: 'Detalles adicionales de la dirección' })} ({t('optional')})
               </label>
               <textarea
                 {...register('additionalInfo')}
                 rows={3}
                 placeholder={t('locationDetailsPlaceholder', { defaultValue: 'Ej: Casa color blanca, portón negro, cerca del supermercado...' })}
-                className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
               />
             </div>
           )}

@@ -2,10 +2,21 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
+import { PackageSearch } from "lucide-react";
 import { productsService } from "@/services/products";
 import type { Product } from "@/types";
 import { CategoryMenu } from "@/components/CategoryMenu";
+import CategoryChips from "@/components/CategoryChips";
 import ProductCard from "@/components/product/ProductCard";
+import ProductCardSkeleton from "@/components/product/ProductCardSkeleton";
+import CartSummaryBar from "@/components/cart/CartSummaryBar";
+
+const SORT_OPTIONS = [
+  { key: "relevance", label: "Relevancia", sortBy: "createdAt", sortOrder: "DESC" as const },
+  { key: "price-asc", label: "Menor precio", sortBy: "price", sortOrder: "ASC" as const },
+  { key: "price-desc", label: "Mayor precio", sortBy: "price", sortOrder: "DESC" as const },
+  { key: "name", label: "Nombre A–Z", sortBy: "name", sortOrder: "ASC" as const },
+];
 
 export default function ProductsPage() {
   const searchParams = useSearchParams();
@@ -13,15 +24,18 @@ export default function ProductsPage() {
   const searchParam = searchParams.get('search');
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [search, setSearch] = useState(searchParam || "");
+  const [sortKey, setSortKey] = useState(SORT_OPTIONS[0].key);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
   const hasMore = page < lastPage;
+  const sort = SORT_OPTIONS.find((option) => option.key === sortKey) ?? SORT_OPTIONS[0];
 
   // Sincronizar con el parámetro de URL (navegación desde navbar)
   const prevSearchParam = useRef(searchParam);
@@ -44,6 +58,16 @@ export default function ProductsPage() {
     }
   }, [categoryParam]);
 
+  // Reset al cambiar el orden
+  const prevSortKey = useRef(sortKey);
+  useEffect(() => {
+    if (sortKey !== prevSortKey.current) {
+      prevSortKey.current = sortKey;
+      setPage(1);
+      setProducts([]);
+    }
+  }, [sortKey]);
+
   const loadProducts = useCallback(async (currentPage: number) => {
     try {
       if (currentPage === 1) {
@@ -56,18 +80,19 @@ export default function ProductsPage() {
         limit: 12,
         categoryUuid: categoryParam || undefined,
         search: search || undefined,
-        sortBy: 'createdAt',
-        sortOrder: 'DESC',
+        sortBy: sort.sortBy,
+        sortOrder: sort.sortOrder,
       });
       setProducts(prev => currentPage === 1 ? response.data : [...prev, ...response.data]);
       setLastPage(response.lastPage);
+      setTotal(response.total);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Error al cargar productos");
     } finally {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [categoryParam, search]);
+  }, [categoryParam, search, sort.sortBy, sort.sortOrder]);
 
   useEffect(() => {
     loadProducts(page);
@@ -94,48 +119,66 @@ export default function ProductsPage() {
   }, [hasMore, loadingMore, loading]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Sidebar - Category Menu */}
-          <aside className="hidden md:block w-full lg:w-64 flex-shrink-0">
+    <div className="min-h-screen bg-sand-50 pb-24 md:pb-0">
+      {/* Filtros pegados bajo el header */}
+      <div className="sticky top-16 z-20 border-b border-sand-200 bg-white md:hidden">
+        <div className="px-4 py-3">
+          <CategoryChips className="-mx-4 px-4" />
+        </div>
+      </div>
+
+      <main className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-8 lg:px-8">
+        <div className="flex flex-col gap-6 lg:flex-row">
+          {/* Menú lateral de categorías */}
+          <aside className="hidden w-full flex-shrink-0 md:block lg:w-64">
             <CategoryMenu />
           </aside>
 
-          {/* Products Section */}
           <div className="flex-1">
+            {/* Recuento y orden */}
+            <div className="mb-3 flex items-baseline justify-between gap-3">
+              <span className="text-[13px] font-bold text-sand-700">
+                {loading ? 'Buscando…' : `${total} ${total === 1 ? 'producto' : 'productos'}`}
+              </span>
+              <label className="flex items-center gap-1 text-[12.5px] font-bold text-brand-600">
+                <span className="sr-only">Ordenar por</span>
+                <select
+                  value={sortKey}
+                  onChange={(e) => setSortKey(e.target.value)}
+                  className="cursor-pointer appearance-none bg-transparent pr-1 text-right font-bold text-brand-600 focus:outline-none"
+                >
+                  {SORT_OPTIONS.map((option) => (
+                    <option key={option.key} value={option.key}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <span aria-hidden="true">▾</span>
+              </label>
+            </div>
 
-            {loading && (
-              <div className="text-center py-12">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-                <p className="text-gray-600 dark:text-gray-400">Cargando productos...</p>
+            {error && (
+              <div className="mb-6 rounded-xl bg-danger-50 p-4">
+                <p className="text-sm text-danger-700">{error}</p>
               </div>
             )}
 
-            {error && (
-              <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4 mb-6">
-                <p className="text-sm text-red-800 dark:text-red-400">{error}</p>
+            {loading && (
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-3">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <ProductCardSkeleton key={i} />
+                ))}
               </div>
             )}
 
             {!loading && !error && products.length === 0 && (
-              <div className="text-center py-12 bg-white dark:bg-slate-800 rounded-lg shadow">
-                <svg
-                  className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-                  />
-                </svg>
-                <p className="text-gray-600 dark:text-gray-400 text-lg">No hay productos disponibles</p>
+              <div className="rounded-2xl border border-sand-300 bg-white py-14 text-center">
+                <PackageSearch className="mx-auto mb-4 h-11 w-11 text-sand-500" strokeWidth={1.6} />
+                <p className="font-display text-lg font-bold text-ink">
+                  No hay productos disponibles
+                </p>
                 {(categoryParam || search) && (
-                  <p className="text-gray-500 dark:text-gray-500 text-sm mt-2">
+                  <p className="mt-2 text-sm text-sand-600">
                     Intenta ajustar tus filtros de búsqueda
                   </p>
                 )}
@@ -144,7 +187,7 @@ export default function ProductsPage() {
 
             {products.length > 0 && (
               <>
-                <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 mb-8">
+                <div className="mb-8 grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-3">
                   {products.map((product, index) => (
                     <ProductCard
                       key={product.uuid}
@@ -152,7 +195,7 @@ export default function ProductsPage() {
                       variant="default"
                       showAddToCart={true}
                       showBadges={true}
-                      showDescription={true}
+                      showDescription={false}
                       showStock={true}
                       priority={index < 6}
                     />
@@ -163,14 +206,13 @@ export default function ProductsPage() {
                 <div ref={sentinelRef} className="h-4" />
 
                 {loadingMore && (
-                  <div className="text-center py-6">
-                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm">Cargando más productos...</p>
+                  <div className="flex justify-center py-6">
+                    <span className="h-7 w-7 animate-spin rounded-full border-[2.5px] border-sand-300 border-t-brand-600" />
                   </div>
                 )}
 
                 {!hasMore && !loadingMore && (
-                  <p className="text-center text-gray-400 dark:text-gray-500 text-sm py-6">
+                  <p className="py-6 text-center text-sm text-sand-600">
                     No hay más productos
                   </p>
                 )}
@@ -179,6 +221,8 @@ export default function ProductsPage() {
           </div>
         </div>
       </main>
+
+      <CartSummaryBar />
     </div>
   );
 }

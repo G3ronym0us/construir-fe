@@ -62,7 +62,8 @@
     "outOfStock": "Agotado",
     "notAvailable": "Producto no disponible",
     "insufficientStock": "Solo {available} disponibles",
-    "sku": "SKU"
+    "sku": "SKU",
+    "add": "Agregar"
   },
   "products": {
     "title": "Productos",
@@ -87,7 +88,10 @@
       "priceDesc": "Precio: Mayor a Menor",
       "nameAsc": "Nombre: A-Z",
       "nameDesc": "Nombre: Z-A"
-    }
+    },
+    "featuredProducts": "Más vendidos",
+    "viewMore": "Ver más",
+    "allProducts": "Todo"
   },
   "auth": {
     "login": "Iniciar Sesión",
@@ -323,7 +327,8 @@
     "imageUploadedAndFeatured": "Imagen subida correctamente. Categoría marcada como destacada.",
     "selectImageFile": "Selecciona un archivo de imagen",
     "imageSelected": "Imagen seleccionada",
-    "uploadingImage": "Subiendo imagen..."
+    "uploadingImage": "Subiendo imagen...",
+    "viewAll": "Ver todas"
   },
   "checkout": {
     "title": "Finalizar Compra",
@@ -430,7 +435,8 @@
       "completeContact": "Por favor completa todos los campos de contacto",
       "completeAddress": "Por favor completa la dirección",
       "selectLocation": "Por favor selecciona tu ubicación"
-    }
+    },
+    "applyDiscount": "Aplicar"
   },
   "discounts": {
     "title": "Gestión de Cupones",

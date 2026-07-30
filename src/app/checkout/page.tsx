@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
@@ -478,26 +478,39 @@ export default function CheckoutPage() {
     setIdentificationNumber(number);
   };
 
-  // Buscar cuando el usuario termina de escribir (onBlur)
+  // Identificaciones ya consultadas, para no gastar el límite de tasa del
+  // backend ni volver a proponer un autocompletado que el usuario descartó.
+  const attemptedLookups = useRef<Set<string>>(new Set());
+
+  /**
+   * Busca los datos del invitado para autocompletar el formulario.
+   *
+   * Se dispara al salir del campo de identificación, no en cada pulsación: el
+   * endpoint público admite 5 consultas por minuto.
+   */
   const handleIdentificationSearch = async () => {
-    // Solo buscar si el número tiene al menos 7 caracteres
-    if (identificationNumber.length >= 7 && !isAuthenticated) {
-      setIsSearchingGuest(true);
-      try {
-        const guestData = await guestCustomersService.searchByIdentification(
-          identificationType,
-          identificationNumber,
-        );
-        if (guestData) {
-          // Guardar datos encontrados y mostrar modal
-          setFoundGuestData(guestData);
-          setShowGuestDataModal(true);
-        }
-      } catch (error) {
-        console.error("Error searching guest customer:", error);
-      } finally {
-        setIsSearchingGuest(false);
+    if (isAuthenticated) return;
+    if (identificationNumber.length < 7) return;
+
+    const lookupKey = `${identificationType}|${identificationNumber}`;
+    if (attemptedLookups.current.has(lookupKey)) return;
+    attemptedLookups.current.add(lookupKey);
+
+    setIsSearchingGuest(true);
+    try {
+      const guestData = await guestCustomersService.searchByIdentification(
+        identificationType,
+        identificationNumber,
+      );
+      if (guestData) {
+        // Guardar datos encontrados y mostrar modal
+        setFoundGuestData(guestData);
+        setShowGuestDataModal(true);
       }
+    } catch (error) {
+      console.error("Error searching guest customer:", error);
+    } finally {
+      setIsSearchingGuest(false);
     }
   };
 
@@ -749,8 +762,8 @@ export default function CheckoutPage() {
 
   if (loadingProducts) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
+      <div className="min-h-screen bg-sand-50 flex items-center justify-center">
+        <Loader2 className="w-12 h-12 animate-spin text-brand-600" />
       </div>
     );
   }
@@ -781,9 +794,9 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">
+    <div className="min-h-screen bg-white md:bg-sand-50 md:py-8">
+      <div className="mx-auto max-w-7xl px-0 sm:px-6 lg:px-8">
+        <h1 className="mb-6 hidden px-4 font-display text-3xl font-bold text-ink md:block md:px-0">
           {t("title")}
         </h1>
 
@@ -791,14 +804,14 @@ export default function CheckoutPage() {
           {/* Formulario */}
           <div className="lg:col-span-2">
             {/* Stepper */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-6">
+            <div className="sticky top-16 z-20 mb-4 bg-white md:static md:mb-6 md:rounded-2xl md:border md:border-sand-300">
               <CheckoutStepper steps={steps} currentStep={currentStep} />
             </div>
 
             <form
               id="checkout-form"
               onSubmit={handleSubmit(onSubmit)}
-              className="bg-white dark:bg-gray-800 rounded-lg p-4 md:p-6 space-y-6"
+              className="space-y-6 bg-white p-4 md:rounded-2xl md:border md:border-sand-300 md:p-6"
             >
               {/* Paso 1: Información de Contacto */}
               {currentStep === 0 && (
@@ -881,12 +894,12 @@ export default function CheckoutPage() {
               )}
 
               {/* Botones de Navegación (desktop/tablet — mobile usa sticky bar) */}
-              <div className="hidden md:flex justify-between pt-6 border-t dark:border-gray-700">
+              <div className="hidden justify-between gap-3 border-t border-sand-200 pt-6 md:flex">
                 <button
                   type="button"
                   onClick={handlePrevious}
                   disabled={currentStep === 0}
-                  className="min-w-[100px] px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="min-h-11 min-w-[110px] rounded-xl border-[1.5px] border-sand-300 px-6 text-sm font-bold text-ink transition-colors hover:bg-sand-100 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {t("previous", { defaultValue: "Anterior" })}
                 </button>
@@ -896,7 +909,7 @@ export default function CheckoutPage() {
                     key="next-btn"
                     type="button"
                     onClick={handleNext}
-                    className="min-w-[100px] px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                    className="min-h-11 min-w-[110px] rounded-xl bg-brand-600 px-6 text-sm font-bold text-white transition-colors hover:bg-brand-700"
                   >
                     {t("next", { defaultValue: "Siguiente" })}
                   </button>
@@ -905,7 +918,7 @@ export default function CheckoutPage() {
                     key="submit-btn"
                     type="submit"
                     disabled={loading}
-                    className="min-w-[100px] px-6 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="flex min-h-11 min-w-[110px] items-center justify-center gap-2 rounded-xl bg-brand-600 px-6 text-sm font-bold text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {loading ? (
                       <>
@@ -931,7 +944,7 @@ export default function CheckoutPage() {
 
         {/* Sticky bar mobile con total + CTA */}
         <div
-          className="md:hidden fixed inset-x-0 bottom-0 z-30 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-4 pt-3 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_12px_rgba(0,0,0,0.3)]"
+          className="fixed inset-x-0 bottom-0 z-30 border-t border-sand-300 bg-white px-4 pt-3 md:hidden"
           style={{
             paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)",
             touchAction: "manipulation",
@@ -944,23 +957,28 @@ export default function CheckoutPage() {
               aria-label={t("orderSummary")}
               aria-expanded={isSummaryOpen}
               aria-controls="order-summary-sheet-title"
-              className="flex items-center gap-1 text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded px-1 py-0.5"
+              className="-ml-1 flex items-center gap-1 rounded-lg px-1 py-1 text-[12.5px] font-bold text-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
             >
               <ChevronUp className="w-4 h-4" />
               {t("orderSummary")} ({itemsCount})
             </button>
             <div className="text-right">
-              <div className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-sand-600">
                 {t("total")}
               </div>
               <div
-                className="text-lg font-bold text-blue-600 dark:text-blue-400"
+                className="text-[17px] font-extrabold text-ink"
                 aria-live="polite"
               >
                 {showVES && totalVES !== null && totalVES !== undefined
                   ? formatVES(totalVES)
                   : formatUSD(total)}
               </div>
+              {showVES && totalVES !== null && totalVES !== undefined && (
+                <div className="text-[11px] font-medium text-sand-600">
+                  {formatUSD(total)}
+                </div>
+              )}
             </div>
           </div>
           <div className="flex gap-2">
@@ -968,7 +986,7 @@ export default function CheckoutPage() {
               <button
                 type="button"
                 onClick={handlePrevious}
-                className="flex-1 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="min-h-11 w-24 flex-none rounded-xl border-[1.5px] border-sand-300 py-3 text-sm font-bold text-ink transition-colors hover:bg-sand-100"
               >
                 {t("previous", { defaultValue: "Anterior" })}
               </button>
@@ -977,7 +995,7 @@ export default function CheckoutPage() {
               <button
                 type="button"
                 onClick={handleNext}
-                className={`${currentStep > 0 ? "flex-[2]" : "flex-1"} py-3 bg-blue-600 text-white font-semibold rounded-lg text-sm hover:bg-blue-700 transition-colors`}
+                className="min-h-11 flex-1 rounded-xl bg-brand-600 py-3 text-[14.5px] font-bold text-white transition-colors hover:bg-brand-700"
               >
                 {t("next", { defaultValue: "Siguiente" })}
               </button>
@@ -986,7 +1004,7 @@ export default function CheckoutPage() {
                 type="submit"
                 form="checkout-form"
                 disabled={loading}
-                className={`${currentStep > 0 ? "flex-[2]" : "flex-1"} py-3 bg-green-600 text-white font-semibold rounded-lg text-sm hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
+                className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-600 py-3 text-[14.5px] font-bold text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? (
                   <>
@@ -1014,48 +1032,48 @@ export default function CheckoutPage() {
             onClick={handleCancelGuestData}
           >
             <div
-              className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6 shadow-2xl animate-in zoom-in-95 duration-300"
+              className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-300"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+              <h3 className="mb-4 font-display text-xl font-bold text-ink">
                 {t("guestDataFound")}
               </h3>
-              <p className="text-gray-700 dark:text-gray-300 mb-4">
+              <p className="text-sand-700 mb-4">
                 {t("guestDataFoundMessage", {
                   count: foundGuestData.ordersCount,
                 })}
               </p>
-              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6 space-y-2">
+              <div className="bg-sand-50 rounded-lg p-4 mb-6 space-y-2">
                 <p className="text-sm">
-                  <span className="font-medium text-gray-700 dark:text-gray-300">
+                  <span className="font-medium text-sand-700">
                     {t("name")}:
                   </span>{" "}
-                  <span className="text-gray-900 dark:text-gray-100">
+                  <span className="text-ink">
                     {foundGuestData.firstName} {foundGuestData.lastName}
                   </span>
                 </p>
                 <p className="text-sm">
-                  <span className="font-medium text-gray-700 dark:text-gray-300">
+                  <span className="font-medium text-sand-700">
                     {t("email")}:
                   </span>{" "}
-                  <span className="text-gray-900 dark:text-gray-100">
+                  <span className="text-ink">
                     {foundGuestData.email}
                   </span>
                 </p>
                 <p className="text-sm">
-                  <span className="font-medium text-gray-700 dark:text-gray-300">
+                  <span className="font-medium text-sand-700">
                     {t("phone")}:
                   </span>{" "}
-                  <span className="text-gray-900 dark:text-gray-100">
+                  <span className="text-ink">
                     {foundGuestData.phone}
                   </span>
                 </p>
                 {foundGuestData.address && (
                   <p className="text-sm">
-                    <span className="font-medium text-gray-700 dark:text-gray-300">
+                    <span className="font-medium text-sand-700">
                       {t("address")}:
                     </span>{" "}
-                    <span className="text-gray-900 dark:text-gray-100">
+                    <span className="text-ink">
                       {foundGuestData.address}
                     </span>
                   </p>
@@ -1065,14 +1083,14 @@ export default function CheckoutPage() {
                 <button
                   type="button"
                   onClick={handleCancelGuestData}
-                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200"
+                  className="min-h-11 flex-1 rounded-xl border-[1.5px] border-sand-300 px-4 text-sm font-bold text-ink transition-colors hover:bg-sand-100"
                 >
                   {t("cancel")}
                 </button>
                 <button
                   type="button"
                   onClick={handleConfirmGuestData}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                  className="min-h-11 flex-1 rounded-xl bg-brand-600 px-4 text-sm font-bold text-white transition-colors hover:bg-brand-700"
                 >
                   {t("autofillData")}
                 </button>

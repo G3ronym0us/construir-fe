@@ -19,18 +19,18 @@ export function getPaymentStatusKey(status: PaymentStatus): string {
  */
 export function getOrderStatusColor(status: OrderStatus): string {
   const colorMap: Record<OrderStatus, string> = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    payment_review: 'bg-orange-100 text-orange-800',
-    confirmed: 'bg-green-100 text-green-800',
-    processing: 'bg-blue-100 text-blue-800',
-    shipped: 'bg-purple-100 text-purple-800',
-    delivered: 'bg-green-100 text-green-800',
-    completed: 'bg-green-100 text-green-800',
-    'on-hold': 'bg-yellow-100 text-yellow-800',
-    cancelled: 'bg-red-100 text-red-800',
-    refunded: 'bg-gray-100 text-gray-800',
+    pending: 'bg-accent-100 text-accent-700',
+    payment_review: 'bg-accent-100 text-accent-700',
+    confirmed: 'bg-success-100 text-success-700',
+    processing: 'bg-brand-100 text-brand-800',
+    shipped: 'bg-brand-100 text-brand-800',
+    delivered: 'bg-success-100 text-success-700',
+    completed: 'bg-success-100 text-success-700',
+    'on-hold': 'bg-accent-100 text-accent-700',
+    cancelled: 'bg-danger-100 text-danger-700',
+    refunded: 'bg-sand-100 text-sand-700',
   };
-  return colorMap[status] || 'bg-gray-100 text-gray-800';
+  return colorMap[status] || 'bg-sand-100 text-sand-700';
 }
 
 /**
@@ -38,10 +38,27 @@ export function getOrderStatusColor(status: OrderStatus): string {
  */
 export function getPaymentStatusColor(status: PaymentStatus): string {
   const colorMap: Record<PaymentStatus, string> = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    verified: 'bg-green-100 text-green-800',
-    rejected: 'bg-red-100 text-red-800',
-    refunded: 'bg-gray-100 text-gray-800',
+    pending: 'bg-accent-100 text-accent-700',
+    verified: 'bg-success-100 text-success-700',
+    rejected: 'bg-danger-100 text-danger-700',
+    refunded: 'bg-sand-100 text-sand-700',
   };
-  return colorMap[status] || 'bg-gray-100 text-gray-800';
+  return colorMap[status] || 'bg-sand-100 text-sand-700';
+}
+
+/**
+ * Avance del pedido de 0 a 1 para la barra de progreso de la tarjeta.
+ * Devuelve `null` cuando el pedido ya no avanza (cancelado, reembolsado).
+ */
+export function getOrderProgress(status: OrderStatus): number | null {
+  const progressMap: Partial<Record<OrderStatus, number>> = {
+    pending: 0.15,
+    payment_review: 0.3,
+    confirmed: 0.45,
+    processing: 0.6,
+    shipped: 0.8,
+    delivered: 1,
+    completed: 1,
+  };
+  return progressMap[status] ?? null;
 }

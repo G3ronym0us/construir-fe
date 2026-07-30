@@ -63,12 +63,12 @@ export function PermissionGuard({
     }
 
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+      <div className="bg-danger-50 border border-danger-100 rounded-lg p-6">
         <div className="flex items-start gap-3">
-          <ShieldAlert className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+          <ShieldAlert className="w-5 h-5 text-danger-600 mt-0.5 flex-shrink-0" />
           <div>
-            <h3 className="text-sm font-medium text-red-800">Acceso Denegado</h3>
-            <p className="text-sm text-red-700 mt-1">
+            <h3 className="text-sm font-medium text-danger-700">Acceso Denegado</h3>
+            <p className="text-sm text-danger-700 mt-1">
               No tienes permisos para acceder a esta página.
             </p>
           </div>

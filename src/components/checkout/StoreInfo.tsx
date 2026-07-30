@@ -17,29 +17,29 @@ export default function StoreInfo() {
   const t = useTranslations('checkout');
 
   return (
-    <div className="bg-blue-50 dark:bg-blue-950/40 border-2 border-blue-200 dark:border-blue-800 rounded-lg p-6">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-        <MapPin className="w-5 h-5 text-blue-600" />
+    <div className="bg-brand-50 border-2 border-brand-200 rounded-2xl p-6">
+      <h3 className="text-lg font-semibold text-ink mb-4 flex items-center gap-2">
+        <MapPin className="w-5 h-5 text-brand-600" />
         {t('pickupLocationTitle')}
       </h3>
 
       <div className="space-y-3">
         {/* Dirección */}
         <div className="flex items-start gap-3">
-          <MapPin className="w-5 h-5 text-gray-600 dark:text-gray-400 mt-0.5 flex-shrink-0" />
+          <MapPin className="w-5 h-5 text-sand-700 mt-0.5 flex-shrink-0" />
           <div>
-            <p className="font-medium text-gray-900 dark:text-gray-100">{STORE_INFO.name}</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">{STORE_INFO.address}</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">{STORE_INFO.city}</p>
+            <p className="font-medium text-ink">{STORE_INFO.name}</p>
+            <p className="text-sm text-sand-700">{STORE_INFO.address}</p>
+            <p className="text-sm text-sand-700">{STORE_INFO.city}</p>
           </div>
         </div>
 
         {/* Teléfono */}
         <div className="flex items-center gap-3">
-          <Phone className="w-5 h-5 text-gray-600 dark:text-gray-400 flex-shrink-0" />
+          <Phone className="w-5 h-5 text-sand-700 flex-shrink-0" />
           <a
             href={`tel:${STORE_INFO.phone}`}
-            className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            className="text-sm text-brand-600 hover:text-brand-700 font-medium"
           >
             {STORE_INFO.phone}
           </a>
@@ -47,8 +47,8 @@ export default function StoreInfo() {
 
         {/* Horario */}
         <div className="flex items-start gap-3">
-          <Clock className="w-5 h-5 text-gray-600 dark:text-gray-400 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-gray-600 dark:text-gray-400">{STORE_INFO.hours}</p>
+          <Clock className="w-5 h-5 text-sand-700 mt-0.5 flex-shrink-0" />
+          <p className="text-sm text-sand-700">{STORE_INFO.hours}</p>
         </div>
 
         {/* Link al mapa */}
@@ -56,7 +56,7 @@ export default function StoreInfo() {
           href={STORE_INFO.mapUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium mt-2"
+          className="inline-flex items-center gap-2 text-sm text-brand-600 hover:text-brand-700 font-medium mt-2"
         >
           {t('viewOnMap')}
           <ExternalLink className="w-4 h-4" />
@@ -64,9 +64,9 @@ export default function StoreInfo() {
       </div>
 
       {/* Instrucciones */}
-      <div className="mt-4 pt-4 border-t border-blue-200 dark:border-blue-800">
-        <p className="text-sm text-gray-700 dark:text-gray-300">
-          <strong className="text-gray-900 dark:text-gray-100">{t('note')}:</strong> {t('pickupInstructions')}
+      <div className="mt-4 pt-4 border-t border-brand-200">
+        <p className="text-sm text-sand-700">
+          <strong className="text-ink">{t('note')}:</strong> {t('pickupInstructions')}
         </p>
       </div>
     </div>

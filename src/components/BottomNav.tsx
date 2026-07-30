@@ -19,45 +19,46 @@ export default function BottomNav() {
     path === '/' ? pathname === '/' : pathname?.startsWith(path) ?? false;
 
   const tabCls = (active: boolean) =>
-    `flex flex-col items-center gap-0.5 py-2 flex-1 transition-colors ${
-      active
-        ? 'text-blue-600 dark:text-blue-400'
-        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+    `flex flex-1 flex-col items-center justify-center gap-1 py-2 min-h-11 transition-colors ${
+      active ? 'text-brand-600' : 'text-sand-600 hover:text-sand-700'
     }`;
+
+  const labelCls = (active: boolean) =>
+    `text-[10px] leading-none ${active ? 'font-bold' : 'font-semibold'}`;
 
   return (
     <>
-      <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-700 z-40 pb-[env(safe-area-inset-bottom)]">
+      <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-sm border-t border-sand-300 z-40 pb-[env(safe-area-inset-bottom)]">
         <div className="flex items-stretch">
           {/* Inicio */}
           <Link href="/" className={tabCls(isActive('/'))}>
-            <Home className="w-5 h-5" />
-            <span className="text-[10px] font-medium leading-none">Inicio</span>
+            <Home className="w-[19px] h-[19px]" strokeWidth={1.9} />
+            <span className={labelCls(isActive('/'))}>Inicio</span>
           </Link>
 
           {/* Productos */}
           <Link href="/productos" className={tabCls(isActive('/productos'))}>
-            <Grid2X2 className="w-5 h-5" />
-            <span className="text-[10px] font-medium leading-none">Productos</span>
+            <Grid2X2 className="w-[19px] h-[19px]" strokeWidth={1.9} />
+            <span className={labelCls(isActive('/productos'))}>Productos</span>
           </Link>
 
           {/* Categorías */}
           <Link href="/categorias" className={tabCls(isActive('/categorias'))}>
-            <LayoutGrid className="w-5 h-5" />
-            <span className="text-[10px] font-medium leading-none">Categorías</span>
+            <LayoutGrid className="w-[19px] h-[19px]" strokeWidth={1.9} />
+            <span className={labelCls(isActive('/categorias'))}>Categorías</span>
           </Link>
 
           {/* Carrito */}
           <Link href="/carrito" className={tabCls(isActive('/carrito'))}>
             <div className="relative">
-              <ShoppingCart className="w-5 h-5" />
+              <ShoppingCart className="w-[19px] h-[19px]" strokeWidth={1.9} />
               {totalItems > 0 && (
-                <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5">
+                <span className="absolute -top-1.5 -right-2.5 min-w-[17px] h-[17px] bg-accent-500 text-ink text-[10px] font-extrabold rounded-full flex items-center justify-center px-1">
                   {totalItems > 99 ? '99+' : totalItems}
                 </span>
               )}
             </div>
-            <span className="text-[10px] font-medium leading-none">Carrito</span>
+            <span className={labelCls(isActive('/carrito'))}>Carrito</span>
           </Link>
 
           {/* Cuenta */}
@@ -66,13 +67,13 @@ export default function BottomNav() {
             className={tabCls(isActive('/mi-cuenta'))}
           >
             {user ? (
-              <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold select-none">
+              <span className="w-[19px] h-[19px] rounded-full bg-brand-600 text-white flex items-center justify-center text-[10px] font-extrabold select-none">
                 {user.firstName?.[0]?.toUpperCase() ?? '?'}
               </span>
             ) : (
-              <User className="w-5 h-5" />
+              <User className="w-[19px] h-[19px]" strokeWidth={1.9} />
             )}
-            <span className="text-[10px] font-medium leading-none">Cuenta</span>
+            <span className={labelCls(isActive('/mi-cuenta'))}>Cuenta</span>
           </Link>
         </div>
       </nav>

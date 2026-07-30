@@ -63,10 +63,10 @@ export default function InvitacionPage() {
 
   if (pageState === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-sand-50">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4" />
-          <p className="text-gray-500">Validando enlace...</p>
+          <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-brand-600 mb-4" />
+          <p className="text-sand-600">Validando enlace...</p>
         </div>
       </div>
     );
@@ -95,14 +95,14 @@ export default function InvitacionPage() {
   if (pageState in errorConfig) {
     const cfg = errorConfig[pageState as "invalid" | "used" | "expired"];
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-        <div className="max-w-md w-full bg-white rounded-xl shadow-md p-8 text-center space-y-4">
+      <div className="min-h-screen flex items-center justify-center bg-sand-50 px-4">
+        <div className="max-w-md w-full rounded-2xl border border-sand-300 bg-white p-8 text-center space-y-4">
           <div className="text-5xl">{cfg.icon}</div>
-          <h1 className="text-xl font-bold text-gray-900">{cfg.title}</h1>
-          <p className="text-gray-600 text-sm">{cfg.desc}</p>
+          <h1 className="text-xl font-bold text-ink">{cfg.title}</h1>
+          <p className="text-sand-700 text-sm">{cfg.desc}</p>
           <Link
             href="/"
-            className="inline-block mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+            className="inline-block mt-4 px-6 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors text-sm font-medium"
           >
             Ir al inicio
           </Link>
@@ -114,36 +114,36 @@ export default function InvitacionPage() {
   // ── Form ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-sand-50 px-4">
       <div className="max-w-md w-full space-y-6">
         {/* Logo */}
         <div className="text-center">
           <Image src="/construir-logo.png" alt="Construir" width={140} height={40} className="mx-auto" />
-          <h2 className="mt-4 text-2xl font-bold text-gray-900">Completa tu registro</h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <h2 className="mt-4 text-2xl font-bold text-ink">Completa tu registro</h2>
+          <p className="mt-1 text-sm text-sand-600">
             Has sido invitado a crear una cuenta.
           </p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-md p-8 space-y-5">
+        <div className="rounded-2xl border border-sand-300 bg-white p-8 space-y-5">
           {/* Email (read-only) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 text-sm">
+            <label className="mb-1.5 block text-[11.5px] font-bold text-sand-700">Email</label>
+            <div className="px-3 py-2 bg-sand-50 border border-sand-300 rounded-lg text-sand-700 text-sm">
               {tokenInfo?.email}
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="rounded-md bg-red-50 p-3">
-                <p className="text-sm text-red-800">{error}</p>
+              <div className="rounded-md bg-danger-50 p-3">
+                <p className="text-sm text-danger-700">{error}</p>
               </div>
             )}
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="firstName" className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
                   Nombre
                 </label>
                 <input
@@ -152,11 +152,11 @@ export default function InvitacionPage() {
                   required
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  className="min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
                 />
               </div>
               <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="lastName" className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
                   Apellido
                 </label>
                 <input
@@ -165,13 +165,13 @@ export default function InvitacionPage() {
                   required
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                  className="min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
                 Contraseña
               </label>
               <input
@@ -181,13 +181,13 @@ export default function InvitacionPage() {
                 minLength={6}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                className="min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
               />
-              <p className="mt-1 text-xs text-gray-400">Mínimo 6 caracteres</p>
+              <p className="mt-1 text-xs text-sand-500">Mínimo 6 caracteres</p>
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="confirmPassword" className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
                 Confirmar contraseña
               </label>
               <input
@@ -197,14 +197,14 @@ export default function InvitacionPage() {
                 minLength={6}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                className="min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors text-sm"
+              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? "Creando cuenta..." : "Crear cuenta"}
             </button>

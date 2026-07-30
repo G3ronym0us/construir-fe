@@ -14,10 +14,10 @@ export interface ToastProps {
 }
 
 const toastStyles = {
-  success: 'bg-green-50 border-green-500 text-green-900',
-  error: 'bg-red-50 border-red-500 text-red-900',
-  warning: 'bg-yellow-50 border-yellow-500 text-yellow-900',
-  info: 'bg-blue-50 border-blue-500 text-blue-900',
+  success: 'bg-success-50 border-success-500 text-success-700',
+  error: 'bg-danger-50 border-danger-500 text-danger-700',
+  warning: 'bg-accent-50 border-accent-500 text-accent-700',
+  info: 'bg-brand-50 border-brand-500 text-brand-900',
 };
 
 const iconStyles = {

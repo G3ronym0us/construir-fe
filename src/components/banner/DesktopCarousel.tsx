@@ -23,7 +23,7 @@ export default function DesktopCarousel({ banners }: DesktopCarouselProps) {
   const goToSlide = (i: number) => swiperRef.current?.swiper.slideToLoop(i);
 
   return (
-    <div className="relative w-full h-[400px] md:h-[500px] lg:h-[600px] bg-gray-900 overflow-hidden shadow-2xl z-0">
+    <div className="relative w-full h-[400px] md:h-[500px] lg:h-[600px] bg-ink overflow-hidden shadow-2xl z-0">
       <Swiper
         ref={swiperRef}
         modules={[Autoplay]}

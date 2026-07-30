@@ -50,7 +50,7 @@ export default function BannerCarousel({ className }: BannerCarouselProps) {
   if (!isMounted || loading || banners.length === 0) {
     return (
       <div className={className}>
-        <div className="w-full h-[400px] md:h-[500px] lg:h-[600px] bg-gray-200 animate-pulse" />
+        <div className="mx-4 h-44 animate-pulse rounded-2xl bg-sand-200 sm:mx-0 sm:h-[400px] sm:rounded-none md:h-[500px] lg:h-[600px]" />
       </div>
     );
   }

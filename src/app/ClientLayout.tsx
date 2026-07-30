@@ -15,7 +15,12 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAdminRoute = pathname?.startsWith('/admin');
   const isCheckoutRoute = pathname?.startsWith('/checkout');
-  const showBottomNav = !isAdminRoute && !isCheckoutRoute;
+  // Las pantallas de acceso llevan su propia cabecera de marca a pantalla completa
+  const isAuthRoute = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email'].some(
+    (route) => pathname?.startsWith(route)
+  );
+  const showChrome = !isAdminRoute && !isAuthRoute;
+  const showBottomNav = showChrome && !isCheckoutRoute;
   const { isCartOpen, closeCart } = useCart();
 
   // Initialize GA4 on mount
@@ -37,11 +42,11 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      {!isAdminRoute && <Navbar />}
+      {showChrome && <Navbar />}
       <main className={`min-h-screen${showBottomNav ? ' pb-16 md:pb-0' : ''}`}>
         {children}
       </main>
-      {!isAdminRoute && <div className="hidden md:block"><Footer /></div>}
+      {showChrome && <div className="hidden md:block"><Footer /></div>}
       {showBottomNav && <BottomNav />}
       <CartDrawer isOpen={isCartOpen} onClose={closeCart} />
     </>

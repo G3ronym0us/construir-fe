@@ -62,7 +62,8 @@
     "outOfStock": "Out of stock",
     "notAvailable": "Product not available",
     "insufficientStock": "Only {available} available",
-    "sku": "SKU"
+    "sku": "SKU",
+    "add": "Add"
   },
   "products": {
     "title": "Products",
@@ -87,7 +88,10 @@
       "priceDesc": "Price: High to Low",
       "nameAsc": "Name: A-Z",
       "nameDesc": "Name: Z-A"
-    }
+    },
+    "featuredProducts": "Best sellers",
+    "viewMore": "See more",
+    "allProducts": "All"
   },
   "auth": {
     "login": "Log In",
@@ -323,7 +327,8 @@
     "imageUploadedAndFeatured": "Image uploaded successfully. Category marked as featured.",
     "selectImageFile": "Select an image file",
     "imageSelected": "Image selected",
-    "uploadingImage": "Uploading image..."
+    "uploadingImage": "Uploading image...",
+    "viewAll": "View all"
   },
   "checkout": {
     "title": "Checkout",
@@ -430,7 +435,8 @@
       "completeContact": "Please complete all contact fields",
       "completeAddress": "Please complete the address",
       "selectLocation": "Please select your location"
-    }
+    },
+    "applyDiscount": "Apply"
   },
   "discounts": {
     "title": "Coupon Management",

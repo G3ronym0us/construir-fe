@@ -4,6 +4,7 @@ import { useState, FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import AuthShell from "@/components/auth/AuthShell";
 import { authService } from "@/services/auth";
 import { getDefaultAdminPath } from "@/lib/permissions";
 
@@ -57,48 +58,35 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Iniciar sesión</h1>
-          <p className="mt-2 text-sm text-gray-500">
-            ¿No tienes cuenta?{" "}
-            <Link href="/register" className="font-semibold text-blue-600 hover:text-blue-500 transition-colors">
-              Regístrate gratis
-            </Link>
-          </p>
-        </div>
-
-        {/* Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+    <AuthShell active="login">
+      <div>
           {/* Password reset success banner */}
           {passwordReset && (
-            <div className="mb-6 flex items-start gap-3 rounded-lg bg-green-50 border border-green-100 px-4 py-3">
-              <svg className="w-5 h-5 text-green-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="mb-6 flex items-start gap-3 rounded-lg bg-success-50 border border-success-100 px-4 py-3">
+              <svg className="w-5 h-5 text-success-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <p className="text-sm text-green-700">Contraseña actualizada correctamente. Ya puedes iniciar sesión.</p>
+              <p className="text-sm text-success-700">Contraseña actualizada correctamente. Ya puedes iniciar sesión.</p>
             </div>
           )}
 
           {/* Email not verified banner */}
           {emailNotVerified && (
-            <div className="mb-6 rounded-lg bg-amber-50 border border-amber-100 p-4 space-y-3">
+            <div className="mb-6 rounded-lg bg-accent-50 border border-accent-100 p-4 space-y-3">
               <div className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-accent-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div>
-                  <p className="text-sm font-medium text-amber-800">Correo no verificado</p>
-                  <p className="text-sm text-amber-700 mt-0.5">
+                  <p className="text-sm font-medium text-accent-700">Correo no verificado</p>
+                  <p className="text-sm text-accent-700 mt-0.5">
                     Debes verificar tu correo antes de iniciar sesión.
                     Revisa tu bandeja de entrada.
                   </p>
                 </div>
               </div>
               {resendSuccess ? (
-                <p className="text-sm text-green-700 bg-green-50 rounded-md px-3 py-2">
+                <p className="text-sm text-success-700 bg-success-50 rounded-md px-3 py-2">
                   Enlace enviado. Revisa tu correo.
                 </p>
               ) : (
@@ -106,7 +94,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={handleResend}
                   disabled={resendLoading || !email}
-                  className="text-sm font-medium text-amber-700 hover:text-amber-900 underline underline-offset-2 disabled:opacity-50 transition-colors"
+                  className="text-sm font-medium text-accent-700 hover:text-accent-700 underline underline-offset-2 disabled:opacity-50 transition-colors"
                 >
                   {resendLoading ? "Enviando..." : "Reenviar enlace de verificación"}
                 </button>
@@ -116,17 +104,17 @@ export default function LoginPage() {
 
           {/* Generic error */}
           {error && (
-            <div className="mb-6 flex items-start gap-3 rounded-lg bg-red-50 border border-red-100 px-4 py-3">
-              <svg className="w-5 h-5 text-red-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="mb-6 flex items-start gap-3 rounded-lg bg-danger-50 border border-danger-100 px-4 py-3">
+              <svg className="w-5 h-5 text-danger-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <p className="text-sm text-red-700">{error}</p>
+              <p className="text-sm text-danger-700">{error}</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
                 Correo electrónico
               </label>
               <input
@@ -137,12 +125,12 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="juan@ejemplo.com"
-                className="block w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                className="block min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
                 Contraseña
               </label>
               <div className="relative">
@@ -154,12 +142,12 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Tu contraseña"
-                  className="block w-full px-3.5 py-2.5 pr-10 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  className="block pr-11 min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-sand-500 hover:text-sand-700"
                   tabIndex={-1}
                 >
                   {showPassword ? (
@@ -177,7 +165,10 @@ export default function LoginPage() {
             </div>
 
             <div className="flex justify-end">
-              <Link href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-500 transition-colors">
+              <Link
+                href="/forgot-password"
+                className="text-[12px] font-bold text-brand-600 transition-colors hover:text-brand-700"
+              >
                 ¿Olvidaste tu contraseña?
               </Link>
             </div>
@@ -185,7 +176,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center justify-center gap-2"
+              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? (
                 <>
@@ -200,8 +191,24 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+
+        {/* Comprar sin cuenta */}
+        <div className="my-5 flex items-center gap-3 text-[11px] font-semibold text-sand-500">
+          <span className="h-px flex-1 bg-sand-300" />
+          o
+          <span className="h-px flex-1 bg-sand-300" />
         </div>
+
+        <Link
+          href="/productos"
+          className="flex min-h-11 w-full items-center justify-center rounded-xl border-[1.5px] border-ink py-3.5 text-sm font-bold text-ink transition-colors hover:bg-sand-100"
+        >
+          Continuar como invitado
+        </Link>
+        <p className="mt-3 text-center text-[11.5px] font-medium leading-[1.55] text-sand-600">
+          Puedes comprar sin cuenta: la creamos automáticamente al confirmar tu primer pedido.
+        </p>
       </div>
-    </div>
+    </AuthShell>
   );
 }

@@ -61,40 +61,40 @@ export default function VerifyEmailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-sand-50 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center space-y-6">
+        <div className="rounded-2xl border border-sand-300 bg-white p-8 text-center space-y-6">
           {status === "loading" && (
             <>
-              <div className="mx-auto w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center">
-                <svg className="animate-spin w-8 h-8 text-blue-500" fill="none" viewBox="0 0 24 24">
+              <div className="mx-auto w-16 h-16 bg-brand-50 rounded-full flex items-center justify-center">
+                <svg className="animate-spin w-8 h-8 text-brand-500" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Verificando tu cuenta...</h2>
-                <p className="text-sm text-gray-500 mt-1">Por favor espera un momento.</p>
+                <h2 className="text-xl font-bold text-ink">Verificando tu cuenta...</h2>
+                <p className="text-sm text-sand-600 mt-1">Por favor espera un momento.</p>
               </div>
             </>
           )}
 
           {status === "success" && (
             <>
-              <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="mx-auto w-16 h-16 bg-success-100 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-success-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">¡Cuenta activada!</h2>
-                <p className="text-sm text-gray-500 mt-2">
+                <h2 className="text-2xl font-bold text-ink">¡Cuenta activada!</h2>
+                <p className="text-sm text-sand-600 mt-2">
                   Tu correo fue verificado exitosamente. Ya puedes iniciar sesión.
                 </p>
               </div>
               <Link
                 href="/login"
-                className="inline-block w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-sm transition-colors"
+                className="inline-block w-full py-3 px-4 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-lg text-sm transition-colors"
               >
                 Iniciar sesión
               </Link>
@@ -103,16 +103,16 @@ export default function VerifyEmailPage() {
 
           {(status === "expired" || status === "invalid" || status === "error") && (
             <>
-              <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-                <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="mx-auto w-16 h-16 bg-danger-100 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-danger-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">
+                <h2 className="text-2xl font-bold text-ink">
                   {status === "expired" ? "Enlace expirado" : "Enlace inválido"}
                 </h2>
-                <p className="text-sm text-gray-500 mt-2">
+                <p className="text-sm text-sand-600 mt-2">
                   {status === "expired"
                     ? "El enlace de verificación ha expirado. Solicita uno nuevo ingresando tu correo."
                     : "El enlace no es válido o ya fue utilizado."}
@@ -122,15 +122,15 @@ export default function VerifyEmailPage() {
               {status === "expired" && (
                 <div className="space-y-3 text-left">
                   {resendSuccess ? (
-                    <div className="rounded-lg bg-green-50 border border-green-100 px-4 py-3">
-                      <p className="text-sm text-green-700">
+                    <div className="rounded-lg bg-success-50 border border-success-100 px-4 py-3">
+                      <p className="text-sm text-success-700">
                         Si el correo existe y no está verificado, recibirás un nuevo enlace.
                       </p>
                     </div>
                   ) : (
                     <>
                       {resendError && (
-                        <p className="text-sm text-red-600 text-center">{resendError}</p>
+                        <p className="text-sm text-danger-600 text-center">{resendError}</p>
                       )}
                       <input
                         type="email"
@@ -138,12 +138,12 @@ export default function VerifyEmailPage() {
                         value={resendEmail}
                         onChange={(e) => setResendEmail(e.target.value)}
                         placeholder="tu@correo.com"
-                        className="block w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                        className="block min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
                       />
                       <button
                         onClick={handleResend}
                         disabled={resendLoading || !resendEmail}
-                        className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-lg text-sm transition-colors flex items-center justify-center gap-2"
+                        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {resendLoading ? (
                           <>
@@ -162,7 +162,7 @@ export default function VerifyEmailPage() {
                 </div>
               )}
 
-              <Link href="/login" className="inline-block text-sm text-blue-600 hover:underline">
+              <Link href="/login" className="inline-block text-sm text-brand-600 hover:underline">
                 Volver al inicio de sesión
               </Link>
             </>

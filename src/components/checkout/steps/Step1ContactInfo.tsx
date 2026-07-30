@@ -32,35 +32,35 @@ export default function Step1ContactInfo({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
-          <Mail className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        <h2 className="mb-2 flex items-center gap-2 font-display text-lg font-bold text-ink">
+          <Mail className="w-5 h-5 text-brand-600" />
           {t('contactInfo')}
         </h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-sm text-sand-700">
           {t('contactInfoDescription', { defaultValue: 'Ingresa tu información de contacto para procesar tu pedido' })}
         </p>
       </div>
 
       {/* Campos de Identificación (solo para guests) */}
       {!isAuthenticated && (
-        <div className="border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 rounded-lg p-4 space-y-4">
-          <div className="flex items-center gap-2 text-blue-900 dark:text-blue-300 font-medium">
+        <div className="border border-brand-200 bg-brand-50 rounded-lg p-4 space-y-4">
+          <div className="flex items-center gap-2 text-brand-900 font-medium">
             <Search className="w-4 h-4" />
             <span>{t('identification', { defaultValue: 'Identificación' })}</span>
           </div>
-          <p className="text-sm text-blue-700 dark:text-blue-400">
-            {t('identificationDescription', { defaultValue: 'Ingresa tu identificación para autocompletar tus datos si ya has comprado antes' })}
+          <p className="text-sm text-brand-700">
+            {t('identificationDescription', { defaultValue: 'Si ya compraste antes, ingresa tu identificación y luego tu correo o teléfono para autocompletar tus datos' })}
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
                 {t('identificationType', { defaultValue: 'Tipo' })}
               </label>
               <select
                 value={identificationType || IdentificationType.V}
                 onChange={(e) => onIdentificationChange(e.target.value as IdentificationType, identificationNumber || '')}
-                className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
               >
                 <option value={IdentificationType.V}>V - Venezolano</option>
                 <option value={IdentificationType.E}>E - Extranjero</option>
@@ -71,7 +71,7 @@ export default function Step1ContactInfo({
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
                 {t('identificationNumber', { defaultValue: 'Número de Identificación' })}
               </label>
               <div className="relative">
@@ -81,11 +81,11 @@ export default function Step1ContactInfo({
                   onChange={(e) => onIdentificationChange(identificationType || IdentificationType.V, e.target.value)}
                   onBlur={onIdentificationBlur}
                   placeholder={t('identificationPlaceholder', { defaultValue: 'Ej: 12345678' })}
-                  className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
                 />
                 {isSearching && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-brand-600"></div>
                   </div>
                 )}
               </div>
@@ -96,39 +96,39 @@ export default function Step1ContactInfo({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
             {t('firstName')} *
           </label>
           <input
             type="text"
             {...register('firstName', { required: true })}
-            className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
           />
           {errors.firstName && (
-            <span className="text-red-500 text-xs mt-1">
+            <span className="text-danger-500 text-xs mt-1">
               {t('errors.fieldRequired', { defaultValue: 'Este campo es requerido' })}
             </span>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
             {t('lastName')} *
           </label>
           <input
             type="text"
             {...register('lastName', { required: true })}
-            className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
           />
           {errors.lastName && (
-            <span className="text-red-500 text-xs mt-1">
+            <span className="text-danger-500 text-xs mt-1">
               {t('errors.fieldRequired', { defaultValue: 'Este campo es requerido' })}
             </span>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
             {t('email')} *
           </label>
           <input
@@ -137,26 +137,26 @@ export default function Step1ContactInfo({
               required: true,
               pattern: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i
             })}
-            className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
           />
           {errors.email && (
-            <span className="text-red-500 text-xs mt-1">
+            <span className="text-danger-500 text-xs mt-1">
               {t('errors.emailInvalid', { defaultValue: 'Email válido requerido' })}
             </span>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
             {t('phone')} *
           </label>
           <input
             type="tel"
             {...register('phone', { required: true })}
-            className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
           />
           {errors.phone && (
-            <span className="text-red-500 text-xs mt-1">
+            <span className="text-danger-500 text-xs mt-1">
               {t('errors.fieldRequired', { defaultValue: 'Este campo es requerido' })}
             </span>
           )}

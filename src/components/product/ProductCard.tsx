@@ -43,7 +43,7 @@ export default function ProductCard({
 
   return (
     <div
-      className="block group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+      className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-sand-300 bg-white transition-shadow hover:shadow-[0_10px_28px_-16px_rgba(20,24,29,0.35)]"
       onClick={() => router.push(`/productos/${product.uuid}`)}
     >
       {/* Image Section */}

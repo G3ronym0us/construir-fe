@@ -3,6 +3,7 @@
 import { useState, FormEvent } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import AuthShell from "@/components/auth/AuthShell";
 import { IdentificationType } from "@/types";
 
 const ID_TYPES = [
@@ -65,25 +66,25 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-sand-50 px-4">
         <div className="max-w-md w-full text-center space-y-6">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-5">
-            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="rounded-2xl border border-sand-300 bg-white p-8 space-y-5">
+            <div className="mx-auto w-16 h-16 bg-success-100 rounded-full flex items-center justify-center">
+              <svg className="w-8 h-8 text-success-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Revisa tu correo</h2>
-              <p className="mt-2 text-gray-500 text-sm leading-relaxed">
+              <h2 className="text-2xl font-bold text-ink">Revisa tu correo</h2>
+              <p className="mt-2 text-sand-600 text-sm leading-relaxed">
                 Te enviamos un enlace de verificación a{" "}
-                <span className="font-medium text-gray-700">{formData.email}</span>.
+                <span className="font-medium text-sand-700">{formData.email}</span>.
                 Haz clic en el enlace para activar tu cuenta.
               </p>
             </div>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-sand-500">
               ¿No lo ves? Revisa la carpeta de spam o{" "}
-              <Link href="/login" className="text-blue-600 hover:underline">
+              <Link href="/login" className="text-brand-600 hover:underline">
                 intenta iniciar sesión
               </Link>{" "}
               para reenviar el correo.
@@ -95,27 +96,14 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-lg">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Crear cuenta</h1>
-          <p className="mt-2 text-sm text-gray-500">
-            ¿Ya tienes cuenta?{" "}
-            <Link href="/login" className="font-semibold text-blue-600 hover:text-blue-500 transition-colors">
-              Inicia sesión
-            </Link>
-          </p>
-        </div>
-
-        {/* Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+    <AuthShell active="register">
+      <div>
           {error && (
-            <div className="mb-6 flex items-start gap-3 rounded-lg bg-red-50 border border-red-100 px-4 py-3">
-              <svg className="w-5 h-5 text-red-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="mb-6 flex items-start gap-3 rounded-lg bg-danger-50 border border-danger-100 px-4 py-3">
+              <svg className="w-5 h-5 text-danger-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <p className="text-sm text-red-700">{error}</p>
+              <p className="text-sm text-danger-700">{error}</p>
             </div>
           )}
 
@@ -123,8 +111,8 @@ export default function RegisterPage() {
             {/* Nombre y Apellido */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
-                  Nombre <span className="text-red-500">*</span>
+                <label htmlFor="firstName" className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
+                  Nombre <span className="text-danger-500">*</span>
                 </label>
                 <input
                   id="firstName"
@@ -135,12 +123,12 @@ export default function RegisterPage() {
                   value={formData.firstName}
                   onChange={handleChange}
                   placeholder="Juan"
-                  className="block w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  className="block min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
                 />
               </div>
               <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
-                  Apellido <span className="text-red-500">*</span>
+                <label htmlFor="lastName" className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
+                  Apellido <span className="text-danger-500">*</span>
                 </label>
                 <input
                   id="lastName"
@@ -151,15 +139,15 @@ export default function RegisterPage() {
                   value={formData.lastName}
                   onChange={handleChange}
                   placeholder="Pérez"
-                  className="block w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  className="block min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
                 />
               </div>
             </div>
 
             {/* Identificación */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Identificación <span className="text-red-500">*</span>
+              <label className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
+                Identificación <span className="text-danger-500">*</span>
               </label>
               <div className="flex gap-2">
                 <select
@@ -167,7 +155,7 @@ export default function RegisterPage() {
                   required
                   value={formData.identificationType}
                   onChange={handleChange}
-                  className="w-36 shrink-0 px-3 py-2.5 border border-gray-300 rounded-lg text-gray-900 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  className="w-24 shrink-0 min-h-11 rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
                 >
                   {ID_TYPES.map((t) => (
                     <option key={t.value} value={t.value}>
@@ -182,18 +170,18 @@ export default function RegisterPage() {
                   value={formData.identificationNumber}
                   onChange={handleChange}
                   placeholder="12345678"
-                  className="flex-1 min-w-0 px-3.5 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  className="min-w-0 flex-1 min-h-11 rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
                 />
               </div>
-              <p className="mt-1 text-xs text-gray-400">
+              <p className="mt-1 text-xs text-sand-500">
                 {ID_TYPES.find((t) => t.value === formData.identificationType)?.label}
               </p>
             </div>
 
             {/* Teléfono */}
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                Teléfono <span className="text-red-500">*</span>
+              <label htmlFor="phone" className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
+                Teléfono <span className="text-danger-500">*</span>
               </label>
               <input
                 id="phone"
@@ -204,14 +192,14 @@ export default function RegisterPage() {
                 value={formData.phone}
                 onChange={handleChange}
                 placeholder="0412-1234567"
-                className="block w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                className="block min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
               />
             </div>
 
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Correo electrónico <span className="text-red-500">*</span>
+              <label htmlFor="email" className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
+                Correo electrónico <span className="text-danger-500">*</span>
               </label>
               <input
                 id="email"
@@ -222,15 +210,15 @@ export default function RegisterPage() {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="juan@ejemplo.com"
-                className="block w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                className="block min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
               />
             </div>
 
             {/* Contraseñas */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                  Contraseña <span className="text-red-500">*</span>
+                <label htmlFor="password" className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
+                  Contraseña <span className="text-danger-500">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -243,12 +231,12 @@ export default function RegisterPage() {
                     value={formData.password}
                     onChange={handleChange}
                     placeholder="Mín. 6 caracteres"
-                    className="block w-full px-3.5 py-2.5 pr-10 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    className="block pr-11 min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-sand-500 hover:text-sand-700"
                     tabIndex={-1}
                   >
                     {showPassword ? (
@@ -265,8 +253,8 @@ export default function RegisterPage() {
                 </div>
               </div>
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirmar contraseña <span className="text-red-500">*</span>
+                <label htmlFor="confirmPassword" className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
+                  Confirmar contraseña <span className="text-danger-500">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -279,16 +267,16 @@ export default function RegisterPage() {
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     placeholder="Repite la contraseña"
-                    className={`block w-full px-3.5 py-2.5 pr-10 border rounded-lg text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
+                    className={`block w-full px-3.5 py-2.5 pr-10 border rounded-lg text-ink placeholder-sand-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition ${
                       formData.confirmPassword && formData.password !== formData.confirmPassword
-                        ? "border-red-300 bg-red-50"
-                        : "border-gray-300"
+                        ? "border-danger-500 bg-danger-50"
+                        : "border-sand-300"
                     }`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirm(!showConfirm)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-sand-500 hover:text-sand-700"
                     tabIndex={-1}
                   >
                     {showConfirm ? (
@@ -304,7 +292,7 @@ export default function RegisterPage() {
                   </button>
                 </div>
                 {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                  <p className="mt-1 text-xs text-red-500">Las contraseñas no coinciden</p>
+                  <p className="mt-1 text-xs text-danger-500">Las contraseñas no coinciden</p>
                 )}
               </div>
             </div>
@@ -312,7 +300,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center justify-center gap-2"
+              className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? (
                 <>
@@ -327,13 +315,12 @@ export default function RegisterPage() {
               )}
             </button>
 
-            <p className="text-center text-xs text-gray-400">
+            <p className="text-center text-xs text-sand-500">
               Al registrarte aceptas nuestros{" "}
-              <span className="text-gray-500 font-medium">términos y condiciones</span>
+              <span className="text-sand-600 font-medium">términos y condiciones</span>
             </p>
           </form>
-        </div>
       </div>
-    </div>
+    </AuthShell>
   );
 }

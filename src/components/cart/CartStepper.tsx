@@ -10,6 +10,8 @@ interface CartStepperProps {
   inventory?: number;
   className?: string;
   compact?: boolean;
+  /** Reemplaza el texto del botón inicial, p. ej. "Agregar · Bs. 1.480,00". */
+  addLabel?: string;
 }
 
 export default function CartStepper({
@@ -17,6 +19,7 @@ export default function CartStepper({
   inventory,
   className = "",
   compact = false,
+  addLabel,
 }: CartStepperProps) {
   const t = useTranslations("cart");
   const { addToCart, getItemQuantity, updateQuantity, removeFromCart } = useCart();
@@ -69,27 +72,27 @@ export default function CartStepper({
   if (currentQty > 0) {
     return (
       <div
-        className={`flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg ${className}`}
+        className={`flex min-h-11 items-center justify-between rounded-xl border-[1.5px] border-brand-600 bg-white ${className}`}
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={handleDecrease}
           disabled={loading}
-          className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-800/40 rounded-l-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex h-11 w-11 items-center justify-center rounded-l-[10px] text-brand-600 transition-colors hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50"
           aria-label="Disminuir cantidad"
         >
-          <Minus className="w-4 h-4" />
+          <Minus className="h-4 w-4" strokeWidth={2.5} />
         </button>
-        <span className="font-semibold text-gray-800 dark:text-gray-200 min-w-[2ch] text-center">
-          {loading ? <Loader2 className="w-4 h-4 animate-spin inline" /> : currentQty}
+        <span className="min-w-[2ch] text-center text-[13px] font-extrabold text-ink">
+          {loading ? <Loader2 className="inline h-4 w-4 animate-spin" /> : currentQty}
         </span>
         <button
           onClick={handleIncrease}
           disabled={loading || isAtStockLimit}
-          className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-800/40 rounded-r-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex h-11 w-11 items-center justify-center rounded-r-[10px] text-brand-600 transition-colors hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50"
           aria-label="Aumentar cantidad"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="h-4 w-4" strokeWidth={2.5} />
         </button>
       </div>
     );
@@ -99,14 +102,14 @@ export default function CartStepper({
     <button
       onClick={handleAdd}
       disabled={loading}
-      className={`flex items-center justify-center gap-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${compact ? 'px-3 py-2' : 'px-6 py-3'} ${className}`}
+      className={`flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand-600 font-bold text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50 ${compact ? 'px-3 py-2.5 text-[12.5px]' : 'px-6 py-3.5 text-sm'} ${className}`}
     >
       {loading ? (
-        <Loader2 className={compact ? 'w-4 h-4 animate-spin' : 'w-5 h-5 animate-spin'} />
+        <Loader2 className={compact ? 'h-4 w-4 animate-spin' : 'h-5 w-5 animate-spin'} />
       ) : (
-        <ShoppingCart className={compact ? 'w-4 h-4' : 'w-5 h-5'} />
+        <ShoppingCart className={compact ? 'hidden h-4 w-4 sm:block' : 'h-5 w-5'} />
       )}
-      <span className={compact ? 'hidden sm:inline' : ''}>{t("addToCart")}</span>
+      <span>{addLabel ?? t("addToCart")}</span>
     </button>
   );
 }
