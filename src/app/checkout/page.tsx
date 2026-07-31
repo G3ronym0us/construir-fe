@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useForm } from "react-hook-form";
+import { useForm, type FieldPath, type FieldPathValue } from "react-hook-form";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/context/ToastContext";
@@ -90,6 +90,7 @@ export default function CheckoutPage() {
     handleSubmit,
     watch,
     setValue,
+    getValues,
     reset,
     formState: { errors },
   } = useForm<CheckoutData>({
@@ -606,28 +607,109 @@ export default function CheckoutPage() {
   ) => {
     setIdentificationType(type);
     setIdentificationNumber(number);
-    // Cambiar la cédula invalida el aviso de autocompletado anterior
-    setAutofilledGuest(null);
+    // Cambiar la cédula invalida el autocompletado anterior: no basta con
+    // quitar el aviso, hay que sacar del formulario los datos de la otra
+    // persona. Si no, una consulta a una cédula ajena seguida de la propia
+    // dejaba el pedido con el nombre, correo y dirección del anterior.
+    revertGuestData();
   };
 
-  // Identificaciones ya consultadas, para no gastar el límite de tasa del backend.
-  const attemptedLookups = useRef<Set<string>>(new Set());
+  // Resultados ya consultados, para no gastar el límite de tasa del backend
+  // (5/min) y para poder reponer el autocompletado sin volver a preguntar
+  // cuando el cliente corrige un dígito y vuelve a la cédula original.
+  const lookupCache = useRef<Map<string, GuestCustomer | null>>(new Map());
+
+  // Lo que escribió el último autocompletado, para poder deshacerlo.
+  const autofilledValues = useRef<Partial<CheckoutData> | null>(null);
+
+  /**
+   * Deshace el último autocompletado.
+   *
+   * Sólo revierte los campos que siguen teniendo exactamente el valor que puso
+   * el autocompletado: si el cliente editó alguno a mano después, lo suyo
+   * manda y se respeta.
+   */
+  const revertGuestData = () => {
+    const applied = autofilledValues.current;
+    autofilledValues.current = null;
+    setAutofilledGuest(null);
+    if (!applied) return;
+
+    const restore = <K extends FieldPath<CheckoutData>>(
+      field: K,
+      empty: FieldPathValue<CheckoutData, K>,
+    ) => {
+      const autofilled = applied[field as keyof CheckoutData];
+      if (autofilled === undefined) return;
+      if (getValues(field) !== autofilled) return;
+      setValue(field, empty);
+    };
+
+    restore("firstName", "");
+    restore("lastName", "");
+    restore("email", "");
+    restore("phone", "");
+    restore("address", "");
+    restore("city", "");
+    restore("state", "");
+    restore("zipCode", "");
+    restore("country", "Venezuela");
+    restore("additionalInfo", "");
+    restore("latitude", undefined);
+    restore("longitude", undefined);
+  };
 
   /** Vuelca sobre el formulario los datos del invitado encontrado. */
   const applyGuestData = (guest: GuestCustomer) => {
+    // Un autocompletado reemplaza al anterior por completo.
+    revertGuestData();
+
+    const applied: Partial<CheckoutData> = {
+      firstName: guest.firstName,
+      lastName: guest.lastName,
+      email: guest.email,
+      phone: guest.phone,
+    };
+
     setValue("firstName", guest.firstName);
     setValue("lastName", guest.lastName);
     setValue("email", guest.email);
     setValue("phone", guest.phone);
 
-    if (guest.address) setValue("address", guest.address);
-    if (guest.city) setValue("city", guest.city);
-    if (guest.state) setValue("state", guest.state);
-    if (guest.zipCode) setValue("zipCode", guest.zipCode);
-    if (guest.country) setValue("country", guest.country);
-    if (guest.additionalInfo) setValue("additionalInfo", guest.additionalInfo);
-    if (guest.latitude) setValue("latitude", guest.latitude);
-    if (guest.longitude) setValue("longitude", guest.longitude);
+    if (guest.address) {
+      setValue("address", guest.address);
+      applied.address = guest.address;
+    }
+    if (guest.city) {
+      setValue("city", guest.city);
+      applied.city = guest.city;
+    }
+    if (guest.state) {
+      setValue("state", guest.state);
+      applied.state = guest.state;
+    }
+    if (guest.zipCode) {
+      setValue("zipCode", guest.zipCode);
+      applied.zipCode = guest.zipCode;
+    }
+    if (guest.country) {
+      setValue("country", guest.country);
+      applied.country = guest.country;
+    }
+    if (guest.additionalInfo) {
+      setValue("additionalInfo", guest.additionalInfo);
+      applied.additionalInfo = guest.additionalInfo;
+    }
+    if (guest.latitude) {
+      setValue("latitude", guest.latitude);
+      applied.latitude = guest.latitude;
+    }
+    if (guest.longitude) {
+      setValue("longitude", guest.longitude);
+      applied.longitude = guest.longitude;
+    }
+
+    autofilledValues.current = applied;
 
     setAutofilledGuest({
       label: `${guest.identificationType}-${guest.identificationNumber}`,
@@ -647,8 +729,13 @@ export default function CheckoutPage() {
     if (identificationNumber.length < 7) return;
 
     const lookupKey = `${identificationType}|${identificationNumber}`;
-    if (attemptedLookups.current.has(lookupKey)) return;
-    attemptedLookups.current.add(lookupKey);
+
+    // Ya consultada: se resuelve con lo cacheado, sin gastar otra petición.
+    if (lookupCache.current.has(lookupKey)) {
+      const cached = lookupCache.current.get(lookupKey) ?? null;
+      if (cached) applyGuestData(cached);
+      return;
+    }
 
     setIsSearchingGuest(true);
     try {
@@ -656,8 +743,15 @@ export default function CheckoutPage() {
         identificationType,
         identificationNumber,
       );
+      lookupCache.current.set(lookupKey, guestData);
+
+      // Una cédula sin registro no deja el formulario como estaba: si venía de
+      // otro autocompletado, esos datos son de otra persona y hay que sacarlos.
       if (guestData) applyGuestData(guestData);
+      else revertGuestData();
     } catch (error) {
+      // Un fallo de red no se cachea: se reintenta al próximo blur. Tampoco se
+      // revierte nada, porque no sabemos si la cédula tiene registro o no.
       console.error("Error searching guest customer:", error);
     } finally {
       setIsSearchingGuest(false);
