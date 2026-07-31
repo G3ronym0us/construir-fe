@@ -93,6 +93,10 @@ export default function Step1ContactInfo({
             <input
               type="text"
               inputMode="numeric"
+              // El teclado móvil rotula la tecla como "siguiente" en vez de un
+              // retorno genérico: Enter avanza de paso, así que la tecla dice
+              // lo que hace.
+              enterKeyHint="next"
               value={identificationNumber || ''}
               onChange={(e) =>
                 onIdentificationChange(

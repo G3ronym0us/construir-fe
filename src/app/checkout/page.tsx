@@ -235,6 +235,26 @@ export default function CheckoutPage() {
 
   const steps = getSteps();
 
+  /**
+   * Enter desde el teclado hace lo mismo que el botón que el cliente tiene
+   * delante: avanzar de paso, y sólo confirmar el pedido en el último.
+   *
+   * El `<form>` envuelve los cuatro pasos, así que su `onSubmit` —el envío
+   * final— se disparaba con Enter en cualquier campo. En el paso de la cédula
+   * eso intentaba crear la orden, la validación del último paso fallaba en
+   * silencio y no pasaba nada visible: en móvil había que bajar el teclado y
+   * tocar el botón a mano.
+   */
+  const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    if (currentStep < steps.length - 1) {
+      event.preventDefault();
+      handleNext();
+      return;
+    }
+
+    handleSubmit(onSubmit)(event);
+  };
+
   // Últimos valores heredados por cada forma de pago, para distinguirlos de los
   // que escribió el usuario a mano.
   const seededPagomovil = useRef({ phoneNumber: "", cedula: "" });
@@ -315,6 +335,14 @@ export default function CheckoutPage() {
         );
         return;
       }
+
+      // Avanzar con Enter no hace `blur` del campo, así que la búsqueda que
+      // cuelga de `onBlur` no llegaba a correr: el cliente pasaba de paso con
+      // el formulario vacío aunque su cédula tuviera registro. Se dispara acá
+      // también; la caché de `handleIdentificationSearch` evita la consulta
+      // repetida cuando el `blur` ya la hizo.
+      void handleIdentificationSearch();
+
       setContactSubStep("details");
       return;
     }
@@ -1053,7 +1081,7 @@ export default function CheckoutPage() {
 
             <form
               id="checkout-form"
-              onSubmit={handleSubmit(onSubmit)}
+              onSubmit={handleFormSubmit}
               className="space-y-6 bg-white p-4 md:rounded-2xl md:border md:border-sand-300 md:p-6"
             >
               {/* Paso 1: Información de Contacto */}
