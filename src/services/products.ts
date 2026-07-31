@@ -167,3 +167,41 @@ export async function getProducts(params?: {
 }): Promise<PaginatedResponse<Product>> {
   return productsService.getPublicPaginated(params);
 }
+
+/**
+ * Resuelve los productos de un carrito a partir de sus uuid.
+ *
+ * El carrito local sólo guarda uuid y cantidad, así que hay que ir a buscar
+ * cada producto para mostrar precios. Se resuelve **uno por uuid** y no
+ * pidiendo una página del catálogo: con `getProducts({ page: 1, limit: 100 })`
+ * todo producto que no estuviera entre los 100 más recientes se trataba como
+ * inexistente — con 1089 productos publicados, el 91% del catálogo.
+ *
+ * `gone` sólo lista los que respondieron **404**. Un fallo de red o un 500 no
+ * dicen nada sobre el catálogo: esos uuid no aparecen ni en `found` ni en
+ * `gone`, y quien llame decide reintentar sin haber perdido nada.
+ */
+export async function resolveCartProducts(
+  uuids: string[],
+): Promise<{ found: Product[]; gone: string[] }> {
+  const results = await Promise.allSettled(
+    uuids.map((uuid) => productsService.getByUuid(uuid)),
+  );
+
+  const found: Product[] = [];
+  const gone: string[] = [];
+
+  results.forEach((result, index) => {
+    if (result.status === 'fulfilled') {
+      found.push(result.value);
+    } else if (
+      (result.reason as { statusCode?: number } | null)?.statusCode === 404
+    ) {
+      gone.push(uuids[index]);
+    } else {
+      console.error(`Error resolviendo el producto ${uuids[index]}:`, result.reason);
+    }
+  });
+
+  return { found, gone };
+}

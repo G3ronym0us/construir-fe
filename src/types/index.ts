@@ -18,6 +18,15 @@ export interface User {
   lastName: string;
   email: string;
   role: UserRole;
+  /**
+   * Perfil de contacto. Llegan de `GET /auth/profile`, que los lee de la fila
+   * y no del token — pueden completarse después del alta.
+   *
+   * Nulos en cuentas viejas: el checkout los pide sólo a quien le falten.
+   */
+  phone?: string | null;
+  identificationType?: IdentificationType | null;
+  identificationNumber?: string | null;
   isActive: boolean;
   deletedAt: string | null;
   createdAt: string;

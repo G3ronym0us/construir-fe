@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { productsService } from '../products';
+import { productsService, resolveCartProducts } from '../products';
 
 vi.mock('@/lib/api', () => ({
   apiClient: {
@@ -106,5 +106,69 @@ describe('productsService.delete', () => {
     await productsService.delete('prod-1');
 
     expect(apiClient.delete).toHaveBeenCalledWith('/products/prod-1');
+  });
+});
+
+/**
+ * Es la pieza que arregló el bug del carrito: antes se pedía la primera página
+ * del catálogo y todo lo que no viniera en ella se daba por inexistente. Con
+ * 1089 productos publicados, eso era el 91% del catálogo.
+ */
+describe('resolveCartProducts', () => {
+  const notFound = () => {
+    const error = new Error('Product not found') as Error & { statusCode?: number };
+    error.statusCode = 404;
+    return error;
+  };
+
+  it('resuelve cada uuid por separado, sin pedir páginas del catálogo', async () => {
+    vi.mocked(apiClient.get).mockResolvedValue(mockProduct);
+
+    const { found, gone } = await resolveCartProducts(['a', 'b']);
+
+    expect(apiClient.get).toHaveBeenCalledWith('/products/a');
+    expect(apiClient.get).toHaveBeenCalledWith('/products/b');
+    expect(found).toHaveLength(2);
+    expect(gone).toEqual([]);
+  });
+
+  it('marca como inexistente sólo lo que responde 404', async () => {
+    vi.mocked(apiClient.get).mockRejectedValue(notFound());
+
+    const { found, gone } = await resolveCartProducts(['borrado']);
+
+    expect(found).toEqual([]);
+    expect(gone).toEqual(['borrado']);
+  });
+
+  // Lo esencial: un fallo de red no dice nada sobre el catálogo, así que ese
+  // uuid no puede acabar en `gone` — quien llame lo purgaría del carrito.
+  it('ante un fallo de red no lo da por encontrado ni por inexistente', async () => {
+    vi.mocked(apiClient.get).mockRejectedValue(new Error('Failed to fetch'));
+
+    const { found, gone } = await resolveCartProducts(['vivo']);
+
+    expect(found).toEqual([]);
+    expect(gone).toEqual([]);
+  });
+
+  it('clasifica cada uuid por su cuenta en una misma llamada', async () => {
+    vi.mocked(apiClient.get)
+      .mockResolvedValueOnce(mockProduct)
+      .mockRejectedValueOnce(notFound())
+      .mockRejectedValueOnce(new Error('Failed to fetch'));
+
+    const { found, gone } = await resolveCartProducts(['vive', 'borrado', 'sin-red']);
+
+    expect(found).toHaveLength(1);
+    expect(gone).toEqual(['borrado']);
+  });
+
+  it('con el carrito vacío no consulta nada', async () => {
+    const { found, gone } = await resolveCartProducts([]);
+
+    expect(apiClient.get).not.toHaveBeenCalled();
+    expect(found).toEqual([]);
+    expect(gone).toEqual([]);
   });
 });

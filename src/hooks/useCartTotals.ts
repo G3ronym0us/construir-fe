@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
-import { productsService } from '@/services/products';
+import { resolveCartProducts } from '@/services/products';
 import { localCartService } from '@/services/cart';
 import { parsePrice } from '@/lib/currency';
 import type { CartItem, Product } from '@/types';
@@ -12,15 +12,6 @@ export interface EnrichedLocalCartItem {
   productUuid: string;
   quantity: number;
   product: Product;
-}
-
-/**
- * Un 404 es la única prueba de que el producto dejó de existir. Cualquier otro
- * fallo — red caída, 500, timeout — no dice nada sobre el catálogo y no debe
- * costarle el ítem al cliente.
- */
-function isGone(error: unknown): boolean {
-  return (error as { statusCode?: number } | null)?.statusCode === 404;
 }
 
 /**
@@ -57,37 +48,23 @@ export function useCartTotals() {
     const loadLocalCartProducts = async () => {
       setLoadingProducts(true);
 
-      const results = await Promise.allSettled(
-        pendingUuids.map((uuid) => productsService.getByUuid(uuid)),
-      );
+      const { found, gone } = await resolveCartProducts(pendingUuids);
       if (cancelled) return;
 
-      const fetched: Product[] = [];
-      const goneUuids: string[] = [];
-
-      results.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-          fetched.push(result.value);
-        } else if (isGone(result.reason)) {
-          goneUuids.push(pendingUuids[index]);
-        } else {
-          // Fallo transitorio: se reintenta cuando cambie el carrito.
-          console.error('Error loading cart product:', result.reason);
-        }
-      });
-
-      if (fetched.length > 0) {
-        const fetchedUuids = new Set(fetched.map((p) => p.uuid));
+      if (found.length > 0) {
+        const fetchedUuids = new Set(found.map((p) => p.uuid));
         setProducts((prev) => [
           ...prev.filter((p) => !fetchedUuids.has(p.uuid)),
-          ...fetched,
+          ...found,
         ]);
       }
 
-      if (goneUuids.length > 0) {
-        const gone = new Set(goneUuids);
+      if (gone.length > 0) {
+        const borrados = new Set(gone);
         localCartService.saveCart({
-          items: localCart.items.filter((item) => !gone.has(item.productUuid)),
+          items: localCart.items.filter(
+            (item) => !borrados.has(item.productUuid),
+          ),
         });
         await refreshCart();
       }

@@ -8,7 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/context/ToastContext";
 import { Loader2, ChevronUp } from "lucide-react";
-import { getProducts } from "@/services/products";
+import { resolveCartProducts } from "@/services/products";
 import { ordersService } from "@/services/orders";
 import { discountsService } from "@/services/discounts";
 import { guestCustomersService } from "@/services/guest-customers";
@@ -145,15 +145,25 @@ export default function CheckoutPage() {
 
   const isAuthenticated = !!user;
 
-  // Quien ya inició sesión no pasa por la pantalla de cédula
-  const effectiveSubStep: ContactSubStep = isAuthenticated
-    ? "details"
-    : contactSubStep;
+  /**
+   * A quien tiene sesión se le pide la cédula sólo si su cuenta no la tiene.
+   *
+   * Saltarle la pantalla a todo el que inició sesión dejaba pedidos sin
+   * identificación: el checkout no la pedía, la cuenta no la tenía y —en
+   * retiro en local— tampoco hay dirección de envío que la lleve, así que al
+   * ERP le llegaba vacía. Se pide una vez y el backend la guarda en la cuenta.
+   */
+  const perfilIncompleto =
+    isAuthenticated && (!user?.identificationNumber || !user?.phone);
+
+  const effectiveSubStep: ContactSubStep =
+    isAuthenticated && !perfilIncompleto ? "details" : contactSubStep;
   const isOnIdentification =
     currentStep === 0 && effectiveSubStep === "identification";
   // En la primera pantalla el retroceso sale del checkout, no navega entre pasos
   const canGoBack =
-    currentStep > 0 || (!isAuthenticated && contactSubStep === "details");
+    currentStep > 0 ||
+    ((!isAuthenticated || perfilIncompleto) && contactSubStep === "details");
 
   const CHECKOUT_STORAGE_KEY = 'checkout_draft';
 
@@ -235,6 +245,26 @@ export default function CheckoutPage() {
 
   const steps = getSteps();
 
+  /**
+   * Enter desde el teclado hace lo mismo que el botón que el cliente tiene
+   * delante: avanzar de paso, y sólo confirmar el pedido en el último.
+   *
+   * El `<form>` envuelve los cuatro pasos, así que su `onSubmit` —el envío
+   * final— se disparaba con Enter en cualquier campo. En el paso de la cédula
+   * eso intentaba crear la orden, la validación del último paso fallaba en
+   * silencio y no pasaba nada visible: en móvil había que bajar el teclado y
+   * tocar el botón a mano.
+   */
+  const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    if (currentStep < steps.length - 1) {
+      event.preventDefault();
+      handleNext();
+      return;
+    }
+
+    handleSubmit(onSubmit)(event);
+  };
+
   // Últimos valores heredados por cada forma de pago, para distinguirlos de los
   // que escribió el usuario a mano.
   const seededPagomovil = useRef({ phoneNumber: "", cedula: "" });
@@ -315,6 +345,14 @@ export default function CheckoutPage() {
         );
         return;
       }
+
+      // Avanzar con Enter no hace `blur` del campo, así que la búsqueda que
+      // cuelga de `onBlur` no llegaba a correr: el cliente pasaba de paso con
+      // el formulario vacío aunque su cédula tuviera registro. Se dispara acá
+      // también; la caché de `handleIdentificationSearch` evita la consulta
+      // repetida cuando el `blur` ya la hizo.
+      void handleIdentificationSearch();
+
       setContactSubStep("details");
       return;
     }
@@ -395,20 +433,23 @@ export default function CheckoutPage() {
     setCurrentStep((prev) => Math.max(prev - 1, 0));
   };
 
-  // Cargar productos para carrito local
+  /**
+   * Resuelve los productos del carrito de invitado para poder mostrar precios.
+   *
+   * Va por uuid y no pidiendo una página del catálogo: con
+   * `getProducts({ page: 1, limit: 100 })` cualquier producto fuera de los 100
+   * más recientes no se encontraba, `enrichedLocalItems` quedaba vacío y la
+   * guarda de más abajo devolvía al cliente al carrito — entraba al checkout y
+   * rebotaba, con el carrito lleno.
+   */
   useEffect(() => {
     const loadLocalCartProducts = async () => {
       try {
         setLoadingProducts(true);
-        const productUuids = localCart.items.map((item) => item.productUuid);
-        const response = await getProducts({
-          page: 1,
-          limit: 100,
-        });
-        const matchedProducts = response.data.filter((p) =>
-          productUuids.includes(p.uuid),
+        const { found } = await resolveCartProducts(
+          localCart.items.map((item) => item.productUuid),
         );
-        setProducts(matchedProducts);
+        setProducts(found);
       } catch (error) {
         console.error("Error loading products:", error);
       } finally {
@@ -883,17 +924,20 @@ export default function CheckoutPage() {
         receiptFile = transferenciaPayment.receipt;
       }
 
-      // Preparar customerInfo (solo para guests)
-      const customerInfo: CustomerInfoDto | undefined = !isAuthenticated
-        ? {
-            identificationType: identificationType,
-            identificationNumber: identificationNumber,
-            firstName: formData.firstName!,
-            lastName: formData.lastName!,
-            email: formData.email!,
-            phone: formData.phone!,
-          }
-        : undefined;
+      // Para invitados, y también para el cliente con sesión cuya cuenta no
+      // tenía cédula o teléfono: en ese caso el checkout se los acaba de pedir
+      // y el backend los guarda en su cuenta, para no volver a pedírselos.
+      const customerInfo: CustomerInfoDto | undefined =
+        !isAuthenticated || perfilIncompleto
+          ? {
+              identificationType: identificationType,
+              identificationNumber: identificationNumber,
+              firstName: formData.firstName!,
+              lastName: formData.lastName!,
+              email: formData.email!,
+              phone: formData.phone!,
+            }
+          : undefined;
 
       // Preparar shippingAddress (solo para delivery)
       const shippingAddress: ShippingAddressDto | undefined =
@@ -1053,7 +1097,7 @@ export default function CheckoutPage() {
 
             <form
               id="checkout-form"
-              onSubmit={handleSubmit(onSubmit)}
+              onSubmit={handleFormSubmit}
               className="space-y-6 bg-white p-4 md:rounded-2xl md:border md:border-sand-300 md:p-6"
             >
               {/* Paso 1: Información de Contacto */}

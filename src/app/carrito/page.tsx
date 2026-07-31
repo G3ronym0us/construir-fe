@@ -34,7 +34,10 @@ export default function CarritoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white pb-40 md:pb-10">
+    // `pb-48` reserva el alto de la barra fija, que ahora lleva el total además
+    // de las dos acciones. Con el `pb-40` anterior el botón de vaciar carrito
+    // quedaba tapado — el mismo problema que este cambio corrige.
+    <div className="min-h-screen bg-white pb-48 md:pb-10">
       <div className="mx-auto max-w-2xl px-4 pt-[calc(1rem+env(safe-area-inset-top))] md:pt-4">
         {/* Cabecera */}
         <div className="mb-3 flex items-baseline gap-3">
@@ -142,6 +145,26 @@ export default function CarritoPage() {
       {/* Acciones fijas al borde inferior: esta pantalla no lleva navegación inferior */}
       {!loading && items.length > 0 && (
         <div className="fixed inset-x-0 bottom-0 z-30 border-t border-sand-300 bg-white px-4 pb-[calc(1.375rem+env(safe-area-inset-bottom))] pt-3 md:static md:mx-auto md:mt-6 md:max-w-2xl md:border-0 md:px-4 md:pb-0">
+          {/* El total viaja con el botón, no con el desglose.
+              La tarjeta de Resumen vive en el flujo del scroll, así que a
+              partir de dos o tres artículos se va de pantalla y dejaba el CTA
+              pidiendo pagar sin decir cuánto. Acá el número está siempre a la
+              vista, que es lo que hacía falta — no que el usuario scrollee.
+              En md+ la barra deja de ser fija y el Resumen queda justo encima,
+              así que repetirlo sobra. */}
+          <div className="mb-2.5 flex items-baseline justify-between md:hidden">
+            <span className="font-display text-[14px] font-bold text-ink">Total</span>
+            <div className="text-right">
+              <p className="text-[17px] font-extrabold leading-tight text-ink">
+                {hasVES ? formatVES(subtotalVES) : formatUSD(subtotal)}
+              </p>
+              {hasVES && (
+                <p className="text-[11px] font-medium text-sand-600">
+                  ≈ {formatUSD(subtotal)}
+                </p>
+              )}
+            </div>
+          </div>
           <button
             onClick={() => router.push('/checkout')}
             className="flex min-h-11 w-full items-center justify-center rounded-xl bg-brand-600 py-3.5 text-[14.5px] font-bold text-white transition-colors hover:bg-brand-700"
