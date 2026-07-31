@@ -145,15 +145,25 @@ export default function CheckoutPage() {
 
   const isAuthenticated = !!user;
 
-  // Quien ya inició sesión no pasa por la pantalla de cédula
-  const effectiveSubStep: ContactSubStep = isAuthenticated
-    ? "details"
-    : contactSubStep;
+  /**
+   * A quien tiene sesión se le pide la cédula sólo si su cuenta no la tiene.
+   *
+   * Saltarle la pantalla a todo el que inició sesión dejaba pedidos sin
+   * identificación: el checkout no la pedía, la cuenta no la tenía y —en
+   * retiro en local— tampoco hay dirección de envío que la lleve, así que al
+   * ERP le llegaba vacía. Se pide una vez y el backend la guarda en la cuenta.
+   */
+  const perfilIncompleto =
+    isAuthenticated && (!user?.identificationNumber || !user?.phone);
+
+  const effectiveSubStep: ContactSubStep =
+    isAuthenticated && !perfilIncompleto ? "details" : contactSubStep;
   const isOnIdentification =
     currentStep === 0 && effectiveSubStep === "identification";
   // En la primera pantalla el retroceso sale del checkout, no navega entre pasos
   const canGoBack =
-    currentStep > 0 || (!isAuthenticated && contactSubStep === "details");
+    currentStep > 0 ||
+    ((!isAuthenticated || perfilIncompleto) && contactSubStep === "details");
 
   const CHECKOUT_STORAGE_KEY = 'checkout_draft';
 
@@ -914,17 +924,20 @@ export default function CheckoutPage() {
         receiptFile = transferenciaPayment.receipt;
       }
 
-      // Preparar customerInfo (solo para guests)
-      const customerInfo: CustomerInfoDto | undefined = !isAuthenticated
-        ? {
-            identificationType: identificationType,
-            identificationNumber: identificationNumber,
-            firstName: formData.firstName!,
-            lastName: formData.lastName!,
-            email: formData.email!,
-            phone: formData.phone!,
-          }
-        : undefined;
+      // Para invitados, y también para el cliente con sesión cuya cuenta no
+      // tenía cédula o teléfono: en ese caso el checkout se los acaba de pedir
+      // y el backend los guarda en su cuenta, para no volver a pedírselos.
+      const customerInfo: CustomerInfoDto | undefined =
+        !isAuthenticated || perfilIncompleto
+          ? {
+              identificationType: identificationType,
+              identificationNumber: identificationNumber,
+              firstName: formData.firstName!,
+              lastName: formData.lastName!,
+              email: formData.email!,
+              phone: formData.phone!,
+            }
+          : undefined;
 
       // Preparar shippingAddress (solo para delivery)
       const shippingAddress: ShippingAddressDto | undefined =
