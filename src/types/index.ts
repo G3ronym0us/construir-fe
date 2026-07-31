@@ -71,15 +71,46 @@ export interface Category {
   parent?: Category | null;
   childrens?: Category[];
   products?: Product[];
+  /** Productos asignados directamente; solo lo trae el listado del admin. */
+  productCount?: number;
+  publishedProductCount?: number;
   deletedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
+/** Atajos por problema de la barra de filtros del listado de categorías. */
+export type CategoryListFilter = 'parents' | 'no-image' | 'hidden';
+
 export interface CategoryStats {
   total: number;
   visible: number;
   hidden: number;
+  parents: number;
+  children: number;
+  featured: number;
+  /** Cuántas categorías caben en la franja de destacadas de la portada. */
+  featuredSlots: number;
+  featuredWithoutImage: number;
+  withoutImage: number;
+  hiddenWithPublishedProducts: number;
+}
+
+/** Dónde se usa hoy una categoría: panel de edición y modal de eliminado. */
+export interface CategoryUsage {
+  menuPosition: number | null;
+  menuTotal: number;
+  featuredSlot: number | null;
+  featuredSlots: number;
+  activeBanners: number;
+  publishedProducts: number;
+  totalProducts: number;
+  children: {
+    uuid: string;
+    name: string;
+    slug: string;
+    productCount: number;
+  }[];
 }
 
 export interface ProductImage {

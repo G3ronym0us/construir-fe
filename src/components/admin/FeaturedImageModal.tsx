@@ -2,11 +2,22 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Upload, AlertCircle } from 'lucide-react';
+import { Upload } from 'lucide-react';
 import Image from 'next/image';
+import { ImageDropzone } from '@/components/admin/categories/ImageDropzone';
+
+/**
+ * Se pide la imagen en el mismo gesto de destacar.
+ *
+ * Marcar la estrella de una categoría sin imagen no falla con un error: la
+ * portada solo muestra destacadas con imagen, así que el modal pide la que
+ * falta y guarda las dos cosas juntas.
+ */
 
 interface FeaturedImageModalProps {
   isOpen: boolean;
+  /** Para nombrar la categoría en el texto; opcional en la edición. */
+  categoryName?: string | null;
   onUpload: (file: File) => Promise<void>;
   onCancel: () => void;
   isUploading: boolean;
@@ -14,6 +25,7 @@ interface FeaturedImageModalProps {
 
 export function FeaturedImageModal({
   isOpen,
+  categoryName,
   onUpload,
   onCancel,
   isUploading,
@@ -22,25 +34,25 @@ export function FeaturedImageModal({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setSelectedFile(file);
+  const handleSelect = (file: File) => {
+    setSelectedFile(file);
 
-      // Crear preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+    const reader = new FileReader();
+    reader.onloadend = () => setPreviewUrl(reader.result as string);
+    reader.readAsDataURL(file);
   };
 
   const handleUpload = async () => {
-    if (!selectedFile) {
-      return;
+    if (!selectedFile) return;
+
+    try {
+      await onUpload(selectedFile);
+      setSelectedFile(null);
+      setPreviewUrl(null);
+    } catch {
+      // El error ya se avisó por toast; el modal se queda abierto con el
+      // archivo elegido para poder reintentar.
     }
-    await onUpload(selectedFile);
   };
 
   const handleCancel = () => {
@@ -53,77 +65,61 @@ export function FeaturedImageModal({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* Overlay - no clickeable durante upload */}
       <div
-        className="fixed inset-0 bg-black/50 transition-opacity"
+        className="fixed inset-0 bg-black/30 transition-opacity"
         onClick={isUploading ? undefined : handleCancel}
       />
 
-      {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white rounded-lg shadow-2xl max-w-md w-full p-6 animate-[modalSlide_0.3s_ease-out]">
-
-          {/* Icon */}
-          <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-yellow-100 rounded-full">
-            <AlertCircle className="w-8 h-8 text-yellow-600" />
-          </div>
-
-          {/* Title */}
-          <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="featured-image-title"
+          className="relative w-full max-w-md rounded-2xl border border-sand-300 bg-white p-6 shadow-xl animate-[modalSlide_0.3s_ease-out]"
+        >
+          <h3
+            id="featured-image-title"
+            className="font-display text-lg font-bold text-ink"
+          >
             {t('featuredImageModalTitle')}
           </h3>
-
-          {/* Description */}
-          <p className="text-sm text-gray-600 text-center mb-6">
-            {t('featuredImageModalDescription')}
+          <p className="mt-1.5 text-[13px] leading-relaxed text-sand-700">
+            {categoryName
+              ? t('featuredImageModalDescriptionNamed', { name: categoryName })
+              : t('featuredImageModalDescription')}
           </p>
 
-          {/* File Input */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('selectImageForFeatured')}
-            </label>
-            <input
-              type="file"
-              onChange={handleFileChange}
-              accept="image/jpeg, image/png, image/webp"
-              disabled={isUploading}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            />
+          <div className="mt-5">
+            {previewUrl ? (
+              <div className="relative h-44 w-full overflow-hidden rounded-lg border border-sand-300">
+                <Image src={previewUrl} alt={t('imageSelected')} fill className="object-cover" />
+              </div>
+            ) : (
+              <ImageDropzone onSelect={handleSelect} disabled={isUploading} />
+            )}
+            {selectedFile && (
+              <p className="mt-2 text-[12.5px] text-sand-700">
+                {t('fileSelected', { filename: selectedFile.name })}
+              </p>
+            )}
           </div>
 
-          {/* Preview */}
-          {previewUrl && (
-            <div className="mb-6">
-              <p className="text-sm font-medium text-gray-700 mb-2">
-                {t('imageSelected')}
-              </p>
-              <div className="relative w-full h-48 rounded-lg overflow-hidden border-2 border-gray-200">
-                <Image
-                  src={previewUrl}
-                  alt="Preview"
-                  fill
-                  className="object-contain"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex gap-3">
+          <div className="mt-6 flex gap-3">
             <button
+              type="button"
               onClick={handleCancel}
               disabled={isUploading}
-              className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 rounded-lg border border-sand-300 bg-white px-4 py-2 text-sm font-medium text-sand-700 transition-colors hover:bg-sand-50 disabled:opacity-50"
             >
-              {t('cancelFeatured')}
+              {t('cancel')}
             </button>
             <button
+              type="button"
               onClick={handleUpload}
               disabled={!selectedFile || isUploading}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-accent-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-600 disabled:opacity-50"
             >
-              <Upload className="w-4 h-4" />
+              <Upload className="h-4 w-4" />
               {isUploading ? t('uploadingImage') : t('uploadAndSetFeatured')}
             </button>
           </div>

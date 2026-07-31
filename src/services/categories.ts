@@ -1,14 +1,15 @@
 import { apiClient } from "@/lib/api";
-import type { Category, CategoryStats, CreateCategoryDto, UpdateCategoryDto, AssignParentDto, PaginatedResponse } from "@/types";
+import type { Category, CategoryListFilter, CategoryStats, CategoryUsage, CreateCategoryDto, UpdateCategoryDto, AssignParentDto, PaginatedResponse } from "@/types";
 
 export const categoriesService = {
   async getAll(): Promise<Category[]> {
     return apiClient.get<Category[]>("/categories");
   },
 
-  async searchPaginated(params: { search?: string; page?: number; limit?: number } = {}): Promise<PaginatedResponse<Category>> {
+  async searchPaginated(params: { search?: string; page?: number; limit?: number; filter?: CategoryListFilter } = {}): Promise<PaginatedResponse<Category>> {
     const qs = new URLSearchParams();
     if (params.search) qs.set('search', params.search);
+    if (params.filter) qs.set('filter', params.filter);
     qs.set('page', String(params.page ?? 1));
     qs.set('limit', String(params.limit ?? 20));
     return apiClient.get<PaginatedResponse<Category>>(`/categories?${qs}`);
@@ -32,6 +33,11 @@ export const categoriesService = {
 
   async getStats(): Promise<CategoryStats> {
     return apiClient.get<CategoryStats>("/categories/stats");
+  },
+
+  /** Dónde se usa hoy: menú, destacadas, banners, productos y visitas. */
+  async getUsage(uuid: string): Promise<CategoryUsage> {
+    return apiClient.get<CategoryUsage>(`/categories/${uuid}/usage`);
   },
 
   async getBySlug(slug: string): Promise<Category> {
