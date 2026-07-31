@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
-import { getProducts } from '@/services/products';
+import { productsService } from '@/services/products';
 import { localCartService } from '@/services/cart';
 import { parsePrice } from '@/lib/currency';
 import type { CartItem, Product } from '@/types';
@@ -12,6 +12,15 @@ export interface EnrichedLocalCartItem {
   productUuid: string;
   quantity: number;
   product: Product;
+}
+
+/**
+ * Un 404 es la única prueba de que el producto dejó de existir. Cualquier otro
+ * fallo — red caída, 500, timeout — no dice nada sobre el catálogo y no debe
+ * costarle el ítem al cliente.
+ */
+function isGone(error: unknown): boolean {
+  return (error as { statusCode?: number } | null)?.statusCode === 404;
 }
 
 /**
@@ -30,35 +39,67 @@ export function useCartTotals() {
 
   const isAuthenticated = !!token;
 
+  // Se resuelve cada producto por su uuid. Antes se pedía la primera página del
+  // catálogo (`limit: 100`) y se trataba como "ya no existe" todo lo que no
+  // viniera en ella: con 1089 productos publicados, eso hacía que el 91% del
+  // catálogo se auto-borrara del carrito del invitado apenas lo agregaba.
   useEffect(() => {
     if (isAuthenticated || localCart.items.length === 0) return;
 
-    const cartUuids = localCart.items.map((item) => item.productUuid);
     const loadedUuids = new Set(products.map((p) => p.uuid));
-    if (!cartUuids.some((uuid) => !loadedUuids.has(uuid))) return;
+    const pendingUuids = localCart.items
+      .map((item) => item.productUuid)
+      .filter((uuid) => !loadedUuids.has(uuid));
+    if (pendingUuids.length === 0) return;
+
+    let cancelled = false;
 
     const loadLocalCartProducts = async () => {
-      try {
-        setLoadingProducts(true);
-        const response = await getProducts({ page: 1, limit: 100 });
-        const matched = response.data.filter((p) => cartUuids.includes(p.uuid));
-        setProducts(matched);
+      setLoadingProducts(true);
 
-        // Purga los productos que ya no existen para no reventar el resumen
-        const matchedUuids = new Set(matched.map((p) => p.uuid));
-        const validItems = localCart.items.filter((item) => matchedUuids.has(item.productUuid));
-        if (validItems.length !== localCart.items.length) {
-          localCartService.saveCart({ items: validItems });
-          await refreshCart();
+      const results = await Promise.allSettled(
+        pendingUuids.map((uuid) => productsService.getByUuid(uuid)),
+      );
+      if (cancelled) return;
+
+      const fetched: Product[] = [];
+      const goneUuids: string[] = [];
+
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          fetched.push(result.value);
+        } else if (isGone(result.reason)) {
+          goneUuids.push(pendingUuids[index]);
+        } else {
+          // Fallo transitorio: se reintenta cuando cambie el carrito.
+          console.error('Error loading cart product:', result.reason);
         }
-      } catch (error) {
-        console.error('Error loading cart products:', error);
-      } finally {
-        setLoadingProducts(false);
+      });
+
+      if (fetched.length > 0) {
+        const fetchedUuids = new Set(fetched.map((p) => p.uuid));
+        setProducts((prev) => [
+          ...prev.filter((p) => !fetchedUuids.has(p.uuid)),
+          ...fetched,
+        ]);
       }
+
+      if (goneUuids.length > 0) {
+        const gone = new Set(goneUuids);
+        localCartService.saveCart({
+          items: localCart.items.filter((item) => !gone.has(item.productUuid)),
+        });
+        await refreshCart();
+      }
+
+      setLoadingProducts(false);
     };
 
     loadLocalCartProducts();
+
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, localCart.items]);
 
