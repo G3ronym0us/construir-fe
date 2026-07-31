@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
-import { getProducts } from "@/services/products";
+import { resolveCartProducts } from "@/services/products";
 import { localCartService } from "@/services/cart";
 import CartItem from "./CartItem";
 import type { Product } from "@/types";
@@ -51,24 +51,30 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     }
   }, [isOpen, isAuthenticated, localCart.items]);
 
+  /**
+   * Resuelve los productos del carrito por uuid.
+   *
+   * Antes se pedía la primera página del catálogo (`limit: 100`) y se purgaba
+   * de `localStorage` todo lo que no viniera en ella: con 1089 productos
+   * publicados, cualquiera fuera de los 100 más recientes se auto-borraba del
+   * carrito. Ahora sólo se purga lo que responde 404; un fallo de red deja el
+   * carrito intacto.
+   */
   const loadLocalCartProducts = async () => {
     try {
       setLoadingProducts(true);
-      const productUuids = localCart.items.map((item) => item.productUuid);
-
-      const response = await getProducts({ page: 1, limit: 100 });
-      const matchedProducts = response.data.filter((p) =>
-        productUuids.includes(p.uuid),
+      const { found, gone } = await resolveCartProducts(
+        localCart.items.map((item) => item.productUuid),
       );
-      setProducts(matchedProducts);
+      setProducts(found);
 
-      // Limpiar del localStorage los items cuyo producto ya no existe
-      const matchedUuids = new Set(matchedProducts.map((p) => p.uuid));
-      const validItems = localCart.items.filter((item) =>
-        matchedUuids.has(item.productUuid),
-      );
-      if (validItems.length !== localCart.items.length) {
-        localCartService.saveCart({ items: validItems });
+      if (gone.length > 0) {
+        const borrados = new Set(gone);
+        localCartService.saveCart({
+          items: localCart.items.filter(
+            (item) => !borrados.has(item.productUuid),
+          ),
+        });
         await refreshCart();
       }
     } catch (error) {

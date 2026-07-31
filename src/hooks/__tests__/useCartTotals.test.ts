@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 
 vi.mock('@/services/products', () => ({
-  productsService: { getByUuid: vi.fn() },
+  resolveCartProducts: vi.fn(),
 }));
 
 vi.mock('@/services/cart', () => ({
@@ -13,7 +13,7 @@ vi.mock('@/context/AuthContext', () => ({ useAuth: vi.fn() }));
 vi.mock('@/context/CartContext', () => ({ useCart: vi.fn() }));
 
 import { useCartTotals } from '../useCartTotals';
-import { productsService } from '@/services/products';
+import { resolveCartProducts } from '@/services/products';
 import { localCartService } from '@/services/cart';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
@@ -48,39 +48,35 @@ function mockCart(items: { productUuid: string; quantity: number }[]) {
   } as unknown as ReturnType<typeof useCart>);
 }
 
-function notFound() {
-  const error = new Error('Product not found') as Error & { statusCode?: number };
-  error.statusCode = 404;
-  return error;
-}
-
 beforeEach(() => {
   vi.clearAllMocks();
 });
 
+/**
+ * La clasificación entre "ya no existe" y "falló la petición" vive en
+ * `resolveCartProducts` y tiene sus propias pruebas. Acá se verifica el
+ * cableado: qué hace el hook con lo que ese resolutor le devuelve.
+ */
 describe('useCartTotals — resolución del carrito del invitado', () => {
-  /**
-   * Regresión: antes se pedía la primera página del catálogo (`limit: 100`) y se
-   * purgaba todo lo que no viniera en ella. Con 1089 productos publicados, un
-   * producto del puesto 101 en adelante se auto-borraba del carrito apenas se
-   * agregaba — el 91% del catálogo era inagregable para un invitado.
-   */
-  it('resuelve por uuid un producto fuera de la primera página y no lo purga', async () => {
+  it('enriquece los ítems con los productos resueltos y no purga nada', async () => {
     mockCart([{ productUuid: SIDERURGICO_UUID, quantity: 1 }]);
-    vi.mocked(productsService.getByUuid).mockResolvedValue(makeProduct(SIDERURGICO_UUID));
+    vi.mocked(resolveCartProducts).mockResolvedValue({
+      found: [makeProduct(SIDERURGICO_UUID)],
+      gone: [],
+    });
 
     const { result } = renderHook(() => useCartTotals());
 
     await waitFor(() => expect(result.current.items).toHaveLength(1));
 
-    expect(productsService.getByUuid).toHaveBeenCalledWith(SIDERURGICO_UUID);
+    expect(resolveCartProducts).toHaveBeenCalledWith([SIDERURGICO_UUID]);
     expect(localCartService.saveCart).not.toHaveBeenCalled();
     expect(result.current.subtotal).toBe(37.12);
   });
 
-  it('purga el ítem sólo cuando el producto responde 404', async () => {
+  it('purga del carrito los uuid que el resolutor marcó como inexistentes', async () => {
     mockCart([{ productUuid: 'borrado', quantity: 1 }]);
-    vi.mocked(productsService.getByUuid).mockRejectedValue(notFound());
+    vi.mocked(resolveCartProducts).mockResolvedValue({ found: [], gone: ['borrado'] });
 
     renderHook(() => useCartTotals());
 
@@ -90,13 +86,14 @@ describe('useCartTotals — resolución del carrito del invitado', () => {
     expect(refreshCart).toHaveBeenCalled();
   });
 
-  it('deja el carrito intacto si la petición falla por red', async () => {
+  it('no purga nada cuando el resolutor no descartó ninguno', async () => {
     mockCart([{ productUuid: SIDERURGICO_UUID, quantity: 1 }]);
-    vi.mocked(productsService.getByUuid).mockRejectedValue(new Error('Failed to fetch'));
+    // Es lo que devuelve ante un fallo de red: ni encontrado ni descartado.
+    vi.mocked(resolveCartProducts).mockResolvedValue({ found: [], gone: [] });
 
     renderHook(() => useCartTotals());
 
-    await waitFor(() => expect(productsService.getByUuid).toHaveBeenCalled());
+    await waitFor(() => expect(resolveCartProducts).toHaveBeenCalled());
 
     expect(localCartService.saveCart).not.toHaveBeenCalled();
     expect(refreshCart).not.toHaveBeenCalled();
@@ -107,9 +104,9 @@ describe('useCartTotals — resolución del carrito del invitado', () => {
       { productUuid: SIDERURGICO_UUID, quantity: 2 },
       { productUuid: 'borrado', quantity: 1 },
     ]);
-    vi.mocked(productsService.getByUuid).mockImplementation(async (uuid: string) => {
-      if (uuid === 'borrado') throw notFound();
-      return makeProduct(uuid);
+    vi.mocked(resolveCartProducts).mockResolvedValue({
+      found: [makeProduct(SIDERURGICO_UUID)],
+      gone: ['borrado'],
     });
 
     renderHook(() => useCartTotals());

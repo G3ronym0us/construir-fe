@@ -8,7 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/context/ToastContext";
 import { Loader2, ChevronUp } from "lucide-react";
-import { getProducts } from "@/services/products";
+import { resolveCartProducts } from "@/services/products";
 import { ordersService } from "@/services/orders";
 import { discountsService } from "@/services/discounts";
 import { guestCustomersService } from "@/services/guest-customers";
@@ -423,20 +423,23 @@ export default function CheckoutPage() {
     setCurrentStep((prev) => Math.max(prev - 1, 0));
   };
 
-  // Cargar productos para carrito local
+  /**
+   * Resuelve los productos del carrito de invitado para poder mostrar precios.
+   *
+   * Va por uuid y no pidiendo una página del catálogo: con
+   * `getProducts({ page: 1, limit: 100 })` cualquier producto fuera de los 100
+   * más recientes no se encontraba, `enrichedLocalItems` quedaba vacío y la
+   * guarda de más abajo devolvía al cliente al carrito — entraba al checkout y
+   * rebotaba, con el carrito lleno.
+   */
   useEffect(() => {
     const loadLocalCartProducts = async () => {
       try {
         setLoadingProducts(true);
-        const productUuids = localCart.items.map((item) => item.productUuid);
-        const response = await getProducts({
-          page: 1,
-          limit: 100,
-        });
-        const matchedProducts = response.data.filter((p) =>
-          productUuids.includes(p.uuid),
+        const { found } = await resolveCartProducts(
+          localCart.items.map((item) => item.productUuid),
         );
-        setProducts(matchedProducts);
+        setProducts(found);
       } catch (error) {
         console.error("Error loading products:", error);
       } finally {
