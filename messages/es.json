@@ -920,7 +920,9 @@
       "discount": "Cupón",
       "banner": "Banner",
       "api-key": "API Key",
-      "exchange-rate": "Tasa de cambio"
+      "exchange-rate": "Tasa de cambio",
+      "invitation": "Invitación",
+      "customer": "Cliente"
     },
     "actions": {
       "create": "Creación",

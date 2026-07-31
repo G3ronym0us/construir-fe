@@ -29,6 +29,16 @@ function formatDate(dateStr: string) {
 export default function AuditLogsPage() {
   const t = useTranslations('auditLogs');
 
+  /*
+   * El interceptor del backend deduce el recurso del primer segmento de la
+   * ruta y, si no está en su mapa, guarda el segmento crudo ("cart", "banks",
+   * "analytics"…). O sea que la lista de recursos es abierta y traducirlos
+   * todos es imposible: cuando falta la traducción se muestra el valor tal
+   * cual en vez de reventar la página entera.
+   */
+  const label = (key: string, fallback: string) =>
+    t.has(key) ? t(key) : fallback;
+
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -180,12 +190,12 @@ export default function AuditLogsPage() {
                   </td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${ACTION_COLORS[log.action] || 'bg-gray-100 text-gray-800'}`}>
-                      {t(`actions.${log.action}`)}
+                      {label(`actions.${log.action}`, log.action)}
                     </span>
                   </td>
                   <td className="px-4 py-3">
                     <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded">
-                      {t(`resources.${log.resource}`)}
+                      {label(`resources.${log.resource}`, log.resource)}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-xs text-gray-500 font-mono truncate max-w-[160px]">
@@ -252,13 +262,13 @@ export default function AuditLogsPage() {
                 <div>
                   <p className="text-xs text-gray-500 mb-1">{t('action')}</p>
                   <span className={`px-2 py-1 text-xs font-semibold rounded-full ${ACTION_COLORS[selected.action] || 'bg-gray-100 text-gray-800'}`}>
-                    {t(`actions.${selected.action}`)}
+                    {label(`actions.${selected.action}`, selected.action)}
                   </span>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 mb-1">{t('resource')}</p>
                   <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded">
-                    {t(`resources.${selected.resource}`)}
+                    {label(`resources.${selected.resource}`, selected.resource)}
                   </span>
                 </div>
               </div>

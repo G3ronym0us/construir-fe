@@ -20,4 +20,6 @@ export enum AuditResource {
   BANNER = "banner",
   API_KEY = "api-key",
   EXCHANGE_RATE = "exchange-rate",
+  INVITATION = "invitation",
+  CUSTOMER = "customer",
 }

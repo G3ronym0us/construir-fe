@@ -920,7 +920,9 @@
       "discount": "Coupon",
       "banner": "Banner",
       "api-key": "API Key",
-      "exchange-rate": "Exchange Rate"
+      "exchange-rate": "Exchange Rate",
+      "invitation": "Invitation",
+      "customer": "Customer"
     },
     "actions": {
       "create": "Created",
