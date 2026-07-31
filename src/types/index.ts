@@ -653,6 +653,20 @@ export interface Order {
   updatedAt: string;
 }
 
+/**
+ * Un pedido tal como lo devuelve el seguimiento público
+ * (`GET /orders/track/:orderNumber`).
+ *
+ * Esa respuesta se obtiene con sólo el número de pedido, sin sesión, así que
+ * el backend recorta todo lo que identifique al cliente o sirva para
+ * suplantarlo: no trae los datos del pago más allá del método y su estado, ni
+ * la dirección, ni el perfil del comprador, ni las notas internas. Ver
+ * `OrderTrackingDto` en el backend.
+ */
+export type TrackedOrder = Omit<Order, "paymentInfo"> & {
+  paymentInfo: PaymentInfo | null;
+};
+
 export interface CreateOrderDto {
   deliveryMethod: DeliveryMethod;
   customerInfo?: CustomerInfoDto; // Required for guests

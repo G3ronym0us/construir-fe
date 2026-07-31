@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowLeft, Package, MapPin, CreditCard, Truck } from "lucide-react";
 import { useTranslations } from "next-intl";
-import type { Order } from "@/types";
+import type { Order, TrackedOrder } from "@/types";
 import { PaymentMethod } from "@/lib/enums";
 import { getOrderStatusColor, getPaymentStatusColor } from "@/lib/order-helpers";
 import { resolvePaymentMethod, resolveBankName, resolveBankCode } from "@/lib/payment-helpers";
@@ -14,8 +14,19 @@ import { TransferenciaPaymentDetails } from "@/components/admin/payment-details/
 import { PaymentReceiptViewer } from "@/components/admin/PaymentReceiptViewer";
 
 interface OrderDetailProps {
-  order: Order;
+  /** Acepta tanto el pedido completo (admin, mi cuenta) como el recortado del seguimiento público. */
+  order: Order | TrackedOrder;
   backLink?: { href: string; label: string };
+  /**
+   * Muestra los datos del pago (banco, referencia, comprobante).
+   *
+   * El seguimiento público lo pasa en `false`: esa pantalla se abre con sólo
+   * el número de pedido, sin sesión que diga quién está mirando, y el backend
+   * ya no envía esos campos. El método de pago y su estado sí se muestran
+   * siempre — sirven para explicar que el pago aún está por verificar y no
+   * identifican a nadie.
+   */
+  showPaymentDetails?: boolean;
 }
 
 function formatDate(dateStr: string) {
@@ -28,11 +39,19 @@ function formatDate(dateStr: string) {
   });
 }
 
-export function OrderDetail({ order, backLink }: OrderDetailProps) {
+export function OrderDetail({
+  order,
+  backLink,
+  showPaymentDetails = true,
+}: OrderDetailProps) {
   const t = useTranslations("orders");
   const tTracking = useTranslations("tracking");
 
-  const paymentMethod = resolvePaymentMethod(order.paymentInfo.method);
+  const paymentInfo = order.paymentInfo;
+  const paymentMethod = paymentInfo
+    ? resolvePaymentMethod(paymentInfo.method)
+    : null;
+  const withPaymentDetails = showPaymentDetails && !!paymentInfo;
 
   return (
     <div className="space-y-6">
@@ -51,9 +70,11 @@ export function OrderDetail({ order, backLink }: OrderDetailProps) {
             <span className={`rounded-full px-3 py-1 text-xs font-bold ${getOrderStatusColor(order.status)}`}>
               {t(`statuses.${order.status}`)}
             </span>
-            <span className={`rounded-full px-3 py-1 text-xs font-bold ${getPaymentStatusColor(order.paymentInfo.status)}`}>
-              {t(`paymentStatuses.${order.paymentInfo.status}`)}
-            </span>
+            {paymentInfo && (
+              <span className={`rounded-full px-3 py-1 text-xs font-bold ${getPaymentStatusColor(paymentInfo.status)}`}>
+                {t(`paymentStatuses.${paymentInfo.status}`)}
+              </span>
+            )}
           </div>
           <p className="text-sm text-sand-600 mt-1">
             {t("createdAt", { date: formatDate(order.createdAt) })}
@@ -128,60 +149,71 @@ export function OrderDetail({ order, backLink }: OrderDetailProps) {
           </div>
 
           {/* Payment */}
-          <div className="rounded-2xl border border-sand-300 bg-white p-6">
-            <h2 className="font-display text-base font-bold text-ink mb-4 flex items-center gap-2">
-              <CreditCard className="w-5 h-5" />
-              {t("paymentInfo")}
-            </h2>
-            <div className="space-y-4">
-              {paymentMethod === PaymentMethod.ZELLE && (
-                <ZellePaymentDetails
-                  details={{
-                    senderName: order.paymentInfo.senderName || "",
-                    senderBank: order.paymentInfo.senderBank || "",
-                    receipt: null,
-                  }}
-                />
-              )}
-              {paymentMethod === PaymentMethod.PAGO_MOVIL && (
-                <PagoMovilPaymentDetails
-                  details={{
-                    bank: resolveBankName(order.paymentInfo.bank),
-                    bankCode: resolveBankCode(order.paymentInfo.bank, order.paymentInfo.bankCode),
-                    phone: order.paymentInfo.phoneNumber || "",
-                    cedula: order.paymentInfo.cedula || "",
-                    referenceCode: order.paymentInfo.referenceCode || "",
-                  }}
-                />
-              )}
-              {paymentMethod === PaymentMethod.TRANSFERENCIA && (
-                <TransferenciaPaymentDetails
-                  details={{
-                    bank: resolveBankName(order.paymentInfo.transferBank),
-                    bankCode: order.paymentInfo.transferBank?.code || "",
-                    beneficiary: order.paymentInfo.accountName || "",
-                    rif: order.paymentInfo.rif || "",
-                    accountNumber: order.paymentInfo.accountNumber || "",
-                    referenceCode: order.paymentInfo.referenceNumber || "",
-                  }}
-                />
-              )}
-              {order.paymentInfo.receiptUrl && (
-                <div>
-                  <p className="text-sm text-sand-600 mb-2">{t("paymentReceipt")}</p>
-                  <PaymentReceiptViewer
-                    receiptUrl={order.paymentInfo.receiptUrl}
-                    orderNumber={order.orderNumber}
-                  />
-                </div>
-              )}
-              {order.paymentInfo.verifiedAt && (
-                <p className="text-sm text-success-600">
-                  {t("verifiedOn", { date: formatDate(order.paymentInfo.verifiedAt) })}
+          {paymentInfo && (
+            <div className="rounded-2xl border border-sand-300 bg-white p-6">
+              <h2 className="font-display text-base font-bold text-ink mb-4 flex items-center gap-2">
+                <CreditCard className="w-5 h-5" />
+                {t("paymentInfo")}
+              </h2>
+              <div className="space-y-4">
+                <p className="text-sm text-sand-700">
+                  <span className="font-medium">{t("paymentMethodLabel")}</span>{" "}
+                  {t(`paymentMethods.${paymentInfo.method}`)}
                 </p>
-              )}
+
+                {withPaymentDetails && (
+                  <>
+                    {paymentMethod === PaymentMethod.ZELLE && (
+                      <ZellePaymentDetails
+                        details={{
+                          senderName: paymentInfo.senderName || "",
+                          senderBank: paymentInfo.senderBank || "",
+                          receipt: null,
+                        }}
+                      />
+                    )}
+                    {paymentMethod === PaymentMethod.PAGO_MOVIL && (
+                      <PagoMovilPaymentDetails
+                        details={{
+                          bank: resolveBankName(paymentInfo.bank),
+                          bankCode: resolveBankCode(paymentInfo.bank, paymentInfo.bankCode),
+                          phone: paymentInfo.phoneNumber || "",
+                          cedula: paymentInfo.cedula || "",
+                          referenceCode: paymentInfo.referenceCode || "",
+                        }}
+                      />
+                    )}
+                    {paymentMethod === PaymentMethod.TRANSFERENCIA && (
+                      <TransferenciaPaymentDetails
+                        details={{
+                          bank: resolveBankName(paymentInfo.transferBank),
+                          bankCode: paymentInfo.transferBank?.code || "",
+                          beneficiary: paymentInfo.accountName || "",
+                          rif: paymentInfo.rif || "",
+                          accountNumber: paymentInfo.accountNumber || "",
+                          referenceCode: paymentInfo.referenceNumber || "",
+                        }}
+                      />
+                    )}
+                    {paymentInfo.receiptUrl && (
+                      <div>
+                        <p className="text-sm text-sand-600 mb-2">{t("paymentReceipt")}</p>
+                        <PaymentReceiptViewer
+                          receiptUrl={paymentInfo.receiptUrl}
+                          orderNumber={order.orderNumber}
+                        />
+                      </div>
+                    )}
+                    {paymentInfo.verifiedAt && (
+                      <p className="text-sm text-success-600">
+                        {t("verifiedOn", { date: formatDate(paymentInfo.verifiedAt) })}
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Sidebar */}

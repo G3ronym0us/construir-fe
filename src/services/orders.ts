@@ -2,6 +2,7 @@ import { apiClient } from '@/lib/api';
 import type {
   Order,
   OrderSummary,
+  TrackedOrder,
   CreateOrderDto,
   UpdateOrderStatusDto,
 } from '@/types';
@@ -67,9 +68,12 @@ export const ordersService = {
   },
 
   /**
-   * Rastrea una orden por su número (público, sin autenticación)
+   * Rastrea una orden por su número (público, sin autenticación).
+   *
+   * Devuelve un `TrackedOrder`, no un `Order`: al no haber sesión, el backend
+   * recorta los datos del pago, la dirección y el perfil del cliente.
    */
-  async trackOrder(orderNumber: string): Promise<Order> {
+  async trackOrder(orderNumber: string): Promise<TrackedOrder> {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/orders/track/${orderNumber}`
     );

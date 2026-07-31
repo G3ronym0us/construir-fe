@@ -7,14 +7,14 @@ import { useTranslations } from "next-intl";
 import { Loader2, PackageSearch } from "lucide-react";
 import { ordersService } from "@/services/orders";
 import { OrderDetail } from "@/components/orders/OrderDetail";
-import type { Order } from "@/types";
+import type { TrackedOrder } from "@/types";
 
 export default function OrderTrackingPage() {
   const params = useParams();
   const orderNumber = params.orderNumber as string;
   const t = useTranslations("tracking");
 
-  const [order, setOrder] = useState<Order | null>(null);
+  const [order, setOrder] = useState<TrackedOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -65,7 +65,9 @@ export default function OrderTrackingPage() {
         <div className="mb-6">
           <h1 className="text-xl font-semibold text-sand-600">{t("title")}</h1>
         </div>
-        <OrderDetail order={order} />
+        {/* Sin datos de pago: esta pantalla se abre con sólo el número de
+            pedido, y el backend ya no los envía. */}
+        <OrderDetail order={order} showPaymentDetails={false} />
       </div>
     </div>
   );
