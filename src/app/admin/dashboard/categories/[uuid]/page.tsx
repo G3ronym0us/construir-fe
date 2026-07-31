@@ -1,18 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useForm, Controller } from 'react-hook-form';
-import { categoriesService } from '@/services/categories';
-import type { Category } from '@/types';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Save, Upload, Trash2 } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Info, Lock, Save, Trash2 } from 'lucide-react';
+import { categoriesService } from '@/services/categories';
+import type { Category, CategoryStats, CategoryUsage } from '@/types';
 import { useToast } from '@/context/ToastContext';
 import { Toggle } from '@/components/ui/Toggle';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import { FeaturedImageModal } from '@/components/admin/FeaturedImageModal';
+import { ImageDropzone } from '@/components/admin/categories/ImageDropzone';
+import { CurrentImagePanel } from '@/components/admin/categories/CurrentImagePanel';
+import { CategoryUsagePanel } from '@/components/admin/categories/CategoryUsagePanel';
+import { MoveParentModal } from '@/components/admin/categories/MoveParentModal';
+import { FeaturedChecklist } from '@/components/admin/categories/FeaturedChecklist';
+import {
+  SlugAvailabilityBadge,
+  useSlugAvailability,
+} from '@/components/admin/categories/SlugField';
 
 interface CategoryFormData {
   name: string;
@@ -33,23 +42,24 @@ export default function EditCategoryPage() {
   const toast = useToast();
 
   const [category, setCategory] = useState<Category | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [usage, setUsage] = useState<CategoryUsage | null>(null);
+  const [stats, setStats] = useState<CategoryStats | null>(null);
   const [parentCategories, setParentCategories] = useState<Category[]>([]);
-  const [initialParentUuid, setInitialParentUuid] = useState<string>('');
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [isDeletingImage, setIsDeletingImage] = useState(false);
+  const [initialParentUuid, setInitialParentUuid] = useState('');
+
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  // Reemplazar vuelve a mostrar la zona de arrastre sin borrar todavía nada.
+  const [isReplacingImage, setIsReplacingImage] = useState(false);
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [isBusyWithImage, setIsBusyWithImage] = useState(false);
   const [deleteImageModal, setDeleteImageModal] = useState<{
     isOpen: boolean;
-    requiresConfirmation: boolean;
     message?: string;
-  }>({
-    isOpen: false,
-    requiresConfirmation: false,
-  });
-  const [featuredImageModal, setFeaturedImageModal] = useState({
-    isOpen: false,
-  });
+  }>({ isOpen: false });
+  const [featuredImageModalOpen, setFeaturedImageModalOpen] = useState(false);
+  const [moveParentModalOpen, setMoveParentModalOpen] = useState(false);
 
   const {
     register,
@@ -59,7 +69,7 @@ export default function EditCategoryPage() {
     setError,
     formState: { errors, isSubmitting },
     watch,
-    setValue
+    setValue,
   } = useForm<CategoryFormData>({
     defaultValues: {
       name: '',
@@ -72,252 +82,309 @@ export default function EditCategoryPage() {
     },
   });
 
+  const slugValue = watch('slug');
   const parentUuidValue = watch('parentUuid');
   const isFeaturedValue = watch('isFeatured');
 
-  useEffect(() => {
-    if (uuid) {
-      loadCategory();
-      loadParentCategories();
-    }
-  }, [uuid]);
+  const { status: slugStatus, takenBy: slugTakenBy } = useSlugAvailability(
+    slugValue,
+    uuid
+  );
 
-  const loadCategory = async () => {
-    try {
-      setIsLoading(true);
-      const data = await categoriesService.getByUuid(uuid);
-      setCategory(data);
-
-      // Reset form with loaded data
-      const parentUuid = data.parent?.uuid || '';
-      setInitialParentUuid(parentUuid);
-
+  const fillForm = useCallback(
+    (data: Category) => {
       reset({
         name: data.name,
         customName: data.customName ?? '',
         slug: data.slug,
         description: data.description || '',
-        parentUuid: parentUuid,
+        parentUuid: data.parent?.uuid || '',
         visible: data.visible,
         isFeatured: data.isFeatured,
       });
-    } catch (error) {
-      console.error('Error loading category:', error);
-      toast.error(tCommon('error'));
-      router.push('/admin/dashboard/categories');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    [reset]
+  );
 
-  const loadParentCategories = async () => {
+  const loadUsage = useCallback(async () => {
     try {
-      const parents = await categoriesService.getParents();
-      // Filter out the current category to prevent self-assignment
-      const availableParents = parents.filter(p => p.uuid !== uuid);
-      setParentCategories(availableParents);
+      setUsage(await categoriesService.getUsage(uuid));
     } catch (error) {
-      console.error('Error loading parent categories:', error);
+      console.error('Error loading category usage:', error);
     }
+  }, [uuid]);
+
+  useEffect(() => {
+    if (!uuid) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        setIsLoading(true);
+        const data = await categoriesService.getByUuid(uuid);
+        if (cancelled) return;
+
+        setCategory(data);
+        setInitialParentUuid(data.parent?.uuid || '');
+        fillForm(data);
+      } catch (error) {
+        console.error('Error loading category:', error);
+        toast.error(tCommon('error'));
+        router.push('/admin/dashboard/categories');
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+
+    categoriesService
+      .getParents()
+      // La propia categoría no puede ser su padre.
+      .then((parents) => setParentCategories(parents.filter((p) => p.uuid !== uuid)))
+      .catch((error) => console.error('Error loading parent categories:', error));
+
+    categoriesService
+      .getStats()
+      .then(setStats)
+      .catch((error) => console.error('Error loading stats:', error));
+
+    loadUsage();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uuid]);
+
+  const handleImageSelect = (file: File) => {
+    setImageFile(file);
+
+    const reader = new FileReader();
+    reader.onloadend = () => setImagePreview(reader.result as string);
+    reader.readAsDataURL(file);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setImageFile(e.target.files[0]);
-    }
-  };
-
-  const handleUploadImage = async () => {
-    if (!imageFile) {
-      toast.error('Por favor selecciona una imagen');
-      return;
-    }
-
-    try {
-      setIsUploadingImage(true);
-      const updatedCategory = await categoriesService.uploadImage(uuid, imageFile);
-      setCategory(updatedCategory);
-      setImageFile(null);
-      toast.success(t('imageUploadSuccess'));
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      toast.error(t('imageUploadError'));
-    } finally {
-      setIsUploadingImage(false);
-    }
+  const clearSelectedImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setIsReplacingImage(false);
   };
 
   const handleDeleteImageClick = async () => {
     try {
-      setIsDeletingImage(true);
-      // Primera llamada sin confirmación
+      setIsBusyWithImage(true);
+      // Primera llamada sin confirmar: el backend avisa si quitar la imagen
+      // también sacaría a la categoría de las destacadas.
       const response = await categoriesService.deleteImage(uuid, false);
 
       if (response.requiresConfirmation) {
-        // Mostrar modal de confirmación
-        setDeleteImageModal({
-          isOpen: true,
-          requiresConfirmation: true,
-          message: response.message,
-        });
-      } else {
-        // Eliminación exitosa sin confirmación (categoría no destacada)
-        if (response.category) {
-          setCategory(response.category);
-        }
-        toast.success(t('imageDeleteSuccess'));
+        setDeleteImageModal({ isOpen: true, message: response.message });
+        return;
       }
+
+      if (response.category) {
+        setCategory(response.category);
+        fillForm(response.category);
+      }
+      toast.success(t('imageDeleteSuccess'));
+      await loadUsage();
     } catch (error) {
       console.error('Error deleting image:', error);
-      toast.error(t('imageDeleteError'));
+      toast.error(error instanceof Error ? error.message : t('imageDeleteError'));
     } finally {
-      setIsDeletingImage(false);
+      setIsBusyWithImage(false);
     }
   };
 
   const handleDeleteImageConfirm = async () => {
     try {
-      setIsDeletingImage(true);
-      // Segunda llamada con confirmación
+      setIsBusyWithImage(true);
       const response = await categoriesService.deleteImage(uuid, true);
 
       if (response.category) {
         setCategory(response.category);
-        // Actualizar el formulario para reflejar que ya no es destacada
-        reset({
-          name: response.category.name,
-          customName: response.category.customName ?? '',
-          slug: response.category.slug,
-          description: response.category.description || '',
-          parentUuid: response.category.parent?.uuid || '',
-          visible: response.category.visible,
-          isFeatured: response.category.isFeatured,
-        });
+        fillForm(response.category);
       }
-
-      setDeleteImageModal({ isOpen: false, requiresConfirmation: false });
+      setDeleteImageModal({ isOpen: false });
       toast.success(t('imageDeleteSuccess'));
+      await loadUsage();
     } catch (error) {
       console.error('Error deleting image:', error);
-      toast.error(t('imageDeleteError'));
+      toast.error(error instanceof Error ? error.message : t('imageDeleteError'));
     } finally {
-      setIsDeletingImage(false);
+      setIsBusyWithImage(false);
     }
   };
 
-  const handleFeaturedToggle = (checked: boolean, fieldOnChange: (value: boolean) => void) => {
-    // Si se está desmarcando, siempre permitir
+  const handleFeaturedToggle = (checked: boolean, onChange: (value: boolean) => void) => {
     if (!checked) {
-      fieldOnChange(false);
+      onChange(false);
       return;
     }
 
-    // Si se está marcando Y ya tiene imagen, permitir
     if (category?.image || imageFile) {
-      fieldOnChange(true);
+      onChange(true);
       return;
     }
 
-    // Si se está marcando SIN imagen, abrir modal
-    setFeaturedImageModal({ isOpen: true });
+    // Destacar sin imagen: se pide la imagen en el mismo gesto.
+    setFeaturedImageModalOpen(true);
   };
 
   const handleFeaturedImageUpload = async (file: File) => {
     try {
-      setIsUploadingImage(true);
+      setIsBusyWithImage(true);
+      const updated = await categoriesService.update(uuid, { isFeatured: true }, file);
 
-      // Usar update() que envía AMBOS: imagen + isFeatured al backend
-      const updatedCategory = await categoriesService.update(
-        uuid,
-        { isFeatured: true },
-        file
-      );
-
-      setCategory(updatedCategory);
+      setCategory(updated);
       setValue('isFeatured', true);
-      setFeaturedImageModal({ isOpen: false });
-
+      setFeaturedImageModalOpen(false);
       toast.success(t('imageUploadedAndFeatured'));
+      await loadUsage();
     } catch (error) {
       console.error('Error uploading image for featured category:', error);
-      toast.error(t('imageUploadError'));
-      throw error; // Re-throw para que el modal maneje el estado
+      toast.error(error instanceof Error ? error.message : t('imageUploadError'));
+      throw error;
     } finally {
-      setIsUploadingImage(false);
+      setIsBusyWithImage(false);
     }
   };
 
-  const onSubmit = async (data: CategoryFormData) => {
+  const save = async (data: CategoryFormData) => {
     if (!category) return;
-    try {
-      // Validación: no se puede marcar como destacada si no tiene imagen y no se está subiendo una
-      if (data.isFeatured && !category.image && !imageFile) {
-        setError('isFeatured', {
-          type: 'manual',
-          message: t('imageRequiredForFeatured')
-        });
-        toast.error(t('imageRequiredForFeatured'));
-        return;
-      }
 
-      // Update category data
-      await categoriesService.update(uuid, {
-        // name bloqueado si viene del ERP (externalCode !== null)
+    await categoriesService.update(
+      uuid,
+      {
+        // El nombre viene del ERP cuando la categoría está sincronizada.
         ...(category.externalCode == null ? { name: data.name } : {}),
         customName: data.customName || null,
         slug: data.slug,
         description: data.description || undefined,
         visible: data.visible,
         isFeatured: data.isFeatured,
-      }, imageFile || undefined);
+      },
+      imageFile || undefined
+    );
 
-      // If parent has changed, update it
-      if (data.parentUuid !== initialParentUuid) {
-        await categoriesService.assignParent(uuid, {
-          parentUuid: data.parentUuid || null
-        });
-      }
+    if (data.parentUuid !== initialParentUuid) {
+      await categoriesService.assignParent(uuid, {
+        parentUuid: data.parentUuid || null,
+      });
+    }
 
-      toast.success(t('updateSuccess'));
-      router.push('/admin/dashboard/categories');
+    toast.success(t('updateSuccess'));
+    router.push('/admin/dashboard/categories');
+  };
+
+  const onSubmit = async (data: CategoryFormData) => {
+    if (!category) return;
+
+    if (data.isFeatured && !category.image && !imageFile) {
+      setError('isFeatured', { type: 'manual', message: t('imageRequiredForFeatured') });
+      toast.error(t('imageRequiredForFeatured'));
+      return;
+    }
+    if (slugStatus === 'taken') {
+      setError('slug', {
+        type: 'manual',
+        message: t('slugTakenBy', { name: slugTakenBy ?? '' }),
+      });
+      return;
+    }
+
+    // Mover de padre reordena el menú y las migas de pan: se confirma aparte.
+    if (data.parentUuid !== initialParentUuid) {
+      setMoveParentModalOpen(true);
+      return;
+    }
+
+    try {
+      await save(data);
     } catch (error) {
       console.error('Error updating category:', error);
-      toast.error(t('updateError'));
+      toast.error(error instanceof Error ? error.message : t('updateError'));
     }
   };
 
+  const handleMoveConfirm = handleSubmit(async (data) => {
+    try {
+      setMoveParentModalOpen(false);
+      await save(data);
+    } catch (error) {
+      console.error('Error updating category:', error);
+      toast.error(error instanceof Error ? error.message : t('updateError'));
+    }
+  });
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-500">{t('loading')}</p>
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-b-2 border-brand-600" />
+          <p className="text-sm text-sand-700">{t('loading')}</p>
         </div>
       </div>
     );
   }
 
   if (!category) {
-    return <div className="p-8 text-center text-gray-500">{t('noCategories')}</div>;
+    return <div className="p-8 text-center text-sand-700">{t('noCategories')}</div>;
   }
 
-  const hasChildren = category.childrens && category.childrens.length > 0;
+  const children = usage?.children ?? [];
+  const hasChildren = children.length > 0 || (category.childrens?.length ?? 0) > 0;
+  const displayName = category.customName ?? category.name;
+  const noFeaturedSlots =
+    !!stats && !category.isFeatured && stats.featured >= stats.featuredSlots;
+
+  const inputClass = (hasError: boolean) =>
+    `mt-1.5 block w-full rounded-lg border px-3 py-2.5 text-[13.5px] text-ink outline-none transition-colors ${
+      hasError
+        ? 'border-danger-500 focus:border-danger-500'
+        : 'border-sand-300 focus:border-brand-400'
+    }`;
 
   return (
-    <div className="space-y-4 md:space-y-6 px-4 md:px-0">
-      <div className="flex items-center gap-3 md:gap-4">
-        <Link href="/admin/dashboard/categories" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-          <ArrowLeft className="w-5 h-5" />
+    <div className="w-full max-w-full space-y-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/admin/dashboard/categories"
+            aria-label={t('backToList')}
+            className="rounded-lg p-2 text-sand-700 transition-colors hover:bg-sand-100"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <div>
+            <h1 className="font-display text-2xl font-bold text-ink md:text-3xl">
+              {displayName}
+            </h1>
+            <p className="mt-0.5 font-mono text-[12px] text-sand-600">
+              /categorias/{category.slug}
+            </p>
+          </div>
+        </div>
+
+        <Link
+          href={`/productos?categoria=${category.uuid}`}
+          target="_blank"
+          className="inline-flex items-center justify-center gap-2 rounded-lg border border-sand-300 bg-white px-3.5 py-2.5 text-sm font-medium text-sand-800 transition-colors hover:bg-sand-50"
+        >
+          <ExternalLink className="h-4 w-4" />
+          {t('viewInStore')}
         </Link>
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{t('editTitle')}</h1>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-lg shadow p-4 sm:p-6 md:p-8 max-w-2xl mx-auto">
-        <div className="space-y-6">
-          {/* Name */}
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_360px]"
+      >
+        <div className="space-y-5 rounded-xl border border-sand-300 bg-white p-5 md:p-6">
+          {/* Nombre oficial — bloqueado cuando lo administra el ERP */}
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-              {t('nameLabel')} <span className="text-red-500">*</span>
+            <label htmlFor="name" className="text-[13px] font-semibold text-ink">
+              {t('nameLabel')} <span className="text-danger-600">*</span>
             </label>
             {category.externalCode != null ? (
               <>
@@ -326,10 +393,11 @@ export default function EditCategoryPage() {
                   id="name"
                   value={category.name}
                   readOnly
-                  className="mt-1 block w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-500 cursor-not-allowed"
+                  className="mt-1.5 block w-full cursor-not-allowed rounded-lg border border-sand-300 bg-sand-100 px-3 py-2.5 text-[13.5px] text-sand-700"
                 />
-                <p className="mt-1 text-xs text-amber-600 flex items-center gap-1">
-                  <span>⚠</span> Este nombre viene del ERP y no puede modificarse. Usa &ldquo;Nombre en tienda&rdquo; para personalizarlo.
+                <p className="mt-1.5 flex items-start gap-1.5 text-[12px] leading-relaxed text-accent-700">
+                  <Lock className="mt-0.5 h-3 w-3 flex-none" />
+                  {t('nameFromErp')}
                 </p>
               </>
             ) : (
@@ -338,192 +406,241 @@ export default function EditCategoryPage() {
                   type="text"
                   id="name"
                   {...register('name', {
-                    required: 'El nombre es requerido',
-                    minLength: { value: 2, message: 'El nombre debe tener al menos 2 caracteres' },
-                    maxLength: { value: 100, message: 'El nombre no puede exceder 100 caracteres' },
+                    required: t('nameRequired'),
+                    minLength: { value: 2, message: t('nameTooShort') },
+                    maxLength: { value: 100, message: t('nameTooLong') },
                   })}
                   placeholder={t('namePlaceholder')}
-                  className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-0 ${
-                    errors.name
-                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                      : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
-                  }`}
+                  className={inputClass(!!errors.name)}
                 />
                 {errors.name && (
-                  <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                    <span className="text-xs">⚠</span> {errors.name.message}
+                  <p className="mt-1 text-[12.5px] font-medium text-danger-600">
+                    {errors.name.message}
                   </p>
                 )}
               </>
             )}
           </div>
 
-          {/* Custom Name */}
           <div>
-            <label htmlFor="customName" className="block text-sm font-medium text-gray-700">
-              Nombre en tienda
-              <span className="ml-1 text-gray-400 font-normal text-xs">(opcional)</span>
+            <label htmlFor="customName" className="text-[13px] font-semibold text-ink">
+              {t('customNameLabel')}
             </label>
             <input
               type="text"
               id="customName"
               {...register('customName')}
-              placeholder="Nombre visible para los clientes"
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-blue-500 focus:border-blue-500"
+              placeholder={t('customNamePlaceholder')}
+              className={inputClass(false)}
             />
-            <p className="mt-1 text-xs text-gray-500">Si se deja vacío, se usará el nombre oficial.</p>
+            <p className="mt-1.5 text-[12px] text-sand-600">{t('customNameHelp')}</p>
           </div>
 
-          {/* Slug */}
           <div>
-            <label htmlFor="slug" className="block text-sm font-medium text-gray-700">
-              {t('slugLabel')} <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="slug"
-              {...register('slug', {
-                required: 'El slug es requerido',
-                pattern: {
-                  value: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-                  message: 'El slug solo puede contener letras minúsculas, números y guiones',
-                },
-              })}
-              placeholder={t('slugPlaceholder')}
-              className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-0 ${
-                errors.slug
-                  ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                  : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+            <div className="flex items-center justify-between gap-3">
+              <label htmlFor="slug" className="text-[13px] font-semibold text-ink">
+                {t('slugLabel')} <span className="text-danger-600">*</span>
+              </label>
+              <SlugAvailabilityBadge status={slugStatus} takenBy={slugTakenBy} />
+            </div>
+            <div
+              className={`mt-1.5 flex items-center rounded-lg border px-3 py-2.5 transition-colors focus-within:border-brand-400 ${
+                errors.slug || slugStatus === 'taken'
+                  ? 'border-danger-500'
+                  : 'border-sand-300'
               }`}
-            />
+            >
+              <span className="flex-none font-mono text-[12.5px] text-sand-600">
+                /categorias/
+              </span>
+              <input
+                type="text"
+                id="slug"
+                {...register('slug', {
+                  required: t('slugRequired'),
+                  pattern: {
+                    value: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+                    message: t('slugInvalidHelp'),
+                  },
+                })}
+                className="w-full bg-transparent font-mono text-[12.5px] text-ink outline-none"
+              />
+            </div>
+            <p className="mt-1.5 text-[12px] leading-relaxed text-sand-600">
+              {t('slugChangeWarning')}
+            </p>
             {errors.slug && (
-              <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                <span className="text-xs">⚠</span> {errors.slug.message}
+              <p className="mt-1 text-[12.5px] font-medium text-danger-600">
+                {errors.slug.message}
               </p>
             )}
           </div>
 
-          {/* Parent Category */}
+          {/* Categoría padre — bloqueada mientras tenga subcategorías */}
           <div>
-            <label htmlFor="parentUuid" className="block text-sm font-medium text-gray-700">
+            <span className="text-[13px] font-semibold text-ink">
               {t('parentCategoryLabel')}
-            </label>
+            </span>
+
             {hasChildren ? (
-              <div className="mt-1">
-                <div className="px-3 py-2 border border-amber-300 rounded-md bg-amber-50 text-amber-800 text-sm">
-                  {t('cannotChangeParentHasChildren', { count: category.childrens?.length || 0 })}
+              <>
+                <div className="mt-1.5 flex items-center justify-between rounded-lg border border-sand-300 bg-sand-100 px-3 py-2.5">
+                  <span className="text-[13.5px] text-sand-700">
+                    {category.parent?.customName ??
+                      category.parent?.name ??
+                      t('noParentShort')}
+                  </span>
+                  <Lock className="h-3.5 w-3.5 flex-none text-sand-500" />
                 </div>
-                <p className="mt-1 text-sm text-gray-500">{t('removeChildrenFirst')}</p>
-              </div>
+                <p className="mt-2 flex items-start gap-1.5 rounded-lg border border-accent-200 bg-accent-50 px-3 py-2.5 text-[12.5px] leading-relaxed text-accent-700">
+                  <Info className="mt-0.5 h-3.5 w-3.5 flex-none" />
+                  <span>
+                    {t('cannotMoveHasChildren', {
+                      count: children.length || category.childrens?.length || 0,
+                    })}
+                  </span>
+                </p>
+
+                {children.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-sand-700">
+                      {t('subcategories')}
+                    </p>
+                    <ul className="mt-1.5 divide-y divide-sand-200 rounded-lg border border-sand-300">
+                      {children.map((child) => (
+                        <li
+                          key={child.uuid}
+                          className="flex items-center justify-between gap-3 px-3 py-2.5"
+                        >
+                          <span className="truncate text-[12.5px] text-sand-800">
+                            {t('subcategoryLine', {
+                              name: child.name,
+                              count: child.productCount,
+                            })}
+                          </span>
+                          <Link
+                            href={`/admin/dashboard/categories/${child.uuid}`}
+                            className="flex-none text-[12.5px] font-semibold text-brand-600 hover:text-brand-700"
+                          >
+                            {t('open')}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
             ) : (
               <>
                 <select
                   id="parentUuid"
                   {...register('parentUuid')}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className={inputClass(false)}
                 >
                   <option value="">{t('noParent')}</option>
                   {parentCategories.map((cat) => (
                     <option key={cat.uuid} value={cat.uuid}>
-                      {cat.name}
+                      {cat.customName ?? cat.name}
                     </option>
                   ))}
                 </select>
-                <p className="mt-1 text-sm text-gray-500">{t('parentCategoryHelp')}</p>
+                <p className="mt-1.5 text-[12px] text-sand-600">
+                  {t('parentCategoryHelp')}
+                </p>
                 {parentUuidValue !== initialParentUuid && (
-                  <p className="mt-2 text-sm text-blue-600 flex items-center gap-1">
-                    <span className="text-xs">ℹ</span>
-                    {parentUuidValue ? 'Se asignará una categoría padre' : 'Se convertirá en categoría principal'}
+                  <p className="mt-2 text-[12.5px] font-medium text-brand-600">
+                    {parentUuidValue ? t('willBeMoved') : t('willBecomeRoot')}
                   </p>
                 )}
               </>
             )}
           </div>
 
-          {/* Description */}
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="description" className="text-[13px] font-semibold text-ink">
               {t('descriptionLabel')}
             </label>
             <textarea
               id="description"
               {...register('description')}
               rows={4}
-              placeholder="Descripción opcional de la categoría..."
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder={t('descriptionPlaceholder')}
+              className={inputClass(false)}
             />
           </div>
+        </div>
 
-          {/* Image File */}
-          <div>
-            <label htmlFor="image" className="block text-sm font-medium text-gray-700">
-              {t('imageLabel')}
-              {isFeaturedValue && !category.image && <span className="text-red-500 ml-1">*</span>}
-            </label>
-            {isFeaturedValue && !category.image && (
-              <p className="mt-1 text-sm text-amber-600 flex items-center gap-1">
-                <span className="text-xs">⚠</span>
-                {t('imageRequiredWarning')}
-              </p>
-            )}
-
-            {/* Current Image Display */}
-            {category.image && (
-              <div className="mt-2 mb-4">
-                <div className="relative w-32 h-32 rounded-lg overflow-hidden border-2 border-gray-200">
-                  <Image
-                    src={category.image}
-                    alt={category.name}
-                    fill
-                    className="object-cover"
-                  />
+        <div className="space-y-4">
+          {/* Imagen actual o zona de carga */}
+          <div className="rounded-xl border border-sand-300 bg-white p-5">
+            {category.image && !isReplacingImage && !imagePreview ? (
+              <CurrentImagePanel
+                image={category.image}
+                name={displayName}
+                isFeatured={category.isFeatured}
+                isBusy={isBusyWithImage}
+                onReplace={() => setIsReplacingImage(true)}
+                onDelete={handleDeleteImageClick}
+              />
+            ) : (
+              <>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-[13px] font-semibold text-ink">
+                    {category.image ? t('replaceImage') : t('imageLabel')}
+                  </span>
+                  {isFeaturedValue && (
+                    <span className="rounded-full bg-accent-50 px-2.5 py-0.5 text-[11px] font-semibold text-accent-700">
+                      {t('imageRequiredIfFeatured')}
+                    </span>
+                  )}
                 </div>
-                <p className="mt-1 text-xs text-gray-500">{t('currentImage')}</p>
-                <button
-                  type="button"
-                  onClick={handleDeleteImageClick}
-                  disabled={isDeletingImage}
-                  className="mt-2 flex items-center gap-2 px-3 py-1.5 text-sm bg-red-50 text-red-700 rounded-lg hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  {isDeletingImage ? 'Eliminando...' : t('deleteImage')}
-                </button>
-              </div>
-            )}
 
-            {/* File Input */}
-            <input
-              type="file"
-              id="image"
-              name="image"
-              onChange={handleFileChange}
-              accept="image/jpeg, image/png, image/webp"
-              className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-colors"
-            />
-
-            {/* New Image Preview and Upload */}
-            {imageFile && (
-              <div className="mt-3 space-y-2">
-                <p className="text-sm text-gray-600 flex items-center gap-2">
-                  <span className="text-green-600">✓</span>
-                  {t('newImageSelected', { filename: imageFile.name })}
-                </p>
-                <button
-                  type="button"
-                  onClick={handleUploadImage}
-                  disabled={isUploadingImage}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <Upload className="w-4 h-4" />
-                  {isUploadingImage ? 'Subiendo...' : (category.image ? t('replaceImage') : t('uploadImage'))}
-                </button>
-              </div>
+                <div className="mt-3">
+                  {imagePreview ? (
+                    <div className="space-y-2">
+                      <div className="relative h-40 w-full overflow-hidden rounded-lg border border-sand-300">
+                        <Image
+                          src={imagePreview}
+                          alt={imageFile?.name ?? ''}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <p className="text-[12px] text-sand-600">
+                        {t('imageSavedOnSubmit')}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={clearSelectedImage}
+                        className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-danger-600 hover:text-danger-700"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        {t('removeSelectedImage')}
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <ImageDropzone onSelect={handleImageSelect} disabled={isBusyWithImage} />
+                      {isReplacingImage && (
+                        <button
+                          type="button"
+                          onClick={clearSelectedImage}
+                          className="mt-2 text-[12.5px] font-medium text-sand-700 hover:text-ink"
+                        >
+                          {t('cancel')}
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </>
             )}
           </div>
 
-          {/* Status and Visibility Section */}
-          <div className="space-y-3 pt-4 border-t border-gray-200">
-            <h3 className="text-sm font-semibold text-gray-700">Estado y Visibilidad</h3>
+          <div className="space-y-3 rounded-xl border border-sand-300 bg-white p-5">
+            <span className="text-[13px] font-semibold text-ink">
+              {t('statusSectionTitle')}
+            </span>
 
             <Controller
               name="visible"
@@ -532,7 +649,7 @@ export default function EditCategoryPage() {
                 <Toggle
                   id="visible"
                   label={t('visibleLabel')}
-                  description="La categoría estará visible para los usuarios en la tienda"
+                  description={t('visibleHelp')}
                   checked={field.value}
                   onChange={field.onChange}
                   color="green"
@@ -547,51 +664,99 @@ export default function EditCategoryPage() {
                 <Toggle
                   id="isFeatured"
                   label={t('isFeaturedLabel')}
-                  description="La categoría aparecerá en la sección de categorías destacadas"
+                  description={
+                    stats
+                      ? t('isFeaturedHelp', {
+                          used: stats.featured,
+                          slots: stats.featuredSlots,
+                        })
+                      : t('isFeaturedHelpPlain')
+                  }
                   checked={field.value}
                   onChange={(checked) => handleFeaturedToggle(checked, field.onChange)}
+                  disabled={noFeaturedSlots && !field.value}
                   color="yellow"
                 />
               )}
             />
-          </div>
-        </div>
 
-        <div className="mt-6 md:mt-8 pt-4 md:pt-6 border-t border-gray-200 flex flex-col sm:flex-row gap-3 sm:justify-end">
-          <Link
-            href="/admin/dashboard/categories"
-            className="flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            Cancelar
-          </Link>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <Save className="w-5 h-5" />
-            {isSubmitting ? t('saving') : t('save')}
-          </button>
+            {noFeaturedSlots && !isFeaturedValue && (
+              <p className="text-[12.5px] font-medium text-accent-700">
+                {t('featuredSlotsFull', { slots: stats?.featuredSlots ?? 0 })}
+              </p>
+            )}
+          </div>
+
+          {isFeaturedValue && (
+            <FeaturedChecklist
+              items={[
+                {
+                  label: t('checkNameAndSlug'),
+                  done: !!slugValue && slugStatus !== 'taken' && slugStatus !== 'invalid',
+                },
+                { label: t('checkImage'), done: !!category.image || !!imageFile },
+                {
+                  label: t('checkProducts', {
+                    count: usage?.publishedProducts ?? 0,
+                  }),
+                  done: (usage?.publishedProducts ?? 0) > 0,
+                },
+              ]}
+            />
+          )}
+
+          <CategoryUsagePanel usage={usage} />
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <Link
+              href="/admin/dashboard/categories"
+              className="flex items-center justify-center rounded-lg border border-sand-300 px-4 py-2.5 text-sm font-medium text-sand-700 transition-colors hover:bg-sand-50"
+            >
+              {t('cancel')}
+            </Link>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-700 disabled:opacity-50"
+            >
+              <Save className="h-4 w-4" />
+              {isSubmitting ? t('saving') : t('save')}
+            </button>
+          </div>
         </div>
       </form>
 
-      {/* Delete Image Confirmation Modal */}
       <ConfirmModal
         isOpen={deleteImageModal.isOpen}
         title={t('deleteImage')}
         message={deleteImageModal.message || t('deleteImageConfirm')}
         confirmText={t('deleteImage')}
-        cancelText="Cancelar"
+        cancelText={t('cancel')}
         onConfirm={handleDeleteImageConfirm}
-        onCancel={() => setDeleteImageModal({ isOpen: false, requiresConfirmation: false })}
+        onCancel={() => setDeleteImageModal({ isOpen: false })}
       />
 
-      {/* Featured Image Upload Modal */}
       <FeaturedImageModal
-        isOpen={featuredImageModal.isOpen}
+        isOpen={featuredImageModalOpen}
+        categoryName={displayName}
         onUpload={handleFeaturedImageUpload}
-        onCancel={() => setFeaturedImageModal({ isOpen: false })}
-        isUploading={isUploadingImage}
+        onCancel={() => setFeaturedImageModalOpen(false)}
+        isUploading={isBusyWithImage}
+      />
+
+      <MoveParentModal
+        isOpen={moveParentModalOpen}
+        categoryName={displayName}
+        currentParent={category.parent?.customName ?? category.parent?.name ?? null}
+        newParent={
+          parentCategories.find((cat) => cat.uuid === parentUuidValue)?.customName ??
+          parentCategories.find((cat) => cat.uuid === parentUuidValue)?.name ??
+          null
+        }
+        productCount={usage?.totalProducts ?? 0}
+        isSaving={isSubmitting}
+        onConfirm={handleMoveConfirm}
+        onCancel={() => setMoveParentModalOpen(false)}
       />
     </div>
   );

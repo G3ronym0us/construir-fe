@@ -1,6 +1,6 @@
 'use client';
 
-import { Package } from 'lucide-react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import CartStepper from '../cart/CartStepper';
 import { formatVES, formatUSD } from '@/lib/currency';
@@ -42,73 +42,84 @@ export default function ProductCardContent({
   const isCompact = variant === 'compact';
 
   return (
-    <div className={`${classes.padding} ${classes.spacingY}`}>
-      {/* Categories */}
+    <div className={`flex flex-1 flex-col ${classes.padding} ${classes.spacingY}`}>
+      {/* Categoría: etiqueta corta en mayúsculas */}
       {product.categories && product.categories.length > 0 && (
-        <div className={`${classes.categorySize} font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide`}>
-          {isCompact ? (
-            // Compact: solo primera categoría
-            <span className="block truncate">{product.categories[0]?.name}</span>
-          ) : (
-            // Default: primera categoría, una sola línea
-            <span className="block truncate text-blue-600 dark:text-blue-400">
-              {product.categories[0]?.name}
-            </span>
-          )}
+        <div className={`${classes.categorySize} font-bold uppercase tracking-[0.08em] text-sand-600`}>
+          <span className="block truncate">{product.categories[0]?.name}</span>
         </div>
       )}
 
-      {/* Nombre del producto */}
-      <h3 className={`${classes.nameSize} text-gray-800 dark:text-gray-200 line-clamp-2 ${classes.minHeight} group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors`}>
-        {product.customName ?? product.name}
+      {/* Nombre del producto: dos líneas de alto fijo para alinear la rejilla.
+          El enlace se estira sobre toda la tarjeta con `after:inset-0`, así que
+          es un <a> de verdad -- navega antes de que hidrate, se abre en pestaña
+          nueva y se alcanza con el teclado -- y el nombre le sirve de etiqueta
+          accesible sin necesidad de aria-label. */}
+      <h3
+        className={`${classes.nameSize} ${classes.minHeight} line-clamp-2 leading-[1.3] text-ink transition-colors group-hover:text-brand-600`}
+      >
+        <Link
+          href={`/productos/${product.uuid}`}
+          className="after:absolute after:inset-0 after:content-['']"
+        >
+          {product.customName ?? product.name}
+        </Link>
       </h3>
 
-      {/* SKU - solo si showSku y no compact */}
       {showSku && !isCompact && (
-        <p className="text-sm text-gray-500 dark:text-gray-400">{tCart('sku')}: {product.sku}</p>
+        <p className="text-xs text-sand-600">{tCart('sku')}: {product.sku}</p>
       )}
 
-      {/* Descripción corta - solo si showDescription y no compact */}
       {showDescription && !isCompact && product.shortDescription && (
-        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 line-clamp-2 hidden sm:block">
+        <p className="hidden text-sm text-sand-700 line-clamp-2 sm:block">
           {product.shortDescription}
         </p>
       )}
 
-      {/* Precio */}
-      <div className="flex items-baseline gap-1">
-        <div className="flex-1">
-          {priceVES && (
-            <p className={`${classes.priceSize} font-bold text-blue-600`}>{formatVES(priceVES)}</p>
-          )}
-          <p className={`${priceVES ? 'text-xs text-gray-500 dark:text-gray-400' : `${classes.priceSize} font-bold text-blue-600 dark:text-blue-400`}`}>
+      {/* Precio dual: Bs. protagonista, USD de referencia */}
+      <div className="mt-auto pt-1">
+        {priceVES ? (
+          <>
+            <p className={`${classes.priceSize} font-extrabold leading-tight ${isOutOfStock ? 'text-sand-600' : 'text-ink'}`}>
+              {formatVES(priceVES)}
+            </p>
+            <p className="text-[11px] font-medium text-sand-600">
+              {formatUSD(priceUSD)} · IVA incl.
+            </p>
+          </>
+        ) : (
+          <p className={`${classes.priceSize} font-extrabold leading-tight ${isOutOfStock ? 'text-sand-600' : 'text-ink'}`}>
             {formatUSD(priceUSD)}
           </p>
-        </div>
+        )}
       </div>
 
-      {/* Stock - solo si showStock y no compact */}
-      {showStock && !isCompact && (
-        <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
-          <Package className="w-4 h-4" />
-          <span>{product.inventory} {tCart('stock')}</span>
-        </div>
+      {/* Stock disponible */}
+      {showStock && !isCompact && !isOutOfStock && (
+        <p
+          className={`text-xs font-semibold ${
+            product.inventory <= 5 ? 'text-accent-700' : 'text-success-600'
+          }`}
+        >
+          {product.inventory} {tCart('stock')}
+        </p>
       )}
 
-      {/* Botón agregar al carrito - solo si showAddToCart */}
+      {/* Acción: stepper cuando hay stock, aviso cuando no */}
       {showAddToCart && product.published && !isOutOfStock && (
         <CartStepper
           productUuid={product.uuid}
           inventory={product.inventory}
-          className="w-full"
+          className="relative z-10 mt-1 w-full"
           compact={true}
+          addLabel={tCart('add')}
         />
       )}
 
       {showAddToCart && isOutOfStock && (
         <button
           disabled
-          className="w-full px-4 py-2 bg-gray-300 dark:bg-slate-700 text-gray-600 dark:text-gray-400 rounded-lg font-semibold cursor-not-allowed"
+          className="relative z-10 mt-1 w-full cursor-not-allowed rounded-xl border-[1.5px] border-sand-300 px-4 py-2.5 text-[12.5px] font-bold text-sand-600"
         >
           {tCart('notAvailable')}
         </button>

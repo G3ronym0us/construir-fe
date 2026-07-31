@@ -3,19 +3,30 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Package, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  Loader2,
+  Package,
+  Store,
+  Truck,
+} from "lucide-react";
 import { productsService } from "@/services/products";
 import CartStepper from "@/components/cart/CartStepper";
+import Accordion from "@/components/ui/Accordion";
+import { useExchangeRate, formatRate } from "@/hooks/useExchangeRate";
 import type { Product } from "@/types";
 import { formatVES, formatUSD, parsePrice } from "@/lib/currency";
 
 export default function ProductDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const uuid = params.uuid as string;
   const t = useTranslations("products");
   const tCart = useTranslations("cart");
+  const { rate } = useExchangeRate();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -45,22 +56,17 @@ export default function ProductDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center">
-        <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
+      <div className="flex min-h-screen items-center justify-center bg-white">
+        <Loader2 className="h-10 w-10 animate-spin text-brand-600" />
       </div>
     );
   }
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex flex-col items-center justify-center">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-          {t("notFound")}
-        </h1>
-        <Link
-          href="/productos"
-          className="text-blue-600 dark:text-blue-400 hover:underline"
-        >
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-white px-6 text-center">
+        <h1 className="font-display text-2xl font-bold text-ink">{t("notFound")}</h1>
+        <Link href="/productos" className="font-bold text-brand-600 hover:text-brand-700">
           Volver a productos
         </Link>
       </div>
@@ -68,70 +74,95 @@ export default function ProductDetailPage() {
   }
 
   const priceUSD = parsePrice(product.priceWithIva);
-  const priceVES = product.priceWithIvaVes
-    ? parsePrice(product.priceWithIvaVes)
-    : null;
+  const priceVES = product.priceWithIvaVes ? parsePrice(product.priceWithIvaVes) : null;
   const isOutOfStock = product.inventory === 0;
   const isLowStock = product.inventory > 0 && product.inventory <= 5;
+  const images = product.images ?? [];
+  const heroPrice = priceVES ? formatVES(priceVES) : formatUSD(priceUSD);
+  const addLabel = `${tCart("addToCart")} · ${heroPrice}`;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Images Section */}
+    <div className="min-h-screen bg-white pb-32 md:pb-10">
+      <div className="mx-auto max-w-7xl md:px-6 md:py-8 lg:px-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
+          {/* Galería */}
           <div>
-            {/* Main Image */}
-            <div className="relative bg-gray-50 dark:bg-slate-700 rounded-lg overflow-hidden mb-4 h-72 sm:h-80 md:h-96">
+            <div className="relative h-[248px] w-full overflow-hidden bg-sand-100 sm:h-[340px] md:aspect-[4/3] md:h-auto md:rounded-2xl md:border md:border-sand-300">
               {selectedImage && !imgError ? (
                 <Image
                   src={selectedImage}
                   alt={product.name}
                   fill
-                  className="object-contain p-4 sm:p-6"
+                  className="object-contain p-6"
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   priority
                   onError={() => setImgError(true)}
                 />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Package className="w-24 h-24 text-gray-300 dark:text-slate-500" />
+                  <Package className="h-20 w-20 text-sand-500" strokeWidth={1.4} />
                 </div>
               )}
 
-              {/* Badges */}
-              <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
-                {product.featured && (
-                  <span className="px-3 py-1 bg-yellow-500 text-white text-sm font-semibold rounded">
-                    {t("featured")}
-                  </span>
-                )}
-                {isOutOfStock && (
-                  <span className="px-3 py-1 bg-red-600 text-white text-sm font-semibold rounded">
+              {/* Volver, sobre la foto en móvil */}
+              <button
+                type="button"
+                onClick={() => router.back()}
+                aria-label="Volver"
+                className="absolute left-4 top-[calc(0.875rem+env(safe-area-inset-top))] z-10 flex h-11 w-11 items-center justify-center rounded-xl bg-white/92 text-ink backdrop-blur-sm md:hidden"
+              >
+                <ArrowLeft className="h-[17px] w-[17px]" />
+              </button>
+
+              {product.featured && (
+                <span className="absolute right-4 top-[calc(0.875rem+env(safe-area-inset-top))] z-10 rounded-lg bg-accent-500 px-2.5 py-1.5 text-[11px] font-extrabold text-ink md:top-4">
+                  {t("featured")}
+                </span>
+              )}
+
+              {isOutOfStock && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/65">
+                  <span className="rounded-lg bg-white px-3 py-1.5 text-sm font-bold text-sand-700">
                     {tCart("outOfStock")}
                   </span>
-                )}
-                {isLowStock && !isOutOfStock && (
-                  <span className="px-3 py-1 bg-orange-500 text-white text-sm font-semibold rounded">
-                    {tCart("lowStock")}
-                  </span>
-                )}
-              </div>
+                </div>
+              )}
+
+              {/* Indicadores de galería */}
+              {images.length > 1 && (
+                <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 gap-1.5 md:hidden">
+                  {images.map((image) => (
+                    <button
+                      key={image.uuid}
+                      type="button"
+                      onClick={() => {
+                        setSelectedImage(image.url);
+                        setImgError(false);
+                      }}
+                      aria-label={`Ver imagen ${image.order + 1}`}
+                      className={`h-[5px] rounded-full transition-all ${
+                        selectedImage === image.url ? "w-5 bg-ink" : "w-[5px] bg-ink/25"
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Thumbnail Images */}
-            {product.images && product.images.length > 1 && (
-              <div className="grid grid-cols-4 gap-2">
-                {product.images.map((image) => (
+            {/* Miniaturas en escritorio */}
+            {images.length > 1 && (
+              <div className="mt-4 hidden grid-cols-5 gap-2 md:grid">
+                {images.map((image) => (
                   <button
                     key={image.uuid}
                     onClick={() => {
                       setSelectedImage(image.url);
                       setImgError(false);
                     }}
-                    className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all flex items-center justify-center ${
+                    className={`relative flex aspect-square items-center justify-center overflow-hidden rounded-xl border-2 transition-all ${
                       selectedImage === image.url
-                        ? "border-blue-600 ring-2 ring-blue-200"
-                        : "border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500"
+                        ? "border-brand-600"
+                        : "border-sand-300 hover:border-brand-300"
                     }`}
                   >
                     <Image
@@ -147,113 +178,119 @@ export default function ProductDetailPage() {
             )}
           </div>
 
-          {/* Product Info Section */}
-          <div className="bg-white dark:bg-slate-800 rounded-lg p-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+          {/* Ficha */}
+          <div className="flex flex-col gap-3.5 px-4 pt-4 md:px-0 md:pt-0">
+            <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-sand-600">
+              {product.categories?.[0]?.name ?? t("title")} · {tCart("sku")} {product.sku}
+            </p>
+
+            <h1 className="font-display text-[22px] font-bold leading-[1.22] text-ink md:text-3xl">
               {product.customName ?? product.name}
             </h1>
 
-            {/* SKU */}
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              {tCart("sku")}: {product.sku}
-            </p>
+            {/* Precio dual con la tasa a la vista */}
+            <div>
+              <p className="text-[26px] font-extrabold leading-none text-ink md:text-4xl">
+                {heroPrice}
+              </p>
+              <p className="mt-1.5 text-[13px] font-medium text-sand-600">
+                {priceVES ? `${formatUSD(priceUSD)} · ` : ""}IVA incluido
+                {rate !== null && ` · tasa BCV ${formatRate(rate)}`}
+              </p>
+            </div>
 
-            {/* Categories */}
+            {/* Disponibilidad y entrega */}
+            <div className="flex flex-wrap gap-2">
+              {isOutOfStock ? (
+                <span className="rounded-full bg-sand-100 px-3 py-1.5 text-[11.5px] font-bold text-sand-700">
+                  {tCart("outOfStock")}
+                </span>
+              ) : (
+                <span
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11.5px] font-bold ${
+                    isLowStock
+                      ? "bg-accent-100 text-accent-700"
+                      : "bg-success-50 text-success-600"
+                  }`}
+                >
+                  <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                  {product.inventory} {tCart("stock")}
+                </span>
+              )}
+              <span className="flex items-center gap-1.5 rounded-full border border-sand-300 bg-sand-100 px-3 py-1.5 text-[11.5px] font-semibold text-sand-700">
+                <Store className="h-3.5 w-3.5" strokeWidth={2} />
+                Retiro en tienda
+              </span>
+              <span className="flex items-center gap-1.5 rounded-full border border-sand-300 bg-sand-100 px-3 py-1.5 text-[11.5px] font-semibold text-sand-700">
+                <Truck className="h-3.5 w-3.5" strokeWidth={2} />
+                Delivery 24 h
+              </span>
+            </div>
+
+            {/* Categorías */}
             {product.categories && product.categories.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-6">
+              <div className="flex flex-wrap gap-2">
                 {product.categories.map((category) => (
-                  <a
+                  <Link
                     key={category.uuid}
-                    href={`/productos?category=${category.slug}`}
-                    className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 text-sm rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                    href={`/productos?categoria=${category.uuid}`}
+                    className="rounded-full bg-brand-50 px-3 py-1.5 text-[11.5px] font-semibold text-brand-600 transition-colors hover:bg-brand-100"
                   >
                     {category.name}
-                  </a>
+                  </Link>
                 ))}
               </div>
             )}
 
-            {/* Price */}
-            <div className="mb-6">
-              {priceVES && (
-                <p className="text-4xl font-bold text-blue-600 dark:text-blue-400">
-                  {formatVES(priceVES)}
-                </p>
-              )}
-              <p
-                className={`${priceVES ? "text-xl text-gray-600 dark:text-gray-400" : "text-4xl font-bold text-blue-600 dark:text-blue-400"}`}
-              >
-                {formatUSD(priceUSD)}
-              </p>
-            </div>
-
-            {/* Stock */}
-            <div className="flex items-center gap-2 mb-6">
-              <Package className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-              <span className="text-gray-700 dark:text-gray-300">
-                {product.inventory} {tCart("stock")}
-              </span>
-            </div>
-
-            {/* Short Description */}
-            {product.shortDescription && (
-              <div className="mb-6">
-                <p className="text-gray-600 dark:text-gray-400">
-                  {product.shortDescription}
-                </p>
-              </div>
-            )}
-
-            {/* Add to Cart / Quantity Stepper — solo desktop */}
-            {!isOutOfStock && (
-              <div className="hidden md:block mb-4">
+            {/* Añadir al carrito en escritorio */}
+            <div className="mt-2 hidden md:block">
+              {isOutOfStock ? (
+                <button
+                  disabled
+                  className="w-full cursor-not-allowed rounded-xl border-[1.5px] border-sand-300 px-6 py-3.5 text-sm font-bold text-sand-600"
+                >
+                  {tCart("notAvailable")}
+                </button>
+              ) : (
                 <CartStepper
                   productUuid={product.uuid}
                   inventory={product.inventory}
                   className="w-full"
+                  addLabel={addLabel}
                 />
-              </div>
-            )}
+              )}
+            </div>
 
-            {isOutOfStock && (
-              <button
-                disabled
-                className="w-full px-6 py-3 bg-gray-300 dark:bg-slate-700 text-gray-600 dark:text-gray-400 rounded-lg font-semibold cursor-not-allowed"
-              >
-                {tCart("notAvailable")}
-              </button>
-            )}
-
-            {/* Description */}
-            {product.description && (
-              <div className="mt-8 pt-8 border-t dark:border-gray-700">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-                  {t("description")}
-                </h2>
-                <div className="text-gray-600 dark:text-gray-400 whitespace-pre-line">
-                  {product.description}
-                </div>
-              </div>
-            )}
+            {/* Detalle plegable */}
+            <div className="mt-3 flex flex-col">
+              {(product.description || product.shortDescription) && (
+                <Accordion title={t("description")} defaultOpen>
+                  <p className="whitespace-pre-line">
+                    {product.description || product.shortDescription}
+                  </p>
+                </Accordion>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Barra fija mobile — sobre el BottomNav */}
-      <div className="md:hidden fixed bottom-[calc(3.5rem+env(safe-area-inset-bottom))] inset-x-0 z-30 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-700 px-4 py-3">
-        {!isOutOfStock ? (
+      {/* Barra fija al borde inferior: en esta pantalla no hay navegación inferior */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-sand-300 bg-white px-4 pb-[calc(1.375rem+env(safe-area-inset-bottom))] pt-3 md:hidden">
+        {isOutOfStock ? (
+          <button
+            disabled
+            className="w-full cursor-not-allowed rounded-xl border-[1.5px] border-sand-300 px-6 py-3.5 text-sm font-bold text-sand-600"
+          >
+            {tCart("notAvailable")}
+          </button>
+        ) : (
           <CartStepper
             productUuid={product.uuid}
             inventory={product.inventory}
             className="w-full"
+            addLabel={addLabel}
           />
-        ) : (
-          <button
-            disabled
-            className="w-full px-6 py-3 bg-gray-300 dark:bg-slate-700 text-gray-600 dark:text-gray-400 rounded-lg font-semibold cursor-not-allowed"
-          >
-            {tCart("notAvailable")}
-          </button>
         )}
       </div>
     </div>

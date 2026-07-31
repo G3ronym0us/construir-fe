@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { CategoriesTable } from '../admin/CategoriesTable';
 import type { Category } from '@/types';
 
@@ -15,6 +15,8 @@ const makeCategory = (overrides: Partial<Category> = {}): Category => ({
   slug: 'herramientas',
   visible: true,
   isFeatured: false,
+  image: 'https://cdn.construir/herramientas.webp',
+  productCount: 12,
   order: 0,
   ...overrides,
 } as Category);
@@ -23,7 +25,8 @@ const parentCategory = makeCategory({
   uuid: 'cat-parent',
   name: 'Maquinaria',
   slug: 'maquinaria',
-  childrens: [makeCategory()],
+  productCount: 96,
+  childrens: [makeCategory(), makeCategory({ uuid: 'cat-2' })],
 });
 
 const childCategory = makeCategory({
@@ -54,20 +57,17 @@ beforeEach(() => {
 describe('CategoriesTable — íconos de tipo', () => {
   it('muestra el tooltip "Categoría padre" para una categoría con hijos', () => {
     render(<CategoriesTable {...defaultProps} />);
-    const icon = document.querySelector('[title="Categoría padre"]');
-    expect(icon).toBeTruthy();
+    expect(document.querySelector('[title="Categoría padre"]')).toBeTruthy();
   });
 
   it('muestra el tooltip "Subcategoría" para una categoría con parent', () => {
     render(<CategoriesTable {...defaultProps} />);
-    const icon = document.querySelector('[title="Subcategoría"]');
-    expect(icon).toBeTruthy();
+    expect(document.querySelector('[title="Subcategoría"]')).toBeTruthy();
   });
 
   it('muestra el tooltip "Independiente" para una categoría sin parent ni hijos', () => {
     render(<CategoriesTable {...defaultProps} />);
-    const icon = document.querySelector('[title="Independiente"]');
-    expect(icon).toBeTruthy();
+    expect(document.querySelector('[title="Independiente"]')).toBeTruthy();
   });
 });
 
@@ -83,64 +83,60 @@ describe('CategoriesTable — nombre y slug', () => {
     expect(screen.getAllByText('Pinturas Premium').length).toBeGreaterThan(0);
   });
 
-  it('muestra el slug como texto secundario', () => {
+  it('muestra el slug como la ruta pública', () => {
     render(<CategoriesTable {...defaultProps} categories={[standaloneCategory]} />);
-    expect(screen.getAllByText('pinturas').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('/pinturas').length).toBeGreaterThan(0);
   });
 });
 
-describe('CategoriesTable — estado vacío', () => {
-  it('muestra el mensaje de sin categorías cuando el array está vacío', () => {
-    render(<CategoriesTable {...defaultProps} categories={[]} />);
-    expect(screen.getByText('noCategories')).toBeInTheDocument();
+describe('CategoriesTable — jerarquía y conteos', () => {
+  it('muestra el conteo de productos de la fila', () => {
+    render(<CategoriesTable {...defaultProps} categories={[standaloneCategory]} />);
+    expect(screen.getAllByText('12').length).toBeGreaterThan(0);
+  });
+
+  it('acompaña el conteo con las subcategorías cuando la categoría es padre', () => {
+    render(<CategoriesTable {...defaultProps} categories={[parentCategory]} />);
+    // El mock de traducciones devuelve la key: "96 · childrenCount"
+    expect(screen.getByText('96 · childrenCount')).toBeInTheDocument();
+  });
+
+  it('cae a 0 productos cuando el backend no manda el conteo', () => {
+    const sinConteo = makeCategory({ productCount: undefined, childrens: [] });
+    render(<CategoriesTable {...defaultProps} categories={[sinConteo]} />);
+    expect(screen.getAllByText('0').length).toBeGreaterThan(0);
   });
 });
 
-describe('CategoriesTable — acción destacado', () => {
+describe('CategoriesTable — destacadas sin imagen', () => {
+  it('avisa que una destacada sin imagen no se está mostrando', () => {
+    const rota = makeCategory({ isFeatured: true, image: undefined, childrens: [] });
+    render(<CategoriesTable {...defaultProps} categories={[rota]} />);
+    expect(screen.getAllByText('noImageShort').length).toBeGreaterThan(0);
+  });
+
+  it('no avisa cuando la destacada sí tiene imagen', () => {
+    const sana = makeCategory({ isFeatured: true, childrens: [] });
+    render(<CategoriesTable {...defaultProps} categories={[sana]} />);
+    expect(screen.queryByText('noImageShort')).toBeNull();
+  });
+});
+
+describe('CategoriesTable — acciones', () => {
   it('llama a onToggleFeatured con el uuid y el valor actual al hacer click en la estrella', () => {
     render(<CategoriesTable {...defaultProps} categories={[standaloneCategory]} />);
 
-    // Botones de estrella (desktop + mobile)
-    const starButtons = screen.getAllByTitle('markFeatured');
-    fireEvent.click(starButtons[0]);
+    // Estrella de escritorio y de móvil renderizan las dos.
+    fireEvent.click(screen.getAllByTitle('markFeatured')[0]);
 
     expect(defaultProps.onToggleFeatured).toHaveBeenCalledWith('cat-solo', false);
   });
-});
 
-describe('CategoriesTable — acción eliminar', () => {
-  it('abre el modal de confirmación al hacer click en eliminar', () => {
+  it('delega el eliminado a la página con la categoría completa', () => {
     render(<CategoriesTable {...defaultProps} categories={[standaloneCategory]} />);
 
-    // Botones de delete (desktop + mobile)
-    const deleteButtons = screen.getAllByTitle('delete');
-    fireEvent.click(deleteButtons[0]);
+    fireEvent.click(screen.getAllByText('delete')[0]);
 
-    // El modal debe aparecer (tiene el título 'delete' traducido)
-    // Con el mock de traducciones retorna la key tal cual
-    expect(screen.getAllByText('delete').length).toBeGreaterThan(0);
-  });
-
-  it('llama a onDelete con el uuid correcto al confirmar', async () => {
-    const onDelete = vi.fn().mockResolvedValueOnce(undefined);
-    render(
-      <CategoriesTable
-        {...defaultProps}
-        categories={[standaloneCategory]}
-        onDelete={onDelete}
-      />,
-    );
-
-    // Abrir modal
-    const deleteButtons = screen.getAllByTitle('delete');
-    fireEvent.click(deleteButtons[0]);
-
-    // El ConfirmModal renderiza el botón de confirmación con confirmText = 'delete'
-    // Con el mock de traducciones, el botón tiene texto 'delete'
-    const confirmButtons = screen.getAllByText('delete');
-    // El último es el botón de confirmar en el modal
-    fireEvent.click(confirmButtons[confirmButtons.length - 1]);
-
-    expect(onDelete).toHaveBeenCalledWith('cat-solo');
+    expect(defaultProps.onDelete).toHaveBeenCalledWith(standaloneCategory);
   });
 });

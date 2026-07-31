@@ -1,167 +1,257 @@
 'use client';
 
-import { Mail, Search } from 'lucide-react';
+import { Check, Info } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { UseFormRegister, FieldErrors } from 'react-hook-form';
 import type { CheckoutData } from '@/types';
 import { IdentificationType } from '@/types';
 
+/** El paso de contacto son dos pantallas: primero la cédula, luego el resto de datos. */
+export type ContactSubStep = 'identification' | 'details';
+
+const FIELD_CLASS =
+  'min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25';
+const LABEL_CLASS = 'mb-1.5 block text-[11.5px] font-bold text-sand-700';
+
 interface Step1ContactInfoProps {
   register: UseFormRegister<CheckoutData>;
   errors: FieldErrors<CheckoutData>;
   isAuthenticated: boolean;
+  subStep: ContactSubStep;
   identificationType?: IdentificationType;
   identificationNumber?: string;
   onIdentificationChange: (type: IdentificationType, number: string) => void;
   onIdentificationBlur?: () => void;
   isSearching?: boolean;
+  /** Identificación con la que se autocompletó el formulario, p. ej. "V-18.402.117". */
+  autofilledIdentification?: string | null;
+  /** Pedidos previos del invitado encontrado, para dar contexto en el aviso. */
+  autofilledOrdersCount?: number;
+  /** Vuelve a la pantalla de identificación desde el aviso de autocompletado. */
+  onChangeIdentification?: () => void;
+  createAccount: boolean;
 }
 
 export default function Step1ContactInfo({
   register,
   errors,
   isAuthenticated,
+  subStep,
   identificationType,
   identificationNumber,
   onIdentificationChange,
   onIdentificationBlur,
-  isSearching
+  isSearching,
+  autofilledIdentification,
+  autofilledOrdersCount,
+  onChangeIdentification,
+  createAccount,
 }: Step1ContactInfoProps) {
   const t = useTranslations('checkout');
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center gap-2">
-          <Mail className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-          {t('contactInfo')}
+  // ── Pantalla 1: identificación ──
+  if (subStep === 'identification') {
+    return (
+      <div className="flex flex-col gap-3.5">
+        <h2 className="font-display text-[21px] font-bold leading-[1.2] text-ink">
+          {t('identificationHeadline', { defaultValue: 'Empecemos por tu cédula o RIF' })}
         </h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          {t('contactInfoDescription', { defaultValue: 'Ingresa tu información de contacto para procesar tu pedido' })}
+        <p className="text-[13.5px] font-medium leading-[1.5] text-sand-700">
+          {t('identificationDescription', {
+            defaultValue:
+              'Si ya compraste con nosotros, completamos el resto de tus datos automáticamente.',
+          })}
         </p>
-      </div>
 
-      {/* Campos de Identificación (solo para guests) */}
-      {!isAuthenticated && (
-        <div className="border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 rounded-lg p-4 space-y-4">
-          <div className="flex items-center gap-2 text-blue-900 dark:text-blue-300 font-medium">
-            <Search className="w-4 h-4" />
-            <span>{t('identification', { defaultValue: 'Identificación' })}</span>
+        <div className="mt-1.5 grid grid-cols-[104px_1fr] gap-2.5">
+          <div>
+            <label className={LABEL_CLASS}>
+              {t('identificationType', { defaultValue: 'Tipo · V / E / J' })}
+            </label>
+            <select
+              value={identificationType || IdentificationType.V}
+              onChange={(e) =>
+                onIdentificationChange(
+                  e.target.value as IdentificationType,
+                  identificationNumber || '',
+                )
+              }
+              className={FIELD_CLASS}
+            >
+              <option value={IdentificationType.V}>V</option>
+              <option value={IdentificationType.E}>E</option>
+              <option value={IdentificationType.J}>J</option>
+              <option value={IdentificationType.G}>G</option>
+              <option value={IdentificationType.P}>P</option>
+            </select>
           </div>
-          <p className="text-sm text-blue-700 dark:text-blue-400">
-            {t('identificationDescription', { defaultValue: 'Ingresa tu identificación para autocompletar tus datos si ya has comprado antes' })}
+
+          <div>
+            <label className={LABEL_CLASS}>
+              {t('identificationNumber', { defaultValue: 'Número' })}
+            </label>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={identificationNumber || ''}
+              onChange={(e) =>
+                onIdentificationChange(
+                  identificationType || IdentificationType.V,
+                  e.target.value,
+                )
+              }
+              onBlur={onIdentificationBlur}
+              placeholder={t('identificationPlaceholder', { defaultValue: 'Ej: 12345678' })}
+              className={FIELD_CLASS}
+            />
+          </div>
+        </div>
+
+        {isSearching && (
+          <p className="flex items-center gap-2 text-xs font-medium text-sand-600">
+            <span className="h-3.5 w-3.5 flex-none animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
+            {t('searchingByIdentification', {
+              defaultValue: 'Buscando tus datos por cédula…',
+            })}
           </p>
+        )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t('identificationType', { defaultValue: 'Tipo' })}
-              </label>
-              <select
-                value={identificationType || IdentificationType.V}
-                onChange={(e) => onIdentificationChange(e.target.value as IdentificationType, identificationNumber || '')}
-                className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value={IdentificationType.V}>V - Venezolano</option>
-                <option value={IdentificationType.E}>E - Extranjero</option>
-                <option value={IdentificationType.J}>J - Jurídico</option>
-                <option value={IdentificationType.G}>G - Gobierno</option>
-                <option value={IdentificationType.P}>P - Pasaporte</option>
-              </select>
-            </div>
+        <div className="mt-2 flex items-start gap-2.5 rounded-xl bg-sand-100 p-3">
+          <Info className="mt-px h-4 w-4 flex-none text-sand-600" strokeWidth={2} />
+          <p className="text-xs font-medium leading-[1.5] text-sand-700">
+            {t('identificationPrivacyNote', {
+              defaultValue:
+                'Usamos tu cédula solo para identificar tu pedido y emitir el recibo.',
+            })}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t('identificationNumber', { defaultValue: 'Número de Identificación' })}
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={identificationNumber || ''}
-                  onChange={(e) => onIdentificationChange(identificationType || IdentificationType.V, e.target.value)}
-                  onBlur={onIdentificationBlur}
-                  placeholder={t('identificationPlaceholder', { defaultValue: 'Ej: 12345678' })}
-                  className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                {isSearching && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                  </div>
-                )}
-              </div>
-            </div>
+  // ── Pantalla 2: resto de los datos ──
+  return (
+    <div className="flex flex-col gap-3.5">
+      {autofilledIdentification && (
+        <div className="flex items-center gap-2.5 rounded-xl border border-success-200 bg-success-50 px-3.5 py-3">
+          <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-success-600 text-white">
+            <Check className="h-3.5 w-3.5" strokeWidth={3} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[12.5px] font-bold text-ink">
+              {t('autofilledTitle', { defaultValue: 'Datos autocompletados' })}
+            </p>
+            <p className="mt-0.5 truncate text-[11.5px] font-medium text-sand-700">
+              {autofilledIdentification}
+              {autofilledOrdersCount
+                ? ` · ${autofilledOrdersCount} ${
+                    autofilledOrdersCount === 1 ? 'pedido anterior' : 'pedidos anteriores'
+                  }`
+                : ''}
+            </p>
           </div>
+          {onChangeIdentification && (
+            <button
+              type="button"
+              onClick={onChangeIdentification}
+              className="flex-none rounded-lg px-1 py-1 text-[12.5px] font-bold text-brand-600 hover:underline"
+            >
+              {t('change', { defaultValue: 'Cambiar' })}
+            </button>
+          )}
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            {t('firstName')} *
-          </label>
-          <input
-            type="text"
-            {...register('firstName', { required: true })}
-            className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+          <label className={LABEL_CLASS}>{t('firstName')} *</label>
+          <input type="text" {...register('firstName', { required: true })} className={FIELD_CLASS} />
           {errors.firstName && (
-            <span className="text-red-500 text-xs mt-1">
+            <span className="text-danger-500 text-xs mt-1">
               {t('errors.fieldRequired', { defaultValue: 'Este campo es requerido' })}
             </span>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            {t('lastName')} *
-          </label>
-          <input
-            type="text"
-            {...register('lastName', { required: true })}
-            className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+          <label className={LABEL_CLASS}>{t('lastName')} *</label>
+          <input type="text" {...register('lastName', { required: true })} className={FIELD_CLASS} />
           {errors.lastName && (
-            <span className="text-red-500 text-xs mt-1">
+            <span className="text-danger-500 text-xs mt-1">
               {t('errors.fieldRequired', { defaultValue: 'Este campo es requerido' })}
             </span>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            {t('email')} *
-          </label>
+          <label className={LABEL_CLASS}>{t('phone')} *</label>
+          <input type="tel" {...register('phone', { required: true })} className={FIELD_CLASS} />
+          {errors.phone && (
+            <span className="text-danger-500 text-xs mt-1">
+              {t('errors.fieldRequired', { defaultValue: 'Este campo es requerido' })}
+            </span>
+          )}
+        </div>
+
+        <div>
+          <label className={LABEL_CLASS}>{t('email')} *</label>
           <input
             type="email"
             {...register('email', {
               required: true,
-              pattern: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i
+              pattern: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
             })}
-            className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className={FIELD_CLASS}
           />
-          {errors.email && (
-            <span className="text-red-500 text-xs mt-1">
+          {errors.email ? (
+            <span className="text-danger-500 text-xs mt-1">
               {t('errors.emailInvalid', { defaultValue: 'Email válido requerido' })}
             </span>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            {t('phone')} *
-          </label>
-          <input
-            type="tel"
-            {...register('phone', { required: true })}
-            className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-          {errors.phone && (
-            <span className="text-red-500 text-xs mt-1">
-              {t('errors.fieldRequired', { defaultValue: 'Este campo es requerido' })}
-            </span>
+          ) : (
+            <p className="mt-1.5 text-[11px] font-medium text-sand-600">
+              {t('emailHelp', {
+                defaultValue: 'Te enviamos el recibo y el estado del pedido aquí',
+              })}
+            </p>
           )}
         </div>
       </div>
+
+      {!isAuthenticated && (
+        <div>
+          <label className="flex min-h-11 cursor-pointer items-center gap-2.5">
+            <input
+              type="checkbox"
+              {...register('createAccount')}
+              className="h-5 w-5 rounded-md border-sand-400 text-brand-600 focus:ring-brand-500"
+            />
+            <span className="text-[12.5px] font-semibold text-sand-700">
+              {t('createAccount', { defaultValue: 'Crear cuenta para seguir mis pedidos' })}
+            </span>
+          </label>
+
+          {createAccount && (
+            <div className="mt-2">
+              <label className={LABEL_CLASS}>{t('password')} *</label>
+              <input
+                type="password"
+                {...register('password', { required: createAccount, minLength: 6 })}
+                placeholder={t('passwordPlaceholder')}
+                className={FIELD_CLASS}
+              />
+              {errors.password && (
+                <span className="text-danger-500 text-xs mt-1">
+                  {t('errors.passwordMin', { defaultValue: 'Mínimo 6 caracteres' })}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      <p className="text-[11.5px] font-medium text-sand-600">
+        {t('allFieldsRequired', { defaultValue: 'Todos los campos son obligatorios.' })}
+      </p>
     </div>
   );
 }

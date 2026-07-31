@@ -14,10 +14,12 @@ import {
   Heart,
   Send
 } from 'lucide-react';
+import { useStoreInfo } from '@/hooks/useStoreInfo';
 
 export default function Footer() {
   const t = useTranslations('footer');
   const tNav = useTranslations('nav');
+  const { storeInfo } = useStoreInfo();
   const [email, setEmail] = useState('');
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [subscribeStatus, setSubscribeStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -42,7 +44,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className="bg-gray-900 text-gray-300">
+    <footer className="bg-brand-900 text-sand-500">
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
@@ -50,10 +52,10 @@ export default function Footer() {
           {/* Columna 1: Sobre la Empresa */}
           <div className="space-y-4">
             <div>
-              <h3 className="text-white text-xl font-bold mb-2">
+              <h3 className="font-display text-white text-xl font-bold mb-2">
                 {t('companyName')}
               </h3>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-sand-500">
                 {t('tagline')}
               </p>
             </div>
@@ -68,7 +70,7 @@ export default function Footer() {
                   href="https://facebook.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-full bg-gray-800 hover:bg-blue-600 flex items-center justify-center transition-colors"
+                  className="w-10 h-10 rounded-full bg-white/10 hover:bg-brand-600 flex items-center justify-center transition-colors"
                   aria-label="Facebook"
                 >
                   <Facebook className="w-5 h-5" />
@@ -77,7 +79,7 @@ export default function Footer() {
                   href="https://instagram.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-full bg-gray-800 hover:bg-pink-600 flex items-center justify-center transition-colors"
+                  className="w-10 h-10 rounded-full bg-white/10 hover:bg-accent-500 flex items-center justify-center transition-colors"
                   aria-label="Instagram"
                 >
                   <Instagram className="w-5 h-5" />
@@ -86,7 +88,7 @@ export default function Footer() {
                   href="https://twitter.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-full bg-gray-800 hover:bg-sky-500 flex items-center justify-center transition-colors"
+                  className="w-10 h-10 rounded-full bg-white/10 hover:bg-brand-500 flex items-center justify-center transition-colors"
                   aria-label="Twitter"
                 >
                   <Twitter className="w-5 h-5" />
@@ -141,38 +143,57 @@ export default function Footer() {
             <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">
               {t('contactInfo')}
             </h4>
+            {/* Los valores vienen del backend (STORE_*); las etiquetas siguen traducidas */}
             <ul className="space-y-3">
-              <li className="flex gap-3 text-sm">
-                <MapPin className="w-5 h-5 flex-shrink-0 text-blue-400" />
-                <span>{t('address')}</span>
-              </li>
-              <li className="flex gap-3 text-sm">
-                <Phone className="w-5 h-5 flex-shrink-0 text-blue-400" />
-                <div>
-                  <p className="font-medium text-white">{t('phone')}</p>
-                  <a href="tel:+582856320178" className="hover:text-white transition-colors">
-                    +58 285 632 0178
-                  </a>
-                </div>
-              </li>
-              <li className="flex gap-3 text-sm">
-                <Mail className="w-5 h-5 flex-shrink-0 text-blue-400" />
-                <div>
-                  <p className="font-medium text-white">{t('email')}</p>
-                  <a href="mailto:info@constru-ir.com" className="hover:text-white transition-colors">
-                    info@constru-ir.com
-                  </a>
-                </div>
-              </li>
-              <li className="flex gap-3 text-sm">
-                <Clock className="w-5 h-5 flex-shrink-0 text-blue-400" />
-                <div>
-                  <p className="font-medium text-white mb-1">{t('hours')}</p>
-                  <p className="text-xs">{t('hoursWeekdays')}</p>
-                  <p className="text-xs">{t('hoursSaturday')}</p>
-                  <p className="text-xs">{t('hoursSunday')}</p>
-                </div>
-              </li>
+              {storeInfo && (storeInfo.address || storeInfo.city) && (
+                <li className="flex gap-3 text-sm">
+                  <MapPin className="w-5 h-5 flex-shrink-0 text-brand-300" />
+                  <span>
+                    {[storeInfo.address, storeInfo.city].filter(Boolean).join(', ')}
+                  </span>
+                </li>
+              )}
+              {storeInfo?.phone && (
+                <li className="flex gap-3 text-sm">
+                  <Phone className="w-5 h-5 flex-shrink-0 text-brand-300" />
+                  <div>
+                    <p className="font-medium text-white">{t('phone')}</p>
+                    <a
+                      href={`tel:${storeInfo.phone.replace(/\s/g, '')}`}
+                      className="hover:text-white transition-colors"
+                    >
+                      {storeInfo.phone}
+                    </a>
+                  </div>
+                </li>
+              )}
+              {storeInfo?.email && (
+                <li className="flex gap-3 text-sm">
+                  <Mail className="w-5 h-5 flex-shrink-0 text-brand-300" />
+                  <div>
+                    <p className="font-medium text-white">{t('email')}</p>
+                    <a
+                      href={`mailto:${storeInfo.email}`}
+                      className="hover:text-white transition-colors"
+                    >
+                      {storeInfo.email}
+                    </a>
+                  </div>
+                </li>
+              )}
+              {storeInfo?.hours && (
+                <li className="flex gap-3 text-sm">
+                  <Clock className="w-5 h-5 flex-shrink-0 text-brand-300" />
+                  <div>
+                    <p className="font-medium text-white mb-1">{t('hours')}</p>
+                    {storeInfo.hours.split('·').map((line) => (
+                      <p key={line} className="text-xs">
+                        {line.trim()}
+                      </p>
+                    ))}
+                  </div>
+                </li>
+              )}
             </ul>
           </div>
 
@@ -181,7 +202,7 @@ export default function Footer() {
             <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">
               {t('newsletter')}
             </h4>
-            <p className="text-sm text-gray-400 mb-4">
+            <p className="text-sm text-sand-500 mb-4">
               {t('newsletterDescription')}
             </p>
 
@@ -192,7 +213,7 @@ export default function Footer() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={t('emailPlaceholder')}
-                  className="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm"
+                  className="w-full px-4 py-3 bg-white/8 text-white rounded-xl border border-white/15 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 text-sm"
                   required
                   disabled={isSubscribing}
                 />
@@ -201,7 +222,7 @@ export default function Footer() {
               <button
                 type="submit"
                 disabled={isSubscribing || !email}
-                className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSubscribing ? (
                   <>
@@ -217,12 +238,12 @@ export default function Footer() {
               </button>
 
               {subscribeStatus === 'success' && (
-                <p className="text-green-400 text-sm">
+                <p className="text-success-500 text-sm">
                   {t('subscribeSuccess')}
                 </p>
               )}
               {subscribeStatus === 'error' && (
-                <p className="text-red-400 text-sm">
+                <p className="text-danger-500 text-sm">
                   {t('subscribeError')}
                 </p>
               )}
@@ -233,12 +254,12 @@ export default function Footer() {
       </div>
 
       {/* Footer Bottom */}
-      <div className="border-t border-gray-800">
+      <div className="border-t border-sand-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
 
             {/* Copyright */}
-            <div className="text-sm text-gray-400 text-center md:text-left">
+            <div className="text-sm text-sand-500 text-center md:text-left">
               © {currentYear} {t('companyName')}. {t('allRightsReserved')}.
             </div>
 
@@ -246,13 +267,13 @@ export default function Footer() {
             <div className="flex gap-6 text-sm">
               <Link
                 href="/terms"
-                className="text-gray-400 hover:text-white transition-colors"
+                className="text-sand-500 hover:text-white transition-colors"
               >
                 {t('terms')}
               </Link>
               <Link
                 href="/privacy"
-                className="text-gray-400 hover:text-white transition-colors"
+                className="text-sand-500 hover:text-white transition-colors"
               >
                 {t('privacy')}
               </Link>

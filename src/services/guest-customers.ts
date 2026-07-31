@@ -6,7 +6,12 @@ import type { GuestCustomer, IdentificationType } from '@/types';
  */
 export const guestCustomersService = {
   /**
-   * Busca un cliente guest por su identificación
+   * Busca un cliente guest para autocompletar el checkout.
+   *
+   * Basta la identificación. El endpoint es público y está limitado a 5
+   * consultas por minuto en el backend, así que conviene no dispararlo en cada
+   * pulsación: el checkout sólo consulta al salir del campo y no repite el
+   * mismo número dos veces.
    */
   async searchByIdentification(
     identificationType: IdentificationType,

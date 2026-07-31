@@ -92,19 +92,19 @@ export default function OrderSummarySheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby="order-summary-sheet-title"
-        className="fixed inset-x-0 bottom-0 z-50 bg-white dark:bg-gray-900 rounded-t-2xl shadow-2xl max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-300 overscroll-contain"
+        className="fixed inset-x-0 bottom-0 z-50 flex max-h-[85vh] flex-col overscroll-contain rounded-t-3xl bg-white shadow-2xl animate-in slide-in-from-bottom duration-300"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="flex justify-center pt-2 pb-1 shrink-0">
           <div
-            className="w-10 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600"
+            className="w-10 h-1.5 rounded-full bg-sand-300"
             aria-hidden="true"
           />
         </div>
-        <div className="flex items-center justify-between px-5 py-3 border-b dark:border-gray-700 shrink-0">
+        <div className="flex shrink-0 items-center justify-between border-b border-sand-200 px-5 py-3">
           <h2
             id="order-summary-sheet-title"
-            className="text-base font-semibold text-gray-900 dark:text-gray-100"
+            className="font-display text-base font-bold text-ink"
           >
             {t("orderSummary")}
           </h2>
@@ -113,10 +113,10 @@ export default function OrderSummarySheet({
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="p-2 -mr-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+            className="-mr-2 flex h-11 w-11 items-center justify-center rounded-lg hover:bg-sand-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
             style={{ touchAction: "manipulation" }}
           >
-            <X className="w-5 h-5 text-gray-700 dark:text-gray-200" />
+            <X className="w-5 h-5 text-sand-700" />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4">

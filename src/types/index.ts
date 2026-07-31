@@ -71,15 +71,46 @@ export interface Category {
   parent?: Category | null;
   childrens?: Category[];
   products?: Product[];
+  /** Productos asignados directamente; solo lo trae el listado del admin. */
+  productCount?: number;
+  publishedProductCount?: number;
   deletedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
+/** Atajos por problema de la barra de filtros del listado de categorías. */
+export type CategoryListFilter = 'parents' | 'no-image' | 'hidden';
+
 export interface CategoryStats {
   total: number;
   visible: number;
   hidden: number;
+  parents: number;
+  children: number;
+  featured: number;
+  /** Cuántas categorías caben en la franja de destacadas de la portada. */
+  featuredSlots: number;
+  featuredWithoutImage: number;
+  withoutImage: number;
+  hiddenWithPublishedProducts: number;
+}
+
+/** Dónde se usa hoy una categoría: panel de edición y modal de eliminado. */
+export interface CategoryUsage {
+  menuPosition: number | null;
+  menuTotal: number;
+  featuredSlot: number | null;
+  featuredSlots: number;
+  activeBanners: number;
+  publishedProducts: number;
+  totalProducts: number;
+  children: {
+    uuid: string;
+    name: string;
+    slug: string;
+    productCount: number;
+  }[];
 }
 
 export interface ProductImage {
@@ -560,10 +591,38 @@ export interface PaymentInfo {
   beneficiary?: string;
 }
 
+/**
+ * Comprador sin cuenta. El backend lo trae como relación eager de la orden, así
+ * que en el detalle viene embebido y no hace falta pedirlo aparte.
+ */
+export interface GuestCustomer {
+  id: number;
+  uuid: string;
+  identificationType: IdentificationType;
+  identificationNumber: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Order {
   uuid: string;
   orderNumber: string;
-  userId: number;
+  userId: number | null;
+  /** Relación eager: presente cuando la compró un usuario registrado. */
+  user?: User | null;
+  guestEmail?: string | null;
+  guestCustomerId?: number | null;
+  /** Relación eager: presente cuando la compró un invitado. */
+  guestCustomer?: GuestCustomer | null;
   status: OrderStatus;
   items: OrderItem[];
   deliveryMethod: DeliveryMethod;
@@ -588,9 +647,25 @@ export interface Order {
   shippedAt?: string;
   deliveredAt?: string;
   cancelledAt?: string;
+  /** Fecha en que el ERP dio la orden por completada. */
+  dateCompleted?: string | null;
   createdAt: string;
   updatedAt: string;
 }
+
+/**
+ * Un pedido tal como lo devuelve el seguimiento público
+ * (`GET /orders/track/:orderNumber`).
+ *
+ * Esa respuesta se obtiene con sólo el número de pedido, sin sesión, así que
+ * el backend recorta todo lo que identifique al cliente o sirva para
+ * suplantarlo: no trae los datos del pago más allá del método y su estado, ni
+ * la dirección, ni el perfil del comprador, ni las notas internas. Ver
+ * `OrderTrackingDto` en el backend.
+ */
+export type TrackedOrder = Omit<Order, "paymentInfo"> & {
+  paymentInfo: PaymentInfo | null;
+};
 
 export interface CreateOrderDto {
   deliveryMethod: DeliveryMethod;
@@ -608,11 +683,15 @@ export interface CreateOrderDto {
   }>;
 }
 
+/**
+ * Espejo exacto del DTO del backend. Ojo: allí el ValidationPipe corre con
+ * `forbidNonWhitelisted`, así que cualquier campo de más devuelve 400 y tumba el
+ * guardado entero. No agregar `trackingNumber` hasta que exista la columna.
+ */
 export interface UpdateOrderStatusDto {
   orderStatus?: OrderStatus;
   paymentStatus?: PaymentStatus;
   adminNotes?: string;
-  trackingNumber?: string;
 }
 
 export interface OrderSummary {
@@ -622,6 +701,51 @@ export interface OrderSummary {
   total: number;
   totalItems: number;
   createdAt: string;
+}
+
+/**
+ * Fila del listado de órdenes del panel.
+ *
+ * Más ancha que `OrderSummary` porque la tabla del admin muestra al comprador,
+ * el estado del pago y el total en Bs.; `/orders/admin/filter` ya la devuelve
+ * resuelta para que el panel no reúna al cliente fila por fila.
+ */
+export interface AdminOrderRow {
+  uuid: string;
+  orderNumber: string;
+  status: OrderStatus;
+  createdAt: string;
+  deliveryMethod: DeliveryMethod;
+  totalItems: number;
+  total: number;
+  totalVes: number | null;
+  exchangeRate: number | null;
+  paymentStatus: PaymentStatus | null;
+  paymentMethod: PaymentMethodEnum | null;
+  paymentReference: string | null;
+  hasReceipt: boolean;
+  customerName: string | null;
+  customerIdentification: string | null;
+  customerEmail: string | null;
+  isGuest: boolean;
+}
+
+/** Cabecera del listado de órdenes: KPIs y conteos de los chips por estado. */
+export interface AdminOrderStats {
+  totalOrders: number;
+  todayOrders: number;
+  monthOrders: number;
+  ordersByStatus: Record<string, number>;
+  /** Órdenes con el pago sin verificar: el trabajo pendiente del panel. */
+  paymentReviewCount: number;
+  oldestPaymentReviewAt: string | null;
+  verifiedOrders: number;
+  verifiedRevenue: number;
+  verifiedRevenueVes: number | null;
+  averageTicket: number;
+  averageTicketVes: number | null;
+  /** Tasa BCV vigente hoy, no la fijada en ninguna orden. */
+  exchangeRate: number | null;
 }
 
 // Discount types
@@ -736,6 +860,7 @@ export interface CustomerListResponseDto {
 
 export interface CustomerDetailResponseDto {
   customer: {
+    uuid: string;
     type: CustomerType;
     name: string;
     email: string;
@@ -941,4 +1066,17 @@ export interface AuditLogFilters {
 export interface AuditLogsResponse {
   logs: AuditLog[];
   total: number;
+}
+
+/** Datos de contacto de la tienda física. Origen: GET /api/v1/store-info. */
+export interface StoreInfo {
+  name: string;
+  address: string;
+  city: string;
+  phone: string;
+  /** Cadena vacía si no se configuró STORE_EMAIL */
+  email: string;
+  hours: string;
+  /** Cadena vacía si no se configuró STORE_MAP_URL */
+  mapUrl: string;
 }

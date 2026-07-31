@@ -1,10 +1,11 @@
 "use client";
 
-import { Upload, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import BankSelector from "./BankSelector";
+import PaymentDetailsPanel from "./PaymentDetailsPanel";
+import ReceiptUpload from "./ReceiptUpload";
 import type { PagoMovilPayment } from "@/types";
-import CopyButton from "@/components/ui/CopyButton";
+import { formatVES } from "@/lib/currency";
 import { usePaymentMethodDetails } from "@/hooks/usePaymentMethods";
 import { PaymentMethod } from "@/lib/enums";
 
@@ -18,34 +19,25 @@ export default function PagoMovilForm({ data, onChange, total }: PagoMovilFormPr
   const t = useTranslations('payment');
   const { details, loading, error, reload } = usePaymentMethodDetails(PaymentMethod.PAGO_MOVIL);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    onChange({ ...data, receipt: file });
-  };
-
-  const removeFile = () => {
-    onChange({ ...data, receipt: null });
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-        <span className="ml-3 text-gray-600 dark:text-gray-400">Cargando información de pago...</span>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
+        <span className="ml-3 text-sand-700">Cargando información de pago...</span>
       </div>
     );
   }
 
   if (error || !details) {
     return (
-      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-        <p className="text-red-800 dark:text-red-400">
+      <div className="bg-danger-50 border border-danger-100 rounded-lg p-4">
+        <p className="text-danger-700">
           No se pudo cargar la información de pago. Por favor, intenta nuevamente.
         </p>
         <button
           type="button"
           onClick={reload}
-          className="mt-2 text-blue-600 hover:text-blue-800"
+          className="mt-2 text-brand-600 hover:text-brand-800"
         >
           Reintentar
         </button>
@@ -55,58 +47,25 @@ export default function PagoMovilForm({ data, onChange, total }: PagoMovilFormPr
 
   return (
     <div className="space-y-4">
-      {/* Datos de la empresa */}
-      <div className="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg p-4">
-        <h3 className="font-semibold text-green-900 dark:text-green-300 mb-3">
-          Datos para realizar el Pago Móvil:
-        </h3>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600 dark:text-gray-400">Banco:</span>
-            <div className="flex items-center gap-1">
-              <span className="font-medium">{details.bank}</span>
-              <CopyButton text={details.bank || ''} />
-            </div>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600 dark:text-gray-400">Teléfono:</span>
-            <div className="flex items-center gap-1">
-              <span className="font-medium">{details.phone}</span>
-              <CopyButton text={details.phone || ''} />
-            </div>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600 dark:text-gray-400">Cédula:</span>
-            <div className="flex items-center gap-1">
-              <span className="font-medium">{details.cedula}</span>
-              <CopyButton text={details.cedula || ''} />
-            </div>
-          </div>
-          <div className="flex justify-between border-t dark:border-green-800 pt-2 mt-2">
-            <span className="text-gray-600 dark:text-gray-400">Monto a pagar:</span>
-            <span className="font-bold text-lg text-green-600 dark:text-green-400">
-              Bs. {total.toFixed(2)}
-            </span>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => {
-            const phone = (details.phone || '').replace(/-/g, '');
-            const cedula = (details.cedula || '').replace(/-/g, '');
-            const allData = `${details.bank} ${details.bankCode}\n${phone}\n${cedula}\nBs. ${total.toFixed(2)}`;
-            navigator.clipboard.writeText(allData);
-          }}
-          className="w-full mt-3 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
-        >
-          Copiar todos los datos
-        </button>
-      </div>
+      <PaymentDetailsPanel
+        rows={[
+          { label: 'Banco', value: `${details.bankCode ?? ''} · ${details.bank ?? ''}`.trim() },
+          { label: 'Teléfono', value: details.phone || '' },
+          { label: 'Cédula', value: details.cedula || '' },
+        ]}
+        amount={formatVES(total)}
+        copyAllText={[
+          `${details.bank} ${details.bankCode}`,
+          (details.phone || '').replace(/-/g, ''),
+          (details.cedula || '').replace(/-/g, ''),
+          formatVES(total),
+        ].join('\n')}
+      />
 
-      {/* Formulario */}
+      {/* Datos del emisor: vienen del paso de contacto, pero se pueden cambiar */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
             Número de Teléfono *
           </label>
           <input
@@ -115,12 +74,12 @@ export default function PagoMovilForm({ data, onChange, total }: PagoMovilFormPr
             onChange={(e) => onChange({ ...data, phoneNumber: e.target.value })}
             required
             placeholder="0414-1234567"
-            className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            className="min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
             Cédula *
           </label>
           <input
@@ -129,10 +88,17 @@ export default function PagoMovilForm({ data, onChange, total }: PagoMovilFormPr
             onChange={(e) => onChange({ ...data, cedula: e.target.value })}
             required
             placeholder="V-12345678"
-            className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            className="min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
           />
         </div>
       </div>
+
+      <p className="-mt-1 text-[11px] font-medium text-sand-600">
+        {t('senderFromContact', {
+          defaultValue:
+            'Tomados de tus datos de contacto. Cámbialos si pagaste desde otro titular.',
+        })}
+      </p>
 
       <BankSelector
         value={data.bankCode}
@@ -143,7 +109,7 @@ export default function PagoMovilForm({ data, onChange, total }: PagoMovilFormPr
       />
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
           Código de Referencia *
         </label>
         <input
@@ -152,49 +118,16 @@ export default function PagoMovilForm({ data, onChange, total }: PagoMovilFormPr
           onChange={(e) => onChange({ ...data, referenceCode: e.target.value })}
           required
           placeholder="Código de confirmación del pago"
-          className="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          className="min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
         />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Comprobante de Pago *
-        </label>
-        {!data.receipt ? (
-          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
-            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-              <Upload className="w-8 h-8 text-gray-400 mb-2" />
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                <span className="font-semibold">Click para subir</span> o arrastra
-              </p>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                PNG, JPG o PDF (máx. 5MB)
-              </p>
-            </div>
-            <input
-              type="file"
-              className="hidden"
-              accept="image/*,.pdf"
-              onChange={handleFileChange}
-              required
-            />
-          </label>
-        ) : (
-          <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg">
-            <div className="flex items-center gap-2">
-              <Upload className="w-5 h-5 text-green-600 dark:text-green-400" />
-              <span className="text-sm text-gray-700 dark:text-gray-300">{data.receipt.name}</span>
-            </div>
-            <button
-              type="button"
-              onClick={removeFile}
-              className="text-red-600 hover:text-red-800"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        )}
-      </div>
+      <ReceiptUpload
+        file={data.receipt}
+        onSelect={(file) => onChange({ ...data, receipt: file })}
+        label="Comprobante de pago"
+        required
+      />
     </div>
   );
 }

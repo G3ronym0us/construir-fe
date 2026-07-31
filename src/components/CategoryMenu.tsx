@@ -63,10 +63,10 @@ export function CategoryMenu() {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-4">
+      <div className="rounded-2xl border border-sand-300 bg-white p-4">
         <div className="animate-pulse space-y-3">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-8 bg-gray-200 dark:bg-slate-700 rounded" />
+            <div key={i} className="h-8 bg-sand-200 rounded" />
           ))}
         </div>
       </div>
@@ -74,24 +74,24 @@ export function CategoryMenu() {
   }
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-lg shadow">
+    <div className="rounded-2xl border border-sand-300 bg-white">
       {/* Header — toggle en mobile, estático en desktop */}
       <button
         type="button"
         onClick={() => setIsMenuOpen(prev => !prev)}
-        className="w-full flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-700 lg:cursor-default"
+        className="flex min-h-11 w-full items-center justify-between border-b border-sand-200 p-4 lg:cursor-default"
       >
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+        <h2 className="flex items-center gap-2 font-display text-base font-bold text-ink">
           <Grid className="w-5 h-5" />
           Categorías
           {selectedCategory && (
-            <span className="ml-1 text-sm font-normal text-blue-600 dark:text-blue-400 truncate max-w-[120px]">
+            <span className="ml-1 text-sm font-normal text-brand-600 truncate max-w-[120px]">
               · {selectedCategory.name}
             </span>
           )}
         </h2>
         <ChevronDown
-          className={`w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform lg:hidden ${isMenuOpen ? 'rotate-180' : ''}`}
+          className={`w-5 h-5 text-sand-600 transition-transform lg:hidden ${isMenuOpen ? 'rotate-180' : ''}`}
         />
       </button>
 
@@ -101,10 +101,10 @@ export function CategoryMenu() {
         <Link
           href="/productos"
           onClick={() => setIsMenuOpen(false)}
-          className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${
+          className={`flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm transition-colors ${
             !currentCategory
-              ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium'
-              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700'
+              ? 'bg-brand-50 font-bold text-brand-700'
+              : 'text-sand-700 hover:bg-sand-100'
           }`}
         >
           <Grid className="w-4 h-4" />
@@ -125,30 +125,30 @@ export function CategoryMenu() {
                   {hasChildren && (
                     <button
                       onClick={() => toggleCategory(category.uuid)}
-                      className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded transition-colors"
+                      className="p-1 hover:bg-sand-100 rounded transition-colors"
                       aria-label={isExpanded ? 'Contraer' : 'Expandir'}
                     >
                       {isExpanded ? (
-                        <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                        <ChevronDown className="w-4 h-4 text-sand-600" />
                       ) : (
-                        <ChevronRight className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                        <ChevronRight className="w-4 h-4 text-sand-600" />
                       )}
                     </button>
                   )}
                   <Link
                     href={`/productos?categoria=${category.uuid}`}
                     onClick={() => setIsMenuOpen(false)}
-                    className={`flex-1 px-3 py-2 rounded-md transition-colors ${
+                    className={`flex min-h-11 flex-1 items-center rounded-xl px-3 text-sm transition-colors ${
                       !hasChildren ? 'ml-5' : ''
                     } ${
                       isActive
-                        ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700'
+                        ? 'bg-brand-50 font-bold text-brand-700'
+                        : 'text-sand-700 hover:bg-sand-100'
                     }`}
                   >
                     {category.name}
                     {hasChildren && (
-                      <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
+                      <span className="ml-2 text-xs text-sand-600">
                         ({category.childrens?.length || 0})
                       </span>
                     )}
@@ -165,10 +165,10 @@ export function CategoryMenu() {
                           key={child.uuid}
                           href={`/productos?categoria=${child.uuid}`}
                           onClick={() => setIsMenuOpen(false)}
-                          className={`block px-3 py-2 rounded-md text-sm transition-colors ${
+                          className={`flex min-h-11 items-center rounded-xl px-3 text-sm transition-colors ${
                             isChildActive
-                              ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium'
-                              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700'
+                              ? 'bg-brand-50 font-bold text-brand-700'
+                              : 'text-sand-700 hover:bg-sand-100'
                           }`}
                         >
                           {child.name}

@@ -4,12 +4,20 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useForm, Controller } from 'react-hook-form';
-import { categoriesService } from '@/services/categories';
-import type { CreateCategoryDto, Category } from '@/types';
 import Link from 'next/link';
-import { ArrowLeft, Save } from 'lucide-react';
+import Image from 'next/image';
+import { ArrowLeft, Save, Trash2 } from 'lucide-react';
+import { categoriesService } from '@/services/categories';
+import type { CreateCategoryDto, Category, CategoryStats } from '@/types';
 import { useToast } from '@/context/ToastContext';
 import { Toggle } from '@/components/ui/Toggle';
+import { ImageDropzone } from '@/components/admin/categories/ImageDropzone';
+import { FeaturedChecklist } from '@/components/admin/categories/FeaturedChecklist';
+import {
+  SlugAvailabilityBadge,
+  slugify,
+  useSlugAvailability,
+} from '@/components/admin/categories/SlugField';
 
 interface CategoryFormData {
   name: string;
@@ -25,8 +33,13 @@ export default function NewCategoryPage() {
   const t = useTranslations('categories');
   const router = useRouter();
   const toast = useToast();
+
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [parentCategories, setParentCategories] = useState<Category[]>([]);
+  const [stats, setStats] = useState<CategoryStats | null>(null);
+  // El slug se autogenera desde el nombre hasta que se toca a mano.
+  const [slugEdited, setSlugEdited] = useState(false);
 
   const {
     register,
@@ -52,48 +65,59 @@ export default function NewCategoryPage() {
   const slugValue = watch('slug');
   const isFeaturedValue = watch('isFeatured');
 
+  const { status: slugStatus, takenBy: slugTakenBy } = useSlugAvailability(slugValue);
+
   useEffect(() => {
-    loadParentCategories();
+    categoriesService
+      .getParents()
+      .then(setParentCategories)
+      .catch((error) => console.error('Error loading parent categories:', error));
+
+    categoriesService
+      .getStats()
+      .then(setStats)
+      .catch((error) => console.error('Error loading stats:', error));
   }, []);
 
-  // Auto-generate slug from name when name changes and slug is empty
   useEffect(() => {
-    if (nameValue && !slugValue) {
-      const newSlug = nameValue
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
-      setValue('slug', newSlug);
+    if (!slugEdited) {
+      setValue('slug', slugify(nameValue));
     }
-  }, [nameValue, slugValue, setValue]);
+  }, [nameValue, slugEdited, setValue]);
 
-  const loadParentCategories = async () => {
-    try {
-      const parents = await categoriesService.getParents();
-      setParentCategories(parents);
-    } catch (error) {
-      console.error('Error loading parent categories:', error);
-    }
+  const handleImageSelect = (file: File) => {
+    setImageFile(file);
+
+    const reader = new FileReader();
+    reader.onloadend = () => setImagePreview(reader.result as string);
+    reader.readAsDataURL(file);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setImageFile(e.target.files[0]);
-    }
+  const clearImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
   };
+
+  const noFeaturedSlots =
+    !!stats && stats.featured >= stats.featuredSlots;
 
   const onSubmit = async (data: CategoryFormData) => {
-    try {
-      // Validación: categorías destacadas requieren imagen
-      if (data.isFeatured && !imageFile) {
-        setError('isFeatured', {
-          type: 'manual',
-          message: t('imageRequiredForFeatured')
-        });
-        toast.error(t('imageRequiredForFeatured'));
-        return;
-      }
+    // Destacar exige imagen y un espacio libre en la portada.
+    if (data.isFeatured && !imageFile) {
+      setError('isFeatured', { type: 'manual', message: t('imageRequiredForFeatured') });
+      toast.error(t('imageRequiredForFeatured'));
+      return;
+    }
+    if (data.isFeatured && noFeaturedSlots) {
+      toast.error(t('featuredSlotsFull', { slots: stats?.featuredSlots ?? 0 }));
+      return;
+    }
+    if (slugStatus === 'taken') {
+      setError('slug', { type: 'manual', message: t('slugTakenBy', { name: slugTakenBy ?? '' }) });
+      return;
+    }
 
+    try {
       const createData: CreateCategoryDto = {
         name: data.name,
         customName: data.customName || undefined,
@@ -103,173 +127,210 @@ export default function NewCategoryPage() {
         isFeatured: data.isFeatured,
       };
 
-      // First, create the category
       const newCategory = await categoriesService.create(createData, imageFile || undefined);
 
-      // If a parent was selected, assign it
       if (data.parentUuid) {
-        await categoriesService.assignParent(newCategory.uuid, { parentUuid: data.parentUuid });
+        await categoriesService.assignParent(newCategory.uuid, {
+          parentUuid: data.parentUuid,
+        });
       }
 
       toast.success(t('createSuccess'));
       router.push('/admin/dashboard/categories');
     } catch (error) {
       console.error('Error creating category:', error);
-      toast.error(t('createError'));
+      toast.error(error instanceof Error ? error.message : t('createError'));
     }
   };
 
+  const inputClass = (hasError: boolean) =>
+    `mt-1.5 block w-full rounded-lg border px-3 py-2.5 text-[13.5px] text-ink outline-none transition-colors ${
+      hasError
+        ? 'border-danger-500 focus:border-danger-500'
+        : 'border-sand-300 focus:border-brand-400'
+    }`;
+
   return (
-    <div className="space-y-4 md:space-y-6 px-4 md:px-0">
-      <div className="flex items-center gap-3 md:gap-4">
-        <Link href="/admin/dashboard/categories" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-          <ArrowLeft className="w-5 h-5" />
+    <div className="w-full max-w-full space-y-5">
+      <div className="flex items-center gap-3">
+        <Link
+          href="/admin/dashboard/categories"
+          aria-label={t('backToList')}
+          className="rounded-lg p-2 text-sand-700 transition-colors hover:bg-sand-100"
+        >
+          <ArrowLeft className="h-5 w-5" />
         </Link>
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{t('createTitle')}</h1>
+        <h1 className="font-display text-2xl font-bold text-ink md:text-3xl">
+          {t('createTitle')}
+        </h1>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-lg shadow p-4 sm:p-6 md:p-8 max-w-2xl mx-auto">
-        <div className="space-y-6">
-          {/* Name */}
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_360px]"
+      >
+        {/* Columna izquierda: identidad de la categoría */}
+        <div className="space-y-5 rounded-xl border border-sand-300 bg-white p-5 md:p-6">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-              {t('nameLabel')} <span className="text-red-500">*</span>
+            <label htmlFor="name" className="text-[13px] font-semibold text-ink">
+              {t('nameLabel')} <span className="text-danger-600">*</span>
             </label>
             <input
               type="text"
               id="name"
               {...register('name', {
-                required: 'El nombre es requerido',
-                minLength: { value: 2, message: 'El nombre debe tener al menos 2 caracteres' },
-                maxLength: { value: 100, message: 'El nombre no puede exceder 100 caracteres' },
+                required: t('nameRequired'),
+                minLength: { value: 2, message: t('nameTooShort') },
+                maxLength: { value: 100, message: t('nameTooLong') },
               })}
               placeholder={t('namePlaceholder')}
-              className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-0 ${
-                errors.name
-                  ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                  : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
-              }`}
+              className={inputClass(!!errors.name)}
             />
+            <p className="mt-1.5 text-[12px] text-sand-600">{t('nameHelp')}</p>
             {errors.name && (
-              <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                <span className="text-xs">⚠</span> {errors.name.message}
+              <p className="mt-1 text-[12.5px] font-medium text-danger-600">
+                {errors.name.message}
               </p>
             )}
           </div>
 
-          {/* Custom Name */}
           <div>
-            <label htmlFor="customName" className="block text-sm font-medium text-gray-700">
-              Nombre en tienda
-              <span className="ml-1 text-gray-400 font-normal text-xs">(opcional)</span>
+            <label htmlFor="customName" className="text-[13px] font-semibold text-ink">
+              {t('customNameLabel')}
             </label>
             <input
               type="text"
               id="customName"
               {...register('customName')}
-              placeholder="Nombre visible para los clientes"
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-0 focus:ring-blue-500 focus:border-blue-500"
+              placeholder={t('customNamePlaceholder')}
+              className={inputClass(false)}
             />
-            <p className="mt-1 text-xs text-gray-500">Si se deja vacío, se usará el nombre oficial.</p>
+            <p className="mt-1.5 text-[12px] text-sand-600">{t('customNameHelp')}</p>
           </div>
 
-          {/* Slug */}
           <div>
-            <label htmlFor="slug" className="block text-sm font-medium text-gray-700">
-              {t('slugLabel')} <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="slug"
-              {...register('slug', {
-                required: 'El slug es requerido',
-                pattern: {
-                  value: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-                  message: 'El slug solo puede contener letras minúsculas, números y guiones',
-                },
-              })}
-              placeholder={t('slugPlaceholder')}
-              className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-0 ${
-                errors.slug
-                  ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
-                  : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+            <div className="flex items-center justify-between gap-3">
+              <label htmlFor="slug" className="text-[13px] font-semibold text-ink">
+                {t('slugLabel')} <span className="text-danger-600">*</span>
+              </label>
+              <SlugAvailabilityBadge status={slugStatus} takenBy={slugTakenBy} />
+            </div>
+            <div
+              className={`mt-1.5 flex items-center rounded-lg border px-3 py-2.5 transition-colors focus-within:border-brand-400 ${
+                errors.slug || slugStatus === 'taken'
+                  ? 'border-danger-500'
+                  : 'border-sand-300'
               }`}
-            />
+            >
+              <span className="flex-none font-mono text-[12.5px] text-sand-600">
+                /categorias/
+              </span>
+              <input
+                type="text"
+                id="slug"
+                {...register('slug', {
+                  required: t('slugRequired'),
+                  pattern: { value: /^[a-z0-9]+(?:-[a-z0-9]+)*$/, message: t('slugInvalidHelp') },
+                })}
+                onInput={() => setSlugEdited(true)}
+                placeholder={t('slugPlaceholder')}
+                className="w-full bg-transparent font-mono text-[12.5px] text-ink outline-none"
+              />
+            </div>
+            <p className="mt-1.5 text-[12px] leading-relaxed text-sand-600">
+              {t('slugHelp')}
+            </p>
             {errors.slug && (
-              <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                <span className="text-xs">⚠</span> {errors.slug.message}
+              <p className="mt-1 text-[12.5px] font-medium text-danger-600">
+                {errors.slug.message}
               </p>
             )}
-            <p className="mt-1 text-xs text-gray-500">
-              Se genera automáticamente desde el nombre. Puedes editarlo si lo deseas.
-            </p>
+            {slugStatus === 'taken' && !errors.slug && (
+              <p className="mt-1 text-[12.5px] font-medium text-danger-600">
+                {t('slugTakenBy', { name: slugTakenBy ?? '' })}
+              </p>
+            )}
           </div>
 
-          {/* Parent Category */}
           <div>
-            <label htmlFor="parentUuid" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="parentUuid" className="text-[13px] font-semibold text-ink">
               {t('parentCategoryLabel')}
             </label>
             <select
               id="parentUuid"
               {...register('parentUuid')}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className={inputClass(false)}
             >
               <option value="">{t('noParent')}</option>
               {parentCategories.map((category) => (
                 <option key={category.uuid} value={category.uuid}>
-                  {category.name}
+                  {category.customName ?? category.name}
                 </option>
               ))}
             </select>
-            <p className="mt-1 text-sm text-gray-500">{t('parentCategoryHelp')}</p>
+            <p className="mt-1.5 text-[12px] text-sand-600">{t('parentCategoryHelp')}</p>
           </div>
 
-          {/* Description */}
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="description" className="text-[13px] font-semibold text-ink">
               {t('descriptionLabel')}
             </label>
             <textarea
               id="description"
               {...register('description')}
               rows={4}
-              placeholder="Descripción opcional de la categoría..."
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder={t('descriptionPlaceholder')}
+              className={inputClass(false)}
             />
           </div>
+        </div>
 
-          {/* Image File */}
-          <div>
-            <label htmlFor="image" className="block text-sm font-medium text-gray-700">
-              {t('imageLabel')}
-              {isFeaturedValue && <span className="text-red-500 ml-1">*</span>}
-            </label>
-            {isFeaturedValue && (
-              <p className="mt-1 text-sm text-amber-600 flex items-center gap-1">
-                <span className="text-xs">⚠</span>
-                {t('imageRequiredWarning')}
-              </p>
-            )}
-            <input
-              type="file"
-              id="image"
-              name="image"
-              onChange={handleFileChange}
-              accept="image/jpeg, image/png, image/webp"
-              className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-colors"
-            />
-            {imageFile && (
-              <p className="mt-2 text-sm text-gray-600 flex items-center gap-2">
-                <span className="text-green-600">✓</span>
-                {t('fileSelected', { filename: imageFile.name })}
-              </p>
-            )}
+        {/* Columna derecha: imagen, visibilidad y requisitos */}
+        <div className="space-y-4">
+          <div className="rounded-xl border border-sand-300 bg-white p-5">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[13px] font-semibold text-ink">{t('imageLabel')}</span>
+              {isFeaturedValue && (
+                <span className="rounded-full bg-accent-50 px-2.5 py-0.5 text-[11px] font-semibold text-accent-700">
+                  {t('imageRequiredIfFeatured')}
+                </span>
+              )}
+            </div>
+
+            <div className="mt-3">
+              {imagePreview ? (
+                <div className="space-y-2">
+                  <div className="relative h-40 w-full overflow-hidden rounded-lg border border-sand-300">
+                    <Image
+                      src={imagePreview}
+                      alt={imageFile?.name ?? ''}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={clearImage}
+                    className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-danger-600 hover:text-danger-700"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    {t('removeSelectedImage')}
+                  </button>
+                </div>
+              ) : (
+                <ImageDropzone onSelect={handleImageSelect} />
+              )}
+            </div>
+
+            <p className="mt-3 text-[12px] leading-relaxed text-sand-600">
+              {t('imageHelp')}
+            </p>
           </div>
 
-          {/* Status and Visibility Section */}
-          <div className="space-y-3 pt-4 border-t border-gray-200">
-            <h3 className="text-sm font-semibold text-gray-700">Estado y Visibilidad</h3>
+          <div className="space-y-3 rounded-xl border border-sand-300 bg-white p-5">
+            <span className="text-[13px] font-semibold text-ink">
+              {t('statusSectionTitle')}
+            </span>
 
             <Controller
               name="visible"
@@ -278,7 +339,7 @@ export default function NewCategoryPage() {
                 <Toggle
                   id="visible"
                   label={t('visibleLabel')}
-                  description="La categoría estará visible para los usuarios en la tienda"
+                  description={t('visibleHelp')}
                   checked={field.value}
                   onChange={field.onChange}
                   color="green"
@@ -293,31 +354,56 @@ export default function NewCategoryPage() {
                 <Toggle
                   id="isFeatured"
                   label={t('isFeaturedLabel')}
-                  description="La categoría aparecerá en la sección de categorías destacadas"
+                  description={
+                    stats
+                      ? t('isFeaturedHelp', {
+                          used: stats.featured,
+                          slots: stats.featuredSlots,
+                        })
+                      : t('isFeaturedHelpPlain')
+                  }
                   checked={field.value}
                   onChange={field.onChange}
+                  disabled={noFeaturedSlots && !field.value}
                   color="yellow"
                 />
               )}
             />
-          </div>
-        </div>
 
-        <div className="mt-6 md:mt-8 pt-4 md:pt-6 border-t border-gray-200 flex flex-col sm:flex-row gap-3 sm:justify-end">
-          <Link
-            href="/admin/dashboard/categories"
-            className="flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            Cancelar
-          </Link>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <Save className="w-5 h-5" />
-            {isSubmitting ? t('saving') : t('save')}
-          </button>
+            {noFeaturedSlots && !isFeaturedValue && (
+              <p className="text-[12.5px] font-medium text-accent-700">
+                {t('featuredSlotsFull', { slots: stats?.featuredSlots ?? 0 })}
+              </p>
+            )}
+          </div>
+
+          <FeaturedChecklist
+            items={[
+              {
+                label: t('checkNameAndSlug'),
+                done: !!nameValue && !!slugValue && slugStatus === 'available',
+              },
+              { label: t('checkImage'), done: !!imageFile },
+              { label: t('checkProductsNew'), done: false },
+            ]}
+          />
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <Link
+              href="/admin/dashboard/categories"
+              className="flex items-center justify-center rounded-lg border border-sand-300 px-4 py-2.5 text-sm font-medium text-sand-700 transition-colors hover:bg-sand-50"
+            >
+              {t('cancel')}
+            </Link>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-700 disabled:opacity-50"
+            >
+              <Save className="h-4 w-4" />
+              {isSubmitting ? t('saving') : t('saveCategory')}
+            </button>
+          </div>
         </div>
       </form>
     </div>

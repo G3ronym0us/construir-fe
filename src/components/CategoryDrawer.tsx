@@ -41,17 +41,17 @@ export default function CategoryDrawer({ isOpen, onClose }: CategoryDrawerProps)
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 md:hidden bg-white dark:bg-slate-900 flex flex-col">
+    <div className="fixed inset-0 z-50 md:hidden bg-white flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-700 flex-shrink-0">
-        <h2 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-sand-300 flex-shrink-0">
+        <h2 className="text-base font-semibold text-ink flex items-center gap-2">
           <LayoutGrid className="w-5 h-5" />
           Categorías
         </h2>
         <button
           type="button"
           onClick={onClose}
-          className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+          className="p-2 text-sand-600 hover:text-ink hover:bg-sand-100 rounded-lg transition-colors"
           aria-label="Cerrar categorías"
         >
           <X className="w-5 h-5" />
@@ -63,10 +63,10 @@ export default function CategoryDrawer({ isOpen, onClose }: CategoryDrawerProps)
         {loading ? (
           <div className="grid grid-cols-3 gap-3">
             {Array.from({ length: 9 }).map((_, i) => (
-              <div key={i} className="rounded-xl overflow-hidden border border-gray-100 dark:border-slate-700 animate-pulse">
-                <div className="aspect-square bg-gray-100 dark:bg-slate-700" />
+              <div key={i} className="rounded-xl overflow-hidden border border-sand-200 animate-pulse">
+                <div className="aspect-square bg-sand-100" />
                 <div className="p-2">
-                  <div className="h-3 bg-gray-100 dark:bg-slate-700 rounded w-3/4 mx-auto" />
+                  <div className="h-3 bg-sand-100 rounded w-3/4 mx-auto" />
                 </div>
               </div>
             ))}
@@ -79,11 +79,11 @@ export default function CategoryDrawer({ isOpen, onClose }: CategoryDrawerProps)
               onClick={onClose}
               className="rounded-xl overflow-hidden hover:shadow-md transition-all active:scale-95"
             >
-              <div className="aspect-square bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
-                <LayoutGrid className="w-10 h-10 text-blue-500 dark:text-blue-400" />
+              <div className="aspect-square bg-brand-50 flex items-center justify-center">
+                <LayoutGrid className="w-10 h-10 text-brand-500" />
               </div>
               <div className="p-2 text-center">
-                <span className="text-xs font-medium text-gray-700 dark:text-gray-300 leading-tight line-clamp-2">
+                <span className="text-xs font-medium text-sand-700 leading-tight line-clamp-2">
                   Todos
                 </span>
               </div>
@@ -96,7 +96,7 @@ export default function CategoryDrawer({ isOpen, onClose }: CategoryDrawerProps)
                 onClick={onClose}
                 className="rounded-xl overflow-hidden hover:shadow-md transition-all active:scale-95"
               >
-                <div className="aspect-square relative bg-gray-50 dark:bg-slate-800">
+                <div className="aspect-square relative bg-sand-50">
                   {category.image ? (
                     <Image
                       src={category.image}
@@ -107,12 +107,12 @@ export default function CategoryDrawer({ isOpen, onClose }: CategoryDrawerProps)
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Package className="w-10 h-10 text-gray-300 dark:text-slate-600" />
+                      <Package className="w-10 h-10 text-sand-500" />
                     </div>
                   )}
                 </div>
                 <div className="p-2 text-center">
-                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300 leading-tight line-clamp-2">
+                  <span className="text-xs font-medium text-sand-700 leading-tight line-clamp-2">
                     {category.name}
                   </span>
                 </div>

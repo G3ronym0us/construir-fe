@@ -47,7 +47,6 @@ export default function OrderSummary({
   discountAmountVes,
   total,
   totalVES,
-  paymentMethod,
   exchangeRate,
   onApplyDiscount,
   discountError,
@@ -55,18 +54,19 @@ export default function OrderSummary({
   variant = "sidebar",
 }: OrderSummaryProps) {
   const t = useTranslations("checkout");
-  const showVES =
-    !!paymentMethod && ["pagomovil", "transferencia"].includes(paymentMethod);
+  // El precio es dual en toda la app: Bs. protagonista y USD de referencia, sin
+  // depender del método de pago elegido.
+  const showVES = totalVES !== null && totalVES !== undefined && totalVES > 0;
 
   const container =
     variant === "sidebar"
-      ? "bg-white dark:bg-gray-800 rounded-lg p-6"
+      ? "rounded-2xl border border-sand-300 bg-white p-5"
       : "";
 
   return (
     <div className={container}>
       {variant === "sidebar" && (
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        <h2 className="mb-4 font-display text-lg font-bold text-ink">
           {t("orderSummary")}
         </h2>
       )}
@@ -85,17 +85,17 @@ export default function OrderSummary({
 
           return (
             <div key={item.product.uuid} className="flex gap-3">
-              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded flex-shrink-0 flex items-center justify-center">
-                <Package className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+              <div className="flex h-14 w-14 flex-none items-center justify-center rounded-xl border border-sand-300 bg-sand-100">
+                <Package className="h-6 w-6 text-sand-500" strokeWidth={1.6} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                <p className="truncate text-[13.5px] font-semibold text-ink">
                   {item.product.name}
                 </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-[11.5px] font-medium text-sand-600">
                   Cantidad: {item.quantity}
                 </p>
-                <p className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                <p className="text-sm font-extrabold text-ink">
                   {showVES && itemPriceVES
                     ? formatVES(itemPriceVES)
                     : formatUSD(itemPriceUSD)}
@@ -106,10 +106,10 @@ export default function OrderSummary({
         })}
       </div>
 
-      <div className="border-t dark:border-gray-700 pt-4 space-y-2">
+      <div className="space-y-2.5 border-t border-sand-200 pt-4">
         {showVES && exchangeRate && typeof exchangeRate === "number" && (
-          <div className="flex justify-between text-xs bg-blue-50 dark:bg-blue-950/40 p-2 rounded">
-            <span className="text-gray-600 dark:text-gray-400">
+          <div className="flex justify-between rounded-lg bg-sand-100 p-2.5 text-xs font-semibold">
+            <span className="text-sand-700">
               Tipo de cambio:
             </span>
             <span className="font-medium">
@@ -118,8 +118,8 @@ export default function OrderSummary({
           </div>
         )}
 
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-600 dark:text-gray-400">
+        <div className="flex justify-between text-[13px] font-semibold text-sand-700">
+          <span>
             {t("subtotal")}:
           </span>
           <span className="font-medium">
@@ -130,7 +130,7 @@ export default function OrderSummary({
         </div>
 
         {ivaAmount > 0 && (
-          <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+          <div className="flex justify-between text-[13px] font-semibold text-sand-700">
             <span>IVA:</span>
             <span className="font-medium">
               {showVES && ivaAmountVes > 0
@@ -140,8 +140,8 @@ export default function OrderSummary({
           </div>
         )}
 
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-600 dark:text-gray-400">
+        <div className="flex justify-between text-[13px] font-semibold text-sand-700">
+          <span>
             {t("shipping")}:
           </span>
           <span className="font-medium">
@@ -150,7 +150,7 @@ export default function OrderSummary({
         </div>
 
         {discountAmount > 0 && (
-          <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
+          <div className="flex justify-between text-[13px] font-semibold text-success-600">
             <span className="font-medium">
               {t("discount")} ({discountCode}):
             </span>
@@ -163,13 +163,23 @@ export default function OrderSummary({
           </div>
         )}
 
-        <div className="border-t dark:border-gray-700 pt-2 flex justify-between text-lg font-bold">
-          <span className="dark:text-gray-100">{t("total")}:</span>
-          <span className="text-blue-600 dark:text-blue-400">
-            {showVES && totalVES !== null && totalVES !== undefined
-              ? formatVES(totalVES)
-              : formatUSD(total)}
-          </span>
+        <div className="flex items-baseline justify-between border-t border-sand-200 pt-3">
+          <span className="font-display text-[15px] font-bold text-ink">{t("total")}</span>
+          <div className="text-right">
+            <span className="block text-[19px] font-extrabold text-ink">
+              {showVES && totalVES !== null && totalVES !== undefined
+                ? formatVES(totalVES)
+                : formatUSD(total)}
+            </span>
+            {showVES && totalVES !== null && totalVES !== undefined && (
+              <span className="text-[11.5px] font-medium text-sand-600">
+                ≈ {formatUSD(total)}
+                {exchangeRate && typeof exchangeRate === "number"
+                  ? ` · BCV ${exchangeRate.toFixed(2)}`
+                  : ""}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -178,6 +188,7 @@ export default function OrderSummary({
           onApply={onApplyDiscount}
           error={discountError}
           isApplying={isApplyingDiscount}
+          bare={variant !== "sidebar"}
         />
       </div>
     </div>

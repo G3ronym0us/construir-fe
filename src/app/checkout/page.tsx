@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useForm } from "react-hook-form";
+import { useForm, type FieldPath, type FieldPathValue } from "react-hook-form";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/context/ToastContext";
@@ -16,7 +16,9 @@ import { exchangeRateService } from "@/services/exchangeRate";
 import { formatVES, formatUSD } from "@/lib/currency";
 
 import CheckoutStepper from "@/components/checkout/CheckoutStepper";
-import Step1ContactInfo from "@/components/checkout/steps/Step1ContactInfo";
+import Step1ContactInfo, {
+  type ContactSubStep,
+} from "@/components/checkout/steps/Step1ContactInfo";
 import Step2DeliveryMethod from "@/components/checkout/steps/Step2DeliveryMethod";
 import Step3Location from "@/components/checkout/steps/Step3Location";
 import Step4Payment from "@/components/checkout/steps/Step4Payment";
@@ -52,6 +54,9 @@ export default function CheckoutPage() {
     "manual" | "auto" | "map"
   >("manual");
   const [currentStep, setCurrentStep] = useState(0);
+  // El paso de contacto se reparte en dos pantallas: cédula primero, datos después
+  const [contactSubStep, setContactSubStep] =
+    useState<ContactSubStep>("identification");
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
 
   // Discount state
@@ -71,10 +76,11 @@ export default function CheckoutPage() {
     useState<IdentificationType>(IdentificationType.V);
   const [identificationNumber, setIdentificationNumber] = useState("");
   const [isSearchingGuest, setIsSearchingGuest] = useState(false);
-  const [showGuestDataModal, setShowGuestDataModal] = useState(false);
-  const [foundGuestData, setFoundGuestData] = useState<GuestCustomer | null>(
-    null,
-  );
+  // Identificación con la que se autocompletó, para el aviso del paso de datos
+  const [autofilledGuest, setAutofilledGuest] = useState<{
+    label: string;
+    ordersCount: number;
+  } | null>(null);
 
   const toast = useToast();
 
@@ -84,6 +90,7 @@ export default function CheckoutPage() {
     handleSubmit,
     watch,
     setValue,
+    getValues,
     reset,
     formState: { errors },
   } = useForm<CheckoutData>({
@@ -137,6 +144,16 @@ export default function CheckoutPage() {
     });
 
   const isAuthenticated = !!user;
+
+  // Quien ya inició sesión no pasa por la pantalla de cédula
+  const effectiveSubStep: ContactSubStep = isAuthenticated
+    ? "details"
+    : contactSubStep;
+  const isOnIdentification =
+    currentStep === 0 && effectiveSubStep === "identification";
+  // En la primera pantalla el retroceso sale del checkout, no navega entre pasos
+  const canGoBack =
+    currentStep > 0 || (!isAuthenticated && contactSubStep === "details");
 
   const CHECKOUT_STORAGE_KEY = 'checkout_draft';
 
@@ -218,9 +235,90 @@ export default function CheckoutPage() {
 
   const steps = getSteps();
 
+  // Últimos valores heredados por cada forma de pago, para distinguirlos de los
+  // que escribió el usuario a mano.
+  const seededPagomovil = useRef({ phoneNumber: "", cedula: "" });
+  const seededTransferencia = useRef({ accountName: "" });
+
+  /**
+   * Pago móvil y transferencia piden datos del emisor que el comprador ya dio en
+   * el paso de contacto (cédula, teléfono, titular), así que los heredan al
+   * llegar al pago — editables, como cualquier otro campo. Zelle queda fuera: ahí
+   * el pago se coordina cuando el encargado contacta al cliente.
+   *
+   * Se siembra al entrar al paso y no en cada pulsación: si no, el valor se
+   * congelaría en la primera letra que se teclea en el contacto.
+   *
+   * Solo se pisa un campo vacío o uno que siga teniendo el valor heredado; en
+   * cuanto el usuario lo edita —porque pagó desde otro titular— manda lo suyo.
+   */
+  const contactPhone = watch("phone");
+  const contactFirstName = watch("firstName");
+  const contactLastName = watch("lastName");
+  useEffect(() => {
+    if (currentStep !== steps.length - 1) return;
+
+    const cedula = identificationNumber
+      ? `${identificationType}-${identificationNumber}`
+      : "";
+    const accountName = `${contactFirstName || ""} ${contactLastName || ""}`.trim();
+
+    setPagomovilPayment((prev) => {
+      const seeded = seededPagomovil.current;
+      const takePhone =
+        !!contactPhone &&
+        (!prev.phoneNumber || prev.phoneNumber === seeded.phoneNumber);
+      const takeCedula =
+        !!cedula && (!prev.cedula || prev.cedula === seeded.cedula);
+      if (!takePhone && !takeCedula) return prev;
+
+      if (takePhone) seeded.phoneNumber = contactPhone;
+      if (takeCedula) seeded.cedula = cedula;
+
+      return {
+        ...prev,
+        ...(takePhone ? { phoneNumber: contactPhone } : {}),
+        ...(takeCedula ? { cedula } : {}),
+      };
+    });
+
+    setTransferenciaPayment((prev) => {
+      const seeded = seededTransferencia.current;
+      const takeName =
+        !!accountName &&
+        (!prev.accountName || prev.accountName === seeded.accountName);
+      if (!takeName) return prev;
+
+      seeded.accountName = accountName;
+      return { ...prev, accountName };
+    });
+  }, [
+    currentStep,
+    steps.length,
+    contactPhone,
+    contactFirstName,
+    contactLastName,
+    identificationType,
+    identificationNumber,
+  ]);
+
   // Funciones de navegación
   const handleNext = () => {
     // Validar el paso actual antes de avanzar
+    if (isOnIdentification) {
+      // La cédula solo abre la pantalla de datos; el autocompletado es un extra
+      if (identificationNumber.trim().length < 7) {
+        toast.error(
+          t("errors.completeIdentification", {
+            defaultValue: "Ingresa tu cédula o RIF para continuar",
+          }),
+        );
+        return;
+      }
+      setContactSubStep("details");
+      return;
+    }
+
     if (currentStep === 0) {
       // Validar contacto
       const firstName = watch("firstName");
@@ -280,6 +378,14 @@ export default function CheckoutPage() {
   };
 
   const handlePrevious = () => {
+    if (currentStep === 0) {
+      // Dentro del paso de contacto, volver es regresar a la pantalla de cédula
+      if (!isAuthenticated && contactSubStep === "details") {
+        setContactSubStep("identification");
+      }
+      return;
+    }
+
     if (currentStep === steps.length - 1 && deliveryMethod === "pickup") {
       // Si estamos en pago y es pickup, volver al paso de método de entrega
       setCurrentStep(1);
@@ -355,6 +461,31 @@ export default function CheckoutPage() {
     .filter(Boolean);
 
   const items = isAuthenticated ? cart?.items || [] : enrichedLocalItems;
+
+  /**
+   * No tiene sentido estar en el checkout sin carrito: el formulario aparece sin
+   * nada que comprar. El carrito vacío tiene su propia pantalla, que sí lo
+   * explica.
+   *
+   * Va con margen a propósito, no redirige en cuanto ve `items` vacío: en el
+   * primer render `cart` es null y el carrito local todavía no se ha hidratado,
+   * así que un chequeo inmediato echaría del checkout a todo el mundo. Si los
+   * artículos llegan dentro de la ventana, el efecto se repite y cancela el
+   * temporizador.
+   *
+   * `orderPlaced` cubre el pedido recién creado: el carrito se vacía en la
+   * pantalla de confirmación y esta guarda no debe robar esa navegación.
+   */
+  const orderPlaced = useRef(false);
+  useEffect(() => {
+    if (loadingProducts || orderPlaced.current || items.length > 0) return;
+
+    const timer = setTimeout(() => {
+      if (!orderPlaced.current) router.replace("/carrito");
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [loadingProducts, items.length, router]);
   const subtotal = isAuthenticated
     ? cart?.subtotal || 0
     : enrichedLocalItems.reduce((acc, item) => {
@@ -476,60 +607,155 @@ export default function CheckoutPage() {
   ) => {
     setIdentificationType(type);
     setIdentificationNumber(number);
+    // Cambiar la cédula invalida el autocompletado anterior: no basta con
+    // quitar el aviso, hay que sacar del formulario los datos de la otra
+    // persona. Si no, una consulta a una cédula ajena seguida de la propia
+    // dejaba el pedido con el nombre, correo y dirección del anterior.
+    revertGuestData();
   };
 
-  // Buscar cuando el usuario termina de escribir (onBlur)
+  // Resultados ya consultados, para no gastar el límite de tasa del backend
+  // (5/min) y para poder reponer el autocompletado sin volver a preguntar
+  // cuando el cliente corrige un dígito y vuelve a la cédula original.
+  const lookupCache = useRef<Map<string, GuestCustomer | null>>(new Map());
+
+  // Lo que escribió el último autocompletado, para poder deshacerlo.
+  const autofilledValues = useRef<Partial<CheckoutData> | null>(null);
+
+  /**
+   * Deshace el último autocompletado.
+   *
+   * Sólo revierte los campos que siguen teniendo exactamente el valor que puso
+   * el autocompletado: si el cliente editó alguno a mano después, lo suyo
+   * manda y se respeta.
+   */
+  const revertGuestData = () => {
+    const applied = autofilledValues.current;
+    autofilledValues.current = null;
+    setAutofilledGuest(null);
+    if (!applied) return;
+
+    const restore = <K extends FieldPath<CheckoutData>>(
+      field: K,
+      empty: FieldPathValue<CheckoutData, K>,
+    ) => {
+      const autofilled = applied[field as keyof CheckoutData];
+      if (autofilled === undefined) return;
+      if (getValues(field) !== autofilled) return;
+      setValue(field, empty);
+    };
+
+    restore("firstName", "");
+    restore("lastName", "");
+    restore("email", "");
+    restore("phone", "");
+    restore("address", "");
+    restore("city", "");
+    restore("state", "");
+    restore("zipCode", "");
+    restore("country", "Venezuela");
+    restore("additionalInfo", "");
+    restore("latitude", undefined);
+    restore("longitude", undefined);
+  };
+
+  /** Vuelca sobre el formulario los datos del invitado encontrado. */
+  const applyGuestData = (guest: GuestCustomer) => {
+    // Un autocompletado reemplaza al anterior por completo.
+    revertGuestData();
+
+    const applied: Partial<CheckoutData> = {
+      firstName: guest.firstName,
+      lastName: guest.lastName,
+      email: guest.email,
+      phone: guest.phone,
+    };
+
+    setValue("firstName", guest.firstName);
+    setValue("lastName", guest.lastName);
+    setValue("email", guest.email);
+    setValue("phone", guest.phone);
+
+    if (guest.address) {
+      setValue("address", guest.address);
+      applied.address = guest.address;
+    }
+    if (guest.city) {
+      setValue("city", guest.city);
+      applied.city = guest.city;
+    }
+    if (guest.state) {
+      setValue("state", guest.state);
+      applied.state = guest.state;
+    }
+    if (guest.zipCode) {
+      setValue("zipCode", guest.zipCode);
+      applied.zipCode = guest.zipCode;
+    }
+    if (guest.country) {
+      setValue("country", guest.country);
+      applied.country = guest.country;
+    }
+    if (guest.additionalInfo) {
+      setValue("additionalInfo", guest.additionalInfo);
+      applied.additionalInfo = guest.additionalInfo;
+    }
+    if (guest.latitude) {
+      setValue("latitude", guest.latitude);
+      applied.latitude = guest.latitude;
+    }
+    if (guest.longitude) {
+      setValue("longitude", guest.longitude);
+      applied.longitude = guest.longitude;
+    }
+
+    autofilledValues.current = applied;
+
+    setAutofilledGuest({
+      label: `${guest.identificationType}-${guest.identificationNumber}`,
+      ordersCount: guest.ordersCount,
+    });
+  };
+
+  /**
+   * Busca los datos del invitado y autocompleta el formulario si hay registro.
+   *
+   * Se dispara al salir del campo de identificación, no en cada pulsación: el
+   * endpoint público admite 5 consultas por minuto. El aviso "Datos
+   * autocompletados · Cambiar" del paso siguiente deja revertirlo.
+   */
   const handleIdentificationSearch = async () => {
-    // Solo buscar si el número tiene al menos 7 caracteres
-    if (identificationNumber.length >= 7 && !isAuthenticated) {
-      setIsSearchingGuest(true);
-      try {
-        const guestData = await guestCustomersService.searchByIdentification(
-          identificationType,
-          identificationNumber,
-        );
-        if (guestData) {
-          // Guardar datos encontrados y mostrar modal
-          setFoundGuestData(guestData);
-          setShowGuestDataModal(true);
-        }
-      } catch (error) {
-        console.error("Error searching guest customer:", error);
-      } finally {
-        setIsSearchingGuest(false);
-      }
+    if (isAuthenticated) return;
+    if (identificationNumber.length < 7) return;
+
+    const lookupKey = `${identificationType}|${identificationNumber}`;
+
+    // Ya consultada: se resuelve con lo cacheado, sin gastar otra petición.
+    if (lookupCache.current.has(lookupKey)) {
+      const cached = lookupCache.current.get(lookupKey) ?? null;
+      if (cached) applyGuestData(cached);
+      return;
     }
-  };
 
-  // Confirmar y autocompletar con los datos encontrados
-  const handleConfirmGuestData = () => {
-    if (foundGuestData) {
-      setValue("firstName", foundGuestData.firstName);
-      setValue("lastName", foundGuestData.lastName);
-      setValue("email", foundGuestData.email);
-      setValue("phone", foundGuestData.phone);
+    setIsSearchingGuest(true);
+    try {
+      const guestData = await guestCustomersService.searchByIdentification(
+        identificationType,
+        identificationNumber,
+      );
+      lookupCache.current.set(lookupKey, guestData);
 
-      if (foundGuestData.address) setValue("address", foundGuestData.address);
-      if (foundGuestData.city) setValue("city", foundGuestData.city);
-      if (foundGuestData.state) setValue("state", foundGuestData.state);
-      if (foundGuestData.zipCode) setValue("zipCode", foundGuestData.zipCode);
-      if (foundGuestData.country) setValue("country", foundGuestData.country);
-      if (foundGuestData.additionalInfo)
-        setValue("additionalInfo", foundGuestData.additionalInfo);
-      if (foundGuestData.latitude)
-        setValue("latitude", foundGuestData.latitude);
-      if (foundGuestData.longitude)
-        setValue("longitude", foundGuestData.longitude);
-
-      setShowGuestDataModal(false);
-      setFoundGuestData(null);
+      // Una cédula sin registro no deja el formulario como estaba: si venía de
+      // otro autocompletado, esos datos son de otra persona y hay que sacarlos.
+      if (guestData) applyGuestData(guestData);
+      else revertGuestData();
+    } catch (error) {
+      // Un fallo de red no se cachea: se reintenta al próximo blur. Tampoco se
+      // revierte nada, porque no sabemos si la cédula tiene registro o no.
+      console.error("Error searching guest customer:", error);
+    } finally {
+      setIsSearchingGuest(false);
     }
-  };
-
-  // Cancelar autocompletado
-  const handleCancelGuestData = () => {
-    setShowGuestDataModal(false);
-    setFoundGuestData(null);
   };
 
   const validatePaymentData = (): boolean => {
@@ -586,6 +812,11 @@ export default function CheckoutPage() {
   };
 
   const onSubmit = async (formData: CheckoutData) => {
+    // El pedido solo se confirma desde el último paso. Blinda contra envíos que
+    // no vienen del botón de confirmar: Enter en cualquier campo, o el clic que
+    // avanza de paso si el navegador lo resuelve sobre el botón ya reemplazado.
+    if (currentStep !== steps.length - 1) return;
+
     // Validaciones básicas según el método de entrega
     if (formData.deliveryMethod === "delivery") {
       if (
@@ -726,9 +957,13 @@ export default function CheckoutPage() {
         await ordersService.uploadReceipt(order.uuid, receiptFile);
       }
 
-      // Limpiar datos guardados y redirigir a confirmación
+      // Limpiar datos guardados y redirigir a confirmación.
+      // replace y no push: el pedido ya se creó, así que el checkout no debe
+      // quedar en el historial. Con push, el botón atrás del teléfono devolvía
+      // al formulario con el carrito ya vacío.
+      orderPlaced.current = true;
       sessionStorage.removeItem(CHECKOUT_STORAGE_KEY);
-      router.push(`/checkout/confirmacion?method=${formData.paymentMethod}`);
+      router.replace(`/checkout/confirmacion?method=${formData.paymentMethod}`);
     } catch (error) {
       console.error("Error processing checkout:", error);
 
@@ -749,14 +984,16 @@ export default function CheckoutPage() {
 
   if (loadingProducts) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <Loader2 className="w-12 h-12 animate-spin text-blue-600" />
+      <div className="min-h-screen bg-sand-50 flex items-center justify-center">
+        <Loader2 className="w-12 h-12 animate-spin text-brand-600" />
       </div>
     );
   }
 
-  const showVES =
-    !!paymentMethod && ["pagomovil", "transferencia"].includes(paymentMethod);
+  // El precio es dual en toda la app: Bs. protagonista y USD de referencia,
+  // independientemente del método de pago que se acabe eligiendo.
+  const hasVESTotal =
+    totalVES !== null && totalVES !== undefined && totalVES > 0;
   const itemsCount = items.reduce(
     (acc, item) => (item ? acc + item.quantity : acc),
     0,
@@ -781,9 +1018,9 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">
+    <div className="min-h-screen bg-white md:bg-sand-50 md:py-8">
+      <div className="mx-auto max-w-7xl px-0 sm:px-6 lg:px-8">
+        <h1 className="mb-6 hidden px-4 font-display text-3xl font-bold text-ink md:block md:px-0">
           {t("title")}
         </h1>
 
@@ -791,14 +1028,33 @@ export default function CheckoutPage() {
           {/* Formulario */}
           <div className="lg:col-span-2">
             {/* Stepper */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-6">
-              <CheckoutStepper steps={steps} currentStep={currentStep} />
+            <div className="sticky top-0 z-20 mb-4 bg-white md:static md:mb-6 md:rounded-2xl md:border md:border-sand-300">
+              <CheckoutStepper
+                steps={steps}
+                currentStep={currentStep}
+                onBack={canGoBack ? handlePrevious : () => router.push("/carrito")}
+                mobileTitle={
+                  currentStep === 0
+                    ? isOnIdentification
+                      ? t("stepContactIdentification", {
+                          defaultValue: "Tus datos",
+                        })
+                      : t("stepContactConfirm", {
+                          defaultValue: "Confirma tus datos",
+                        })
+                    : undefined
+                }
+                // La cédula es media pantalla del primer paso, no un paso entero
+                progress={
+                  isOnIdentification ? (100 / steps.length) * 0.6 : undefined
+                }
+              />
             </div>
 
             <form
               id="checkout-form"
               onSubmit={handleSubmit(onSubmit)}
-              className="bg-white dark:bg-gray-800 rounded-lg p-4 md:p-6 space-y-6"
+              className="space-y-6 bg-white p-4 md:rounded-2xl md:border md:border-sand-300 md:p-6"
             >
               {/* Paso 1: Información de Contacto */}
               {currentStep === 0 && (
@@ -806,11 +1062,18 @@ export default function CheckoutPage() {
                   register={register}
                   errors={errors}
                   isAuthenticated={isAuthenticated}
+                  subStep={effectiveSubStep}
                   identificationType={identificationType}
                   identificationNumber={identificationNumber}
                   onIdentificationChange={handleIdentificationChange}
                   onIdentificationBlur={handleIdentificationSearch}
                   isSearching={isSearchingGuest}
+                  autofilledIdentification={autofilledGuest?.label ?? null}
+                  autofilledOrdersCount={autofilledGuest?.ordersCount}
+                  onChangeIdentification={() =>
+                    setContactSubStep("identification")
+                  }
+                  createAccount={createAccount || false}
                 />
               )}
 
@@ -839,8 +1102,6 @@ export default function CheckoutPage() {
               {/* Paso 4: Pago */}
               {currentStep === steps.length - 1 && (
                 <Step4Payment
-                  register={register}
-                  errors={errors}
                   paymentMethod={paymentMethod}
                   onPaymentMethodChange={handlePaymentMethodChange}
                   zellePayment={zellePayment}
@@ -851,8 +1112,6 @@ export default function CheckoutPage() {
                   onTransferenciaChange={setTransferenciaPayment}
                   totalUSD={total}
                   totalVES={totalVES}
-                  isAuthenticated={isAuthenticated}
-                  createAccount={createAccount || false}
                   cartItems={items.flatMap((item) => {
                     if (!item) return [];
                     const price =
@@ -881,12 +1140,12 @@ export default function CheckoutPage() {
               )}
 
               {/* Botones de Navegación (desktop/tablet — mobile usa sticky bar) */}
-              <div className="hidden md:flex justify-between pt-6 border-t dark:border-gray-700">
+              <div className="hidden justify-between gap-3 border-t border-sand-200 pt-6 md:flex">
                 <button
                   type="button"
                   onClick={handlePrevious}
-                  disabled={currentStep === 0}
-                  className="min-w-[100px] px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!canGoBack}
+                  className="min-h-11 min-w-[110px] rounded-xl border-[1.5px] border-sand-300 px-6 text-sm font-bold text-ink transition-colors hover:bg-sand-100 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {t("previous", { defaultValue: "Anterior" })}
                 </button>
@@ -896,7 +1155,7 @@ export default function CheckoutPage() {
                     key="next-btn"
                     type="button"
                     onClick={handleNext}
-                    className="min-w-[100px] px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                    className="min-h-11 min-w-[110px] rounded-xl bg-brand-600 px-6 text-sm font-bold text-white transition-colors hover:bg-brand-700"
                   >
                     {t("next", { defaultValue: "Siguiente" })}
                   </button>
@@ -905,7 +1164,7 @@ export default function CheckoutPage() {
                     key="submit-btn"
                     type="submit"
                     disabled={loading}
-                    className="min-w-[100px] px-6 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="flex min-h-11 min-w-[110px] items-center justify-center gap-2 rounded-xl bg-brand-600 px-6 text-sm font-bold text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {loading ? (
                       <>
@@ -931,62 +1190,71 @@ export default function CheckoutPage() {
 
         {/* Sticky bar mobile con total + CTA */}
         <div
-          className="md:hidden fixed inset-x-0 bottom-0 z-30 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-4 pt-3 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_12px_rgba(0,0,0,0.3)]"
+          className="fixed inset-x-0 bottom-0 z-30 border-t border-sand-300 bg-white px-4 pt-3 md:hidden"
           style={{
             paddingBottom: "calc(env(safe-area-inset-bottom) + 0.75rem)",
             touchAction: "manipulation",
           }}
         >
-          <div className="flex items-center justify-between gap-3 mb-2">
+          <div
+            className={`items-center justify-between gap-3 mb-2 ${
+              isOnIdentification ? "hidden" : "flex"
+            }`}
+          >
             <button
               type="button"
               onClick={() => setIsSummaryOpen(true)}
               aria-label={t("orderSummary")}
               aria-expanded={isSummaryOpen}
               aria-controls="order-summary-sheet-title"
-              className="flex items-center gap-1 text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded px-1 py-0.5"
+              className="-ml-1 flex items-center gap-1 rounded-lg px-1 py-1 text-[12.5px] font-bold text-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
             >
               <ChevronUp className="w-4 h-4" />
               {t("orderSummary")} ({itemsCount})
             </button>
             <div className="text-right">
-              <div className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-sand-600">
                 {t("total")}
               </div>
               <div
-                className="text-lg font-bold text-blue-600 dark:text-blue-400"
+                className="text-[17px] font-extrabold text-ink"
                 aria-live="polite"
               >
-                {showVES && totalVES !== null && totalVES !== undefined
-                  ? formatVES(totalVES)
-                  : formatUSD(total)}
+                {hasVESTotal ? formatVES(totalVES!) : formatUSD(total)}
               </div>
+              {hasVESTotal && (
+                <div className="text-[11px] font-medium text-sand-600">
+                  {formatUSD(total)}
+                </div>
+              )}
             </div>
           </div>
           <div className="flex gap-2">
-            {currentStep > 0 && (
+            {canGoBack && (
               <button
                 type="button"
                 onClick={handlePrevious}
-                className="flex-1 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                className="min-h-11 w-24 flex-none rounded-xl border-[1.5px] border-sand-300 py-3 text-sm font-bold text-ink transition-colors hover:bg-sand-100"
               >
-                {t("previous", { defaultValue: "Anterior" })}
+                {t("previous", { defaultValue: "Atrás" })}
               </button>
             )}
             {currentStep < steps.length - 1 ? (
               <button
+                key="next-btn"
                 type="button"
                 onClick={handleNext}
-                className={`${currentStep > 0 ? "flex-[2]" : "flex-1"} py-3 bg-blue-600 text-white font-semibold rounded-lg text-sm hover:bg-blue-700 transition-colors`}
+                className="min-h-11 flex-1 rounded-xl bg-brand-600 py-3 text-[14.5px] font-bold text-white transition-colors hover:bg-brand-700"
               >
                 {t("next", { defaultValue: "Siguiente" })}
               </button>
             ) : activePaymentMethods.length > 0 ? (
               <button
+                key="submit-btn"
                 type="submit"
                 form="checkout-form"
                 disabled={loading}
-                className={`${currentStep > 0 ? "flex-[2]" : "flex-1"} py-3 bg-green-600 text-white font-semibold rounded-lg text-sm hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
+                className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-600 py-3 text-[14.5px] font-bold text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? (
                   <>
@@ -1007,79 +1275,6 @@ export default function CheckoutPage() {
           {...summaryProps}
         />
 
-        {/* Modal de confirmación de datos encontrados */}
-        {showGuestDataModal && foundGuestData && (
-          <div
-            className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-[60] p-4 animate-in fade-in duration-200"
-            onClick={handleCancelGuestData}
-          >
-            <div
-              className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6 shadow-2xl animate-in zoom-in-95 duration-300"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-                {t("guestDataFound")}
-              </h3>
-              <p className="text-gray-700 dark:text-gray-300 mb-4">
-                {t("guestDataFoundMessage", {
-                  count: foundGuestData.ordersCount,
-                })}
-              </p>
-              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6 space-y-2">
-                <p className="text-sm">
-                  <span className="font-medium text-gray-700 dark:text-gray-300">
-                    {t("name")}:
-                  </span>{" "}
-                  <span className="text-gray-900 dark:text-gray-100">
-                    {foundGuestData.firstName} {foundGuestData.lastName}
-                  </span>
-                </p>
-                <p className="text-sm">
-                  <span className="font-medium text-gray-700 dark:text-gray-300">
-                    {t("email")}:
-                  </span>{" "}
-                  <span className="text-gray-900 dark:text-gray-100">
-                    {foundGuestData.email}
-                  </span>
-                </p>
-                <p className="text-sm">
-                  <span className="font-medium text-gray-700 dark:text-gray-300">
-                    {t("phone")}:
-                  </span>{" "}
-                  <span className="text-gray-900 dark:text-gray-100">
-                    {foundGuestData.phone}
-                  </span>
-                </p>
-                {foundGuestData.address && (
-                  <p className="text-sm">
-                    <span className="font-medium text-gray-700 dark:text-gray-300">
-                      {t("address")}:
-                    </span>{" "}
-                    <span className="text-gray-900 dark:text-gray-100">
-                      {foundGuestData.address}
-                    </span>
-                  </p>
-                )}
-              </div>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={handleCancelGuestData}
-                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200"
-                >
-                  {t("cancel")}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmGuestData}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-md hover:shadow-lg"
-                >
-                  {t("autofillData")}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

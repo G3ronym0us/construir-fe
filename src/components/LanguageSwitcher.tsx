@@ -46,7 +46,7 @@ export default function LanguageSwitcher() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+        className="flex items-center gap-2 px-3 py-2 text-sand-700 hover:bg-sand-100 rounded-lg transition-colors"
         aria-label="Cambiar idioma"
       >
         <Languages className="w-5 h-5" />
@@ -56,19 +56,19 @@ export default function LanguageSwitcher() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+        <div className="absolute right-0 mt-2 w-48 rounded-2xl border border-sand-300 bg-white-lg border border-sand-300 py-1 z-50">
           {languages.map((lang) => (
             <button
               key={lang.code}
               onClick={() => handleLanguageChange(lang.code)}
-              className={`w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-gray-100 transition-colors ${
-                locale === lang.code ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
+              className={`w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-sand-100 transition-colors ${
+                locale === lang.code ? 'bg-brand-50 text-brand-600' : 'text-sand-700'
               }`}
             >
               <span className="text-xl">{lang.flag}</span>
               <span className="font-medium">{lang.name}</span>
               {locale === lang.code && (
-                <span className="ml-auto text-blue-600">✓</span>
+                <span className="ml-auto text-brand-600">✓</span>
               )}
             </button>
           ))}

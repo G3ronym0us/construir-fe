@@ -5,53 +5,15 @@ interface ProductCardSkeletonProps {
 export default function ProductCardSkeleton({ variant = 'default' }: ProductCardSkeletonProps) {
   const isCompact = variant === 'compact';
 
-  const imageHeight = isCompact ? 'h-36 sm:h-44' : 'h-48 sm:h-56';
-  const padding = isCompact ? 'p-2 sm:p-3' : 'p-3';
-  const spacingY = isCompact ? 'space-y-1' : 'space-y-2';
-
   return (
-    <div className="block bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden animate-pulse">
-      {/* Image skeleton */}
-      <div className={`bg-gray-200 dark:bg-slate-700 ${imageHeight}`} />
-
-      {/* Content skeleton */}
-      <div className={`${padding} ${spacingY}`}>
-        {/* Category skeleton */}
-        <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded w-1/3" />
-
-        {/* Name skeleton - 2 lines */}
-        <div className="space-y-2">
-          <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-full" />
-          <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-4/5" />
-        </div>
-
-        {/* SKU skeleton - only for default variant */}
-        {!isCompact && (
-          <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-1/4" />
-        )}
-
-        {/* Description skeleton - only for default variant */}
-        {!isCompact && (
-          <div className="space-y-2 hidden sm:block">
-            <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded w-full" />
-            <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded w-3/4" />
-          </div>
-        )}
-
-        {/* Price skeleton */}
-        {isCompact ? (
-          <div className="h-8 bg-gray-200 dark:bg-slate-700 rounded w-1/2" />
-        ) : (
-          <div className="space-y-1">
-            <div className="h-8 bg-gray-200 dark:bg-slate-700 rounded w-2/3" />
-            <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-1/3" />
-          </div>
-        )}
-
-        {/* Stock skeleton - only for default variant */}
-        {!isCompact && (
-          <div className="h-5 bg-gray-200 dark:bg-slate-700 rounded w-1/3" />
-        )}
+    <div className="animate-pulse overflow-hidden rounded-2xl border border-sand-300 bg-white">
+      <div className={`${isCompact ? 'h-[84px] sm:h-40' : 'h-[90px] sm:h-48'} bg-sand-200`} />
+      <div className="space-y-2 p-2.5 sm:p-3">
+        <div className="h-2 w-1/3 rounded bg-sand-200" />
+        <div className="h-3 w-full rounded bg-sand-200" />
+        <div className="h-3 w-2/3 rounded bg-sand-200" />
+        <div className="h-4 w-1/2 rounded bg-sand-200" />
+        <div className="h-10 w-full rounded-xl bg-sand-200" />
       </div>
     </div>
   );

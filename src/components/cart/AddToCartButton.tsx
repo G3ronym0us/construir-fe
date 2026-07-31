@@ -54,10 +54,10 @@ export default function AddToCartButton({
       <button
         onClick={handleAddToCart}
         disabled={loading || justAdded || isOutOfStock}
-        className={`p-2 rounded-lg transition-colors ${
+        className={`flex h-11 w-11 items-center justify-center rounded-xl transition-colors ${
           justAdded
-            ? "bg-green-600 text-white"
-            : "bg-blue-600 text-white hover:bg-blue-700"
+            ? "bg-success-600 text-white"
+            : "bg-brand-600 text-white hover:bg-brand-700"
         } disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
         aria-label={t('addToCart')}
         title={t('addToCart')}
@@ -77,10 +77,10 @@ export default function AddToCartButton({
     <button
       onClick={handleAddToCart}
       disabled={loading || justAdded || isOutOfStock}
-      className={`flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors ${
+      className={`flex min-h-11 items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-bold transition-colors ${
         justAdded
-          ? "bg-green-600 text-white"
-          : "bg-blue-600 text-white hover:bg-blue-700"
+          ? "bg-success-600 text-white"
+          : "bg-brand-600 text-white hover:bg-brand-700"
       } disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
     >
       {loading ? (

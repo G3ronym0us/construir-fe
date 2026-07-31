@@ -38,32 +38,24 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      // Special handling for 403 Forbidden errors
-      if (response.status === 403) {
-        const error: ApiError = await response.json().catch(() => ({
-          statusCode: 403,
-          message: 'No tienes permisos para realizar esta acción',
-          error: 'Forbidden'
-        }));
+      // El `statusCode` viaja en el error para que quien llama pueda distinguir
+      // un rechazo del servidor (404, 403…) de un fallo de red — que no llega
+      // acá, sino que hace que `fetch` reviente. Sin esa distinción, código como
+      // el del carrito no puede decidir si un producto de verdad ya no existe o
+      // si simplemente no hubo conexión.
+      const body: ApiError | null = await response.json().catch(() => null);
 
-        // Create a custom error with 403 flag for identification
-        const forbiddenError = new Error(
-          Array.isArray(error.message) ? error.message.join(', ') : error.message
-        ) as Error & { statusCode?: number };
-        forbiddenError.statusCode = 403;
-        throw forbiddenError;
-      }
+      const message = body
+        ? Array.isArray(body.message)
+          ? body.message.join(', ')
+          : body.message
+        : response.status === 403
+          ? 'No tienes permisos para realizar esta acción'
+          : `HTTP Error: ${response.status} ${response.statusText}`;
 
-      try {
-        const error: ApiError = await response.json();
-        throw new Error(Array.isArray(error.message) ? error.message.join(', ') : error.message);
-      } catch (err) {
-        // If already thrown (403 case), re-throw
-        if (err instanceof Error && (err as Error & { statusCode?: number }).statusCode === 403) {
-          throw err;
-        }
-        throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
-      }
+      const error = new Error(message) as Error & { statusCode?: number };
+      error.statusCode = response.status;
+      throw error;
     }
 
     // Handle no content response

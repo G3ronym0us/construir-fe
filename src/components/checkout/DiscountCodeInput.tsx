@@ -2,15 +2,22 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Loader2, Ticket } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 interface DiscountCodeInputProps {
   onApply: (code: string) => Promise<void>;
   error?: string | null;
   isApplying: boolean;
+  /** Sin el filete y la etiqueta superiores, para el carrito. */
+  bare?: boolean;
 }
 
-export default function DiscountCodeInput({ onApply, error, isApplying }: DiscountCodeInputProps) {
+export default function DiscountCodeInput({
+  onApply,
+  error,
+  isApplying,
+  bare = false,
+}: DiscountCodeInputProps) {
   const t = useTranslations('checkout');
   const [code, setCode] = useState('');
 
@@ -21,34 +28,33 @@ export default function DiscountCodeInput({ onApply, error, isApplying }: Discou
   };
 
   return (
-    <div className="border-t pt-4">
-      <label htmlFor="discount-code" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-        {t('discountCodeLabel')}
-      </label>
-      <div className="flex gap-2">
+    <div className={bare ? '' : 'border-t border-sand-200 pt-4'}>
+      {!bare && (
+        <label htmlFor="discount-code" className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
+          {t('discountCodeLabel')}
+        </label>
+      )}
+      <div className="flex gap-2.5">
         <input
           type="text"
           id="discount-code"
           value={code}
           onChange={(e) => setCode(e.target.value)}
           placeholder={t('discountCodePlaceholder')}
-          className="flex-grow block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+          aria-label={bare ? t('discountCodeLabel') : undefined}
+          className="min-h-11 w-full flex-1 rounded-xl border border-sand-300 bg-sand-100 px-3.5 text-[13px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
           disabled={isApplying}
         />
         <button
           type="button"
           onClick={handleApply}
           disabled={isApplying || !code.trim()}
-          className="flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex min-h-11 flex-none items-center justify-center rounded-xl border-[1.5px] border-ink px-4 text-[13px] font-bold text-ink transition-colors hover:bg-ink hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {isApplying ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <Ticket className="w-5 h-5" />
-          )}
+          {isApplying ? <Loader2 className="h-4 w-4 animate-spin" /> : t('applyDiscount')}
         </button>
       </div>
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-[12.5px] font-semibold text-danger-600">{error}</p>}
     </div>
   );
 }

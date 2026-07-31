@@ -26,35 +26,35 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-sand-50 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Recuperar contraseña</h1>
-          <p className="mt-2 text-sm text-gray-500">
+          <h1 className="text-3xl font-bold text-ink tracking-tight">Recuperar contraseña</h1>
+          <p className="mt-2 text-sm text-sand-600">
             ¿Recordaste tu contraseña?{" "}
-            <Link href="/login" className="font-semibold text-blue-600 hover:text-blue-500 transition-colors">
+            <Link href="/login" className="font-semibold text-brand-600 hover:text-brand-500 transition-colors">
               Inicia sesión
             </Link>
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+        <div className="rounded-2xl border border-sand-300 bg-white p-6 sm:p-8">
           {submitted ? (
             <div className="text-center space-y-4">
-              <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="mx-auto w-12 h-12 bg-success-100 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-success-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
               </div>
               <div>
-                <p className="text-base font-medium text-gray-900">Revisa tu correo</p>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="text-base font-medium text-ink">Revisa tu correo</p>
+                <p className="mt-1 text-sm text-sand-600">
                   Si el correo está registrado, recibirás un enlace para restablecer tu contraseña.
                 </p>
               </div>
               <Link
                 href="/login"
-                className="inline-block mt-2 text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors"
+                className="inline-block mt-2 text-sm font-medium text-brand-600 hover:text-brand-500 transition-colors"
               >
                 Volver al inicio de sesión
               </Link>
@@ -62,21 +62,21 @@ export default function ForgotPasswordPage() {
           ) : (
             <>
               {error && (
-                <div className="mb-6 flex items-start gap-3 rounded-lg bg-red-50 border border-red-100 px-4 py-3">
-                  <svg className="w-5 h-5 text-red-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="mb-6 flex items-start gap-3 rounded-lg bg-danger-50 border border-danger-100 px-4 py-3">
+                  <svg className="w-5 h-5 text-danger-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <p className="text-sm text-red-700">{error}</p>
+                  <p className="text-sm text-danger-700">{error}</p>
                 </div>
               )}
 
-              <p className="text-sm text-gray-600 mb-5">
+              <p className="text-sm text-sand-700 mb-5">
                 Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.
               </p>
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="email" className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
                     Correo electrónico
                   </label>
                   <input
@@ -87,14 +87,14 @@ export default function ForgotPasswordPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="juan@ejemplo.com"
-                    className="block w-full px-3.5 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    className="block min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center justify-center gap-2"
+                  className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {loading ? (
                     <>

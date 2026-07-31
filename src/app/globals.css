@@ -1,28 +1,106 @@
 @import "tailwindcss";
 
+/*
+ * Sistema de diseño Constru-ir — storefront móvil.
+ * Azul profundo de marca, neutros cálidos y ámbar de seguridad para stock y ofertas.
+ */
+@theme {
+  /* Marca */
+  --color-brand-50: #f4f8fc;
+  --color-brand-100: #e3edf6;
+  --color-brand-200: #c6dbec;
+  --color-brand-300: #92bcda;
+  --color-brand-400: #4e8fbe;
+  --color-brand-500: #16639f;
+  --color-brand-600: #0f4c81;
+  --color-brand-700: #0b3a63;
+  --color-brand-800: #0f2f4e;
+  --color-brand-900: #0f2842;
+
+  /* Ámbar de seguridad: ofertas, stock, avisos */
+  --color-accent-50: #fdf6ec;
+  --color-accent-100: #fdf1e2;
+  --color-accent-200: #f8ddbb;
+  --color-accent-300: #f0b566;
+  --color-accent-400: #ea9c3b;
+  --color-accent-500: #e2851b;
+  --color-accent-600: #c66f10;
+  --color-accent-700: #a85f0d;
+
+  /* Éxito */
+  --color-success-50: #eaf5ef;
+  --color-success-100: #d3ebde;
+  --color-success-500: #1f9068;
+  --color-success-600: #1a7a55;
+  --color-success-700: #14603f;
+
+  /* Error / destructivo */
+  --color-danger-50: #fdeeec;
+  --color-danger-100: #f9dcd8;
+  --color-danger-500: #cc4438;
+  --color-danger-600: #b3392f;
+  --color-danger-700: #8e2b23;
+
+  /* Neutros cálidos */
+  --color-sand-50: #fbfaf8;
+  --color-sand-100: #f7f5f2;
+  --color-sand-200: #f0ede8;
+  --color-sand-300: #e7e3dd;
+  --color-sand-400: #ded9d2;
+  --color-sand-500: #b6b1a9;
+  --color-sand-600: #8b8781;
+  --color-sand-700: #55524d;
+  --color-sand-800: #33312e;
+  --color-sand-900: #14181d;
+
+  /* Tinta: texto principal */
+  --color-ink: #14181d;
+
+  --font-display: var(--font-archivo), "Archivo", system-ui, sans-serif;
+  --font-sans: var(--font-manrope), "Manrope", system-ui, sans-serif;
+}
+
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #14181d;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * El storefront se compromete con un único aspecto claro y cálido, así que no
+ * seguimos `prefers-color-scheme`. El panel admin usa variantes `dark:` explícitas
+ * y no depende de este bloque.
+ */
+
+@layer components {
+  /* Objetivo de toque mínimo de 44px exigido por el diseño móvil */
+  .touch-target {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+  }
+
+  /* Fila de chips desplazable sin barra visible */
+  .chip-row {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .chip-row::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @keyframes slideIn {
@@ -44,5 +122,14 @@ body {
   to {
     transform: scale(1);
     opacity: 1;
+  }
+}
+
+@keyframes sheetUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
   }
 }

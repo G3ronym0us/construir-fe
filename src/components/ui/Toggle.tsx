@@ -20,10 +20,10 @@ export function Toggle({
   color = 'blue',
 }: ToggleProps) {
   const colorClasses = {
-    blue: 'bg-blue-600 focus:ring-blue-500',
-    yellow: 'bg-yellow-500 focus:ring-yellow-500',
-    green: 'bg-green-600 focus:ring-green-500',
-    purple: 'bg-purple-600 focus:ring-purple-500',
+    blue: 'bg-brand-600 focus:ring-brand-500',
+    yellow: 'bg-accent-500 focus:ring-accent-500',
+    green: 'bg-success-600 focus:ring-success-500',
+    purple: 'bg-brand-600 focus:ring-brand-500',
   };
 
   const handleClick = () => {
@@ -40,11 +40,11 @@ export function Toggle({
   };
 
   return (
-    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+    <div className="flex items-center justify-between p-4 bg-sand-50 rounded-lg hover:bg-sand-100 transition-colors">
       <div className="flex-1 min-w-0 pr-4">
         <label
           htmlFor={id}
-          className={`block text-sm font-medium text-gray-900 ${
+          className={`block text-sm font-medium text-ink ${
             disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
           }`}
           onClick={handleClick}
@@ -52,7 +52,7 @@ export function Toggle({
           {label}
         </label>
         {description && (
-          <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+          <p className="text-xs text-sand-600 mt-1 leading-relaxed">
             {description}
           </p>
         )}
@@ -73,7 +73,7 @@ export function Toggle({
         } ${
           checked
             ? colorClasses[color]
-            : 'bg-gray-200'
+            : 'bg-sand-200'
         }`}
       >
         <span

@@ -46,8 +46,8 @@ function ResetPasswordForm() {
   if (!token) {
     return (
       <div className="text-center space-y-4">
-        <p className="text-sm text-gray-600">El enlace no es válido o ha expirado.</p>
-        <Link href="/forgot-password" className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors">
+        <p className="text-sm text-sand-700">El enlace no es válido o ha expirado.</p>
+        <Link href="/forgot-password" className="text-sm font-medium text-brand-600 hover:text-brand-500 transition-colors">
           Solicitar un nuevo enlace
         </Link>
       </div>
@@ -57,20 +57,20 @@ function ResetPasswordForm() {
   if (error === "invalid_token") {
     return (
       <div className="text-center space-y-4">
-        <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-          <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="mx-auto w-12 h-12 bg-danger-100 rounded-full flex items-center justify-center">
+          <svg className="w-6 h-6 text-danger-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
         <div>
-          <p className="text-base font-medium text-gray-900">Enlace no válido o expirado</p>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="text-base font-medium text-ink">Enlace no válido o expirado</p>
+          <p className="mt-1 text-sm text-sand-600">
             Este enlace ya no es válido. Solicita uno nuevo.
           </p>
         </div>
         <Link
           href="/forgot-password"
-          className="inline-block text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors"
+          className="inline-block text-sm font-medium text-brand-600 hover:text-brand-500 transition-colors"
         >
           Solicitar un nuevo enlace
         </Link>
@@ -81,17 +81,17 @@ function ResetPasswordForm() {
   return (
     <>
       {error === "generic" && (
-        <div className="mb-6 flex items-start gap-3 rounded-lg bg-red-50 border border-red-100 px-4 py-3">
-          <svg className="w-5 h-5 text-red-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="mb-6 flex items-start gap-3 rounded-lg bg-danger-50 border border-danger-100 px-4 py-3">
+          <svg className="w-5 h-5 text-danger-500 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <p className="text-sm text-red-700">Ocurrió un error. Intenta de nuevo.</p>
+          <p className="text-sm text-danger-700">Ocurrió un error. Intenta de nuevo.</p>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="newPassword" className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
             Nueva contraseña
           </label>
           <div className="relative">
@@ -103,12 +103,12 @@ function ResetPasswordForm() {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="Mínimo 8 caracteres"
-              className="block w-full px-3.5 py-2.5 pr-10 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+              className="block pr-11 min-h-11 w-full rounded-xl border border-sand-300 bg-sand-100 px-3.5 py-3 text-[13.5px] font-medium text-ink placeholder-sand-600 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/25"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+              className="absolute inset-y-0 right-0 flex items-center pr-3 text-sand-500 hover:text-sand-700"
               tabIndex={-1}
             >
               {showPassword ? (
@@ -126,7 +126,7 @@ function ResetPasswordForm() {
         </div>
 
         <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="confirmPassword" className="mb-1.5 block text-[11.5px] font-bold text-sand-700">
             Confirmar contraseña
           </label>
           <input
@@ -137,19 +137,19 @@ function ResetPasswordForm() {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="Repite tu nueva contraseña"
-            className={`block w-full px-3.5 py-2.5 border rounded-lg text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition ${
-              validationError ? "border-red-400 bg-red-50" : "border-gray-300"
+            className={`block w-full px-3.5 py-2.5 border rounded-lg text-ink placeholder-sand-500 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition ${
+              validationError ? "border-danger-500 bg-danger-50" : "border-sand-300"
             }`}
           />
           {validationError && (
-            <p className="mt-1 text-xs text-red-600">{validationError}</p>
+            <p className="mt-1 text-xs text-danger-600">{validationError}</p>
           )}
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center justify-center gap-2"
+          className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? (
             <>
@@ -170,17 +170,17 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-sand-50 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Nueva contraseña</h1>
-          <p className="mt-2 text-sm text-gray-500">
+          <h1 className="text-3xl font-bold text-ink tracking-tight">Nueva contraseña</h1>
+          <p className="mt-2 text-sm text-sand-600">
             Elige una contraseña segura para tu cuenta.
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
-          <Suspense fallback={<div className="text-center text-sm text-gray-500">Cargando...</div>}>
+        <div className="rounded-2xl border border-sand-300 bg-white p-6 sm:p-8">
+          <Suspense fallback={<div className="text-center text-sm text-sand-600">Cargando...</div>}>
             <ResetPasswordForm />
           </Suspense>
         </div>
