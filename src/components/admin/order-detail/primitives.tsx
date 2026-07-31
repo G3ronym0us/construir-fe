@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { formatUSD, formatVES } from "@/lib/currency";
+import type { OrderStatus, PaymentStatus } from "@/types";
 
 /**
  * Piezas compartidas por las tarjetas del detalle de orden.
@@ -88,11 +89,37 @@ export function Pill({
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11.5px] font-bold ${pillTones[tone]}`}
+      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-1 text-[11.5px] font-bold ${pillTones[tone]}`}
     >
       {children}
     </span>
   );
+}
+
+/**
+ * Color del estado del pedido, compartido por el listado y el detalle.
+ *
+ * El avance se lee por color: ámbar mientras la orden espera al ERP, azul
+ * cuando ya está en preparación, verde al completarse y rojo si se cae.
+ */
+export function orderStatusTone(status: OrderStatus): PillTone {
+  const tones: Partial<Record<OrderStatus, PillTone>> = {
+    "on-hold": "warning",
+    pending: "brand",
+    completed: "success",
+    cancelled: "danger",
+  };
+  return tones[status] ?? "neutral";
+}
+
+export function paymentStatusTone(status: PaymentStatus): PillTone {
+  const tones: Partial<Record<PaymentStatus, PillTone>> = {
+    pending: "warning",
+    verified: "success",
+    rejected: "danger",
+    refunded: "neutral",
+  };
+  return tones[status] ?? "neutral";
 }
 
 interface DualAmountProps {

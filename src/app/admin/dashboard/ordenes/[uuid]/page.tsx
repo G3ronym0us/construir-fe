@@ -22,26 +22,13 @@ import { OrderItemsCard } from "@/components/admin/order-detail/OrderItemsCard";
 import { PaymentCard } from "@/components/admin/order-detail/PaymentCard";
 import {
   Pill,
-  type PillTone,
+  orderStatusTone,
+  paymentStatusTone,
 } from "@/components/admin/order-detail/primitives";
 import {
   getOrderCustomer,
   toWhatsAppUrl,
 } from "@/components/admin/order-detail/order-customer";
-
-const orderTones: Partial<Record<OrderStatus, PillTone>> = {
-  "on-hold": "warning",
-  pending: "warning",
-  completed: "success",
-  cancelled: "danger",
-};
-
-const paymentTones: Record<PaymentStatus, PillTone> = {
-  pending: "warning",
-  verified: "success",
-  rejected: "danger",
-  refunded: "neutral",
-};
 
 export default function OrderDetailPage() {
   const t = useTranslations("orders");
@@ -162,10 +149,10 @@ export default function OrderDetailPage() {
             <h1 className="font-display text-2xl font-bold text-ink">
               {t("detailTitle", { orderNumber: order.orderNumber })}
             </h1>
-            <Pill tone={orderTones[order.status] ?? "neutral"}>
+            <Pill tone={orderStatusTone(order.status)}>
               {t(`statuses.${order.status}`)}
             </Pill>
-            <Pill tone={paymentTones[order.paymentInfo.status] ?? "neutral"}>
+            <Pill tone={paymentStatusTone(order.paymentInfo.status)}>
               {t(`paymentStatuses.${order.paymentInfo.status}`)}
             </Pill>
             <Pill>

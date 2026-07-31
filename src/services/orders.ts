@@ -1,5 +1,7 @@
 import { apiClient } from '@/lib/api';
 import type {
+  AdminOrderRow,
+  AdminOrderStats,
   Order,
   OrderSummary,
   TrackedOrder,
@@ -110,17 +112,7 @@ export const ordersService = {
   /**
    * Obtiene estadísticas del dashboard (Solo Admin)
    */
-  async getAdminStats(): Promise<{
-    totalOrders: number;
-    pendingOrders: number;
-    confirmedOrders: number;
-    shippedOrders: number;
-    deliveredOrders: number;
-    totalRevenue: number;
-    todayOrders: number;
-    monthOrders: number;
-    ordersByStatus: Record<string, number>;
-  }> {
+  async getAdminStats(): Promise<AdminOrderStats> {
     return apiClient.get('/orders/admin/stats');
   },
 
@@ -135,7 +127,7 @@ export const ordersService = {
     search?: string;
     limit?: number;
     offset?: number;
-  }): Promise<{ orders: OrderSummary[]; total: number }> {
+  }): Promise<{ orders: AdminOrderRow[]; total: number }> {
     const params = new URLSearchParams();
 
     if (filters.status) params.append('status', filters.status);

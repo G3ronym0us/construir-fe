@@ -703,6 +703,51 @@ export interface OrderSummary {
   createdAt: string;
 }
 
+/**
+ * Fila del listado de órdenes del panel.
+ *
+ * Más ancha que `OrderSummary` porque la tabla del admin muestra al comprador,
+ * el estado del pago y el total en Bs.; `/orders/admin/filter` ya la devuelve
+ * resuelta para que el panel no reúna al cliente fila por fila.
+ */
+export interface AdminOrderRow {
+  uuid: string;
+  orderNumber: string;
+  status: OrderStatus;
+  createdAt: string;
+  deliveryMethod: DeliveryMethod;
+  totalItems: number;
+  total: number;
+  totalVes: number | null;
+  exchangeRate: number | null;
+  paymentStatus: PaymentStatus | null;
+  paymentMethod: PaymentMethodEnum | null;
+  paymentReference: string | null;
+  hasReceipt: boolean;
+  customerName: string | null;
+  customerIdentification: string | null;
+  customerEmail: string | null;
+  isGuest: boolean;
+}
+
+/** Cabecera del listado de órdenes: KPIs y conteos de los chips por estado. */
+export interface AdminOrderStats {
+  totalOrders: number;
+  todayOrders: number;
+  monthOrders: number;
+  ordersByStatus: Record<string, number>;
+  /** Órdenes con el pago sin verificar: el trabajo pendiente del panel. */
+  paymentReviewCount: number;
+  oldestPaymentReviewAt: string | null;
+  verifiedOrders: number;
+  verifiedRevenue: number;
+  verifiedRevenueVes: number | null;
+  averageTicket: number;
+  averageTicketVes: number | null;
+  /** Tasa BCV vigente hoy, no la fijada en ninguna orden. */
+  exchangeRate: number | null;
+}
+
 // Discount types
 export type DiscountType = "percentage" | "fixed";
 
