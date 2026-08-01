@@ -38,6 +38,7 @@ import type {
 import { IdentificationType } from "@/types";
 import { PaymentMethod as PaymentMethodEnum } from "@/lib/enums";
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
+import { esMetodoHabilitado } from "@/components/checkout/LocationMethodSelector";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -175,7 +176,9 @@ export default function CheckoutPage() {
       const data = JSON.parse(saved);
       if (data.form) reset(data.form);
       // Always start at step 1 so the user can review/modify data, even if it was previously saved
-      if (data.locationMethod) setLocationMethod(data.locationMethod);
+      // Un borrador viejo puede traer un método que hoy está deshabilitado: se
+      // descarta y queda el manual, que es el valor inicial.
+      if (esMetodoHabilitado(data.locationMethod)) setLocationMethod(data.locationMethod);
       if (data.identificationType) setIdentificationType(data.identificationType);
       if (data.identificationNumber !== undefined) setIdentificationNumber(data.identificationNumber);
       if (data.zellePayment) setZellePayment({ ...data.zellePayment, receipt: null });

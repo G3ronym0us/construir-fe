@@ -5,6 +5,22 @@ import { useTranslations } from 'next-intl';
 
 export type LocationMethod = 'auto' | 'map' | 'manual';
 
+/**
+ * Métodos de ubicación habilitados hoy.
+ *
+ * `auto` (GPS del navegador) y `map` (Leaflet) funcionan y guardan latitud y
+ * longitud, pero el payload que consume OrbisNet no tiene campo para
+ * coordenadas: `address_1` viaja con el relleno «Coordenadas GPS» y el ERP se
+ * queda sin saber a dónde ir. Sólo la dirección escrita llega completa.
+ *
+ * Quedan fuera hasta terminar sus pruebas. Para reactivarlos basta agregarlos
+ * a esta lista — el resto del checkout ya los soporta.
+ */
+export const METODOS_HABILITADOS: LocationMethod[] = ['manual'];
+
+export const esMetodoHabilitado = (m: unknown): m is LocationMethod =>
+  typeof m === 'string' && METODOS_HABILITADOS.includes(m as LocationMethod);
+
 interface LocationMethodSelectorProps {
   value: LocationMethod;
   onChange: (method: LocationMethod) => void;
@@ -32,7 +48,11 @@ export default function LocationMethodSelector({ value, onChange }: LocationMeth
       title: t('locationManual'),
       description: t('locationManualDesc'),
     },
-  ];
+  ].filter((m) => METODOS_HABILITADOS.includes(m.id));
+
+  // Con un solo método no hay nada que elegir: mostrar un selector de una sola
+  // opción sólo agrega ruido al checkout.
+  if (methods.length < 2) return null;
 
   return (
     <div className="space-y-3">
